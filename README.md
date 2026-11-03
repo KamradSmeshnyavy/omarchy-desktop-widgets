@@ -7,8 +7,9 @@ styled after your bar. One `service` plugin: cava, MPRIS and the `/proc` probe r
 
 | Part | What it does | Open |
 |---|---|---|
-| Widgets | clock (4 styles), now-playing card, cava visualizer, CPU/RAM/temperature/battery rings — on the Bottom layer, under windows | always |
-| Dashboard | player with visualizer, month calendar, weather (open-meteo, no key), CPU/RAM graphs | `omarchy-shell widgets toggleDashboard` |
+| Widgets | clock (4 styles + `nihil` Doto dot-matrix), now-playing card (with `DotScreen` dot-matrix cover in `nihil` style), cava visualizer (bars/mirror/wave + `nihil` LED dots), CPU/RAM/temperature/battery rings or 28-LED `nihil` dials — on the Bottom layer, under windows | always |
+| Dashboard | `default` (player, month calendar, weather, CPU/RAM graphs) or `nihil` (Doto clock, dot-matrix MPRIS cover, 24×6 LED spectrum, 28-LED CPU/RAM/°C dials, rx/tx LED oscilloscope) | `omarchy-shell widgets toggleDashboard` |
+| Settings panel | NIHIL right-edge hardware drawer: 3×2 circular tiles (Wi-Fi, Bluetooth, Audio, Mic, DND, Night light), 24-segment LED sliders, expandable Wi-Fi/Bluetooth/Audio lists, notification history, 2-click red-confirm session actions | `omarchy-shell widgets toggleSettings` |
 | Power menu | lock, suspend, hibernate, log out, reboot, shut down — the last three need a second press within 3 s | `omarchy-shell widgets togglePower` |
 | Overview | workspace grid with wallpaper and live window previews; click to go, drag a window to move it | `omarchy-shell widgets toggleOverview` |
 
@@ -50,7 +51,10 @@ hl.layer_rule({ match = { namespace = "omarchy-power" }, blur = true, ignore_alp
   "visualizerAlpha": 0.45, "visualizerIdle": false,
   "sysinfo": true, "sysinfoAnchor": "top-right",
   "edgeMargin": 56, "tint": "accent", "locale": "", "screens": "all",
+  "widgetStyle": "default",       // default | nihil
+  "edgeHover": false,             // screen-edge dwell hotzones for dashboard, settings & launcher
   // dashboard and power menu
+  "dashStyle": "default",         // default | nihil
   "dashFollowBar": true,          // colour, alpha, border, radius as the bar
   "dashAttach": "auto",           // auto | attached | floating
   "dashBackground": "background", "dashAlpha": 0.94, "dashRadius": 22, "dashBorder": false,

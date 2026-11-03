@@ -1,0 +1,8 @@
+Third-party attributions for kamradsmeshnyavy.widgets:
+
+- NIHIL hardware dashboard (`NihilDashboard.qml`), right-edge control panel (`SettingsPanel.qml`),
+  edge hotzones (`EdgeHotzones.qml`), `widgetStyle: "nihil"` desktop cards, and LED-matrix components
+  (`nihil/{Ico,DotText,Label,Txt,DotMeter,DotScreen,DotScope,Dial,SegSlider,CircleButton,PillButton,Tile}.qml`):
+  Adapted from Nihil-Shell (https://github.com/poligle/Nihil-Shell)
+  Copyright (c) 2026 Pol Iglesias
+  Licensed under the MIT License.

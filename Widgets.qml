@@ -39,7 +39,10 @@ Item {
     screens: "all",             // all primary
     weatherCity: "",            // город для погоды (open-meteo); пусто — блок погоды с подсказкой
     weatherUnits: "celsius",    // celsius fahrenheit
-    // Дашборд (Dashboard.qml) и меню выключения: стиль — BarStyle.qml.
+    widgetStyle: "default",     // default nihil
+    edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
+    // Дашборд (Dashboard.qml / NihilDashboard.qml) и меню выключения: стиль — BarStyle.qml.
+    dashStyle: "default",       // default nihil
     dashFollowBar: true,
     dashAttach: "auto",         // auto attached floating
     dashBackground: "background",
@@ -84,6 +87,8 @@ Item {
   readonly property color muted: Commons.Color.muted
   readonly property color background: Commons.Color.background
   readonly property string fontFamily: Commons.Style.font.family
+  readonly property bool nihilWidgets: String(value("widgetStyle")) === "nihil"
+  readonly property bool nihilDash: String(value("dashStyle")) === "nihil"
 
   property string uiLang: ""
   readonly property bool ru: String(locale.name).indexOf("ru") === 0
@@ -189,20 +194,34 @@ Item {
   readonly property int historyLength: 60
   property var cpuHistory: []
   property var memHistory: []
+  property string netIface: ""
+  property real rxRate: 0
+  property real txRate: 0
+  property var netPrev: null
+  property var rxHistory: []
+  property var txHistory: []
 
-  // ── Дашборд ────────────────────────────────────────────────────────────
+  // ── Дашборд и панель настроек ──────────────────────────────────────────
   property bool dashboardOpen: false
+  property bool settingsOpen: false
+  property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
   // Меню выключения (PowerMenu.qml). Открытие одного закрывает другое.
   property bool powerOpen: false
-  onPowerOpenChanged: if (powerOpen) { dashboardOpen = false; overviewOpen = false; dashStyle.refresh() }
+  onPowerOpenChanged: if (powerOpen) { dashboardOpen = false; settingsOpen = false; overviewOpen = false; dashStyle.refresh() }
   // Обзор рабочих столов (Overview.qml).
   property bool overviewOpen: false
-  onOverviewOpenChanged: if (overviewOpen) { dashboardOpen = false; powerOpen = false }
+  onOverviewOpenChanged: if (overviewOpen) { dashboardOpen = false; settingsOpen = false; powerOpen = false }
+  onSettingsOpenChanged: if (settingsOpen) { dashboardOpen = false; powerOpen = false; overviewOpen = false }
   IpcHandler {
     target: "widgets"
     function toggleDashboard(): void { root.dashboardOpen = !root.dashboardOpen }
     function openDashboard(): void { root.dashboardOpen = true }
     function closeDashboard(): void { root.dashboardOpen = false }
+    function toggleSettings(): void { root.settingsOpen = !root.settingsOpen }
+    function openSettings(): void { root.settingsOpen = true }
+    function closeSettings(): void { root.settingsOpen = false }
+    // Панель настроек сразу с раскрытым разделом: wifi | bt | audio.
+    function openSettingsSection(name: string): void { root.settingsSection = name; root.settingsOpen = true }
     function togglePower(): void { root.powerOpen = !root.powerOpen }
     function openPower(): void { root.powerOpen = true }
     function closePower(): void { root.powerOpen = false }
@@ -210,7 +229,7 @@ Item {
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
   }
-  onDashboardOpenChanged: if (dashboardOpen) { powerOpen = false; overviewOpen = false; dashStyle.refresh(); weatherFetcher.refreshIfStale() }
+  onDashboardOpenChanged: if (dashboardOpen) { settingsOpen = false; powerOpen = false; overviewOpen = false; dashStyle.refresh(); weatherFetcher.refreshIfStale() }
 
   // Экран под курсором / с фокусом — дашборд открывается там.
   readonly property var focusedScreen: {
@@ -280,6 +299,18 @@ Item {
     host: root
   }
 
+  NihilDashboard {
+    host: root
+  }
+
+  SettingsPanel {
+    host: root
+  }
+
+  EdgeHotzones {
+    host: root
+  }
+
   PowerMenu {
     host: root
   }
@@ -295,9 +326,15 @@ Item {
       "awk '/^MemTotal|^MemAvailable/{printf \"%s \", $2} END{print \"\"}' /proc/meminfo | sed 's/^/mem /';" +
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
-      "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done"]
+      "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
+      // Скорость сети нужна только дашборду NIHIL.
+      (!root.nihilDash ? "" :
+      "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
+      "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
+      )]
     stdout: StdioCollector {
       onStreamFinished: {
+        var nowMs = Date.now()
         var lines = text.split("\n")
         for (var i = 0; i < lines.length; i++) {
           var f = lines[i].trim().split(/\s+/)
@@ -317,6 +354,20 @@ Item {
           } else if (f[0] === "bat" && f.length >= 2) {
             root.battery = Number(f[1])
             root.batteryStatus = f[2] || ""
+          } else if (f[0] === "net" && f.length >= 4) {
+            var iface = f[1], rx = Number(f[2]), tx = Number(f[3])
+            root.netIface = iface
+            if (root.netPrev && root.netPrev.iface === iface && nowMs > root.netPrev.ts) {
+              var elapsed = (nowMs - root.netPrev.ts) / 1000
+              root.rxRate = Math.max(0, (rx - root.netPrev.rx) / elapsed)
+              root.txRate = Math.max(0, (tx - root.netPrev.tx) / elapsed)
+            } else {
+              root.rxRate = 0
+              root.txRate = 0
+            }
+            root.netPrev = { iface: iface, rx: rx, tx: tx, ts: nowMs }
+            root.rxHistory = root.rxHistory.concat([root.rxRate]).slice(-44)
+            root.txHistory = root.txHistory.concat([root.txRate]).slice(-44)
           }
         }
       }

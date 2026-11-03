@@ -42,14 +42,14 @@ PanelWindow {
   readonly property string animation: String(host.value("dashAnimation"))
   readonly property int duration: Math.max(60, host.num("dashDuration"))
 
-  property real progress: host.dashboardOpen ? 1 : 0
+  property real progress: !host.nihilDash && host.dashboardOpen ? 1 : 0
   Behavior on progress { NumberAnimation { duration: dash.duration; easing.type: Easing.OutCubic } }
   // grow — высота растёт; slide — сдвиг сверху; fade — только прозрачность (+ лёгкий масштаб).
   readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress) : bodyHeight
   readonly property real slide: animation === "slide" ? (1 - progress) * -(bodyHeight + margin) : 0
   readonly property real fadeOpacity: animation === "grow" ? 1 : progress
 
-  visible: progress > 0.001
+  visible: !host.nihilDash && progress > 0.001
   screen: host.focusedScreen
   anchors.top: true
   exclusionMode: ExclusionMode.Normal
@@ -60,11 +60,11 @@ PanelWindow {
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
-  WlrLayershell.keyboardFocus: host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+  WlrLayershell.keyboardFocus: !host.nihilDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   mask: Region { item: hit }
 
   HyprlandFocusGrab {
-    active: dash.host.dashboardOpen
+    active: !dash.host.nihilDash && dash.host.dashboardOpen
     windows: [dash]
     onCleared: dash.host.dashboardOpen = false
   }

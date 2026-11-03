@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import "nihil" as Nihil
 
 // Карточка «сейчас играет» (MPRIS): обложка, название, исполнитель, прогресс, кнопки.
 Rectangle {
@@ -7,13 +8,14 @@ Rectangle {
 
   required property var host
   readonly property var player: host.player
+  readonly property bool nihil: host.nihilWidgets
 
   width: 400
   height: 120
   radius: 18
-  color: Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62)
+  color: nihil ? Nihil.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62)
   border.width: 1
-  border.color: Qt.rgba(host.accent.r, host.accent.g, host.accent.b, 0.35)
+  border.color: nihil ? Nihil.Palette.line : Qt.rgba(host.accent.r, host.accent.g, host.accent.b, 0.35)
 
   readonly property real progress: player && player.lengthSupported && player.length > 0
     ? Math.max(0, Math.min(1, player.position / player.length)) : 0
@@ -25,7 +27,16 @@ Rectangle {
     width: card.height - 24
     height: width
 
+    Nihil.DotScreen {
+      visible: card.nihil
+      anchors.fill: parent
+      source: card.player ? String(card.player.trackArtUrl || "") : ""
+      pitch: 4
+      radius: 12
+    }
+
     Rectangle {
+      visible: !card.nihil
       anchors.fill: parent
       radius: 12
       color: Qt.rgba(card.host.accent.r, card.host.accent.g, card.host.accent.b, 0.18)
@@ -41,7 +52,7 @@ Rectangle {
     Image {
       id: art
       anchors.fill: parent
-      source: card.player ? card.player.trackArtUrl : ""
+      source: !card.nihil && card.player ? card.player.trackArtUrl : ""
       fillMode: Image.PreserveAspectCrop
       asynchronous: true
       sourceSize.width: 192
@@ -60,7 +71,7 @@ Rectangle {
       source: art
       maskEnabled: true
       maskSource: artMask
-      visible: art.status === Image.Ready
+      visible: !card.nihil && art.status === Image.Ready
     }
   }
 
@@ -72,25 +83,37 @@ Rectangle {
       width: parent.width
       text: card.player ? card.player.trackTitle : ""
       elide: Text.ElideRight
-      font.family: card.host.fontFamily
+      font.family: card.nihil ? Nihil.Palette.fontTitle : card.host.fontFamily
       font.pixelSize: 17
-      font.weight: Font.Bold
-      color: card.host.foreground
+      font.weight: card.nihil ? Nihil.Palette.titleWeight(Font.Medium) : Font.Bold
+      color: card.nihil ? Nihil.Palette.fg : card.host.foreground
     }
     Text {
       width: parent.width
       text: card.player ? (card.player.trackArtist || card.player.identity) : ""
       elide: Text.ElideRight
-      font.family: card.host.fontFamily
-      font.pixelSize: 13
-      color: card.host.foreground
-      opacity: 0.7
+      font.family: card.nihil ? Nihil.Palette.fontMono : card.host.fontFamily
+      font.pixelSize: card.nihil ? 11 : 13
+      font.letterSpacing: card.nihil ? 1.4 : 0
+      font.capitalization: card.nihil ? Font.AllUppercase : Font.MixedCase
+      color: card.nihil ? Nihil.Palette.dim : card.host.foreground
+      opacity: card.nihil ? 1 : 0.7
     }
+  }
+
+  Nihil.DotMeter {
+    visible: card.nihil
+    anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
+    count: Math.max(10, Math.floor((width + 3) / 7))
+    dot: 4
+    gap: 3
+    value: card.progress
   }
 
   // Прогресс
   Rectangle {
     id: track
+    visible: !card.nihil
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     height: 4
     radius: 2

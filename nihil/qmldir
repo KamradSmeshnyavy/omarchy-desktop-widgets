@@ -1,0 +1,19 @@
+module nihil
+singleton Palette 1.0 Palette.qml
+CircleButton 1.0 CircleButton.qml
+Dial 1.0 Dial.qml
+DotMeter 1.0 DotMeter.qml
+DotScope 1.0 DotScope.qml
+DotScreen 1.0 DotScreen.qml
+DotText 1.0 DotText.qml
+Ico 1.0 Ico.qml
+Label 1.0 Label.qml
+PillButton 1.0 PillButton.qml
+SegSlider 1.0 SegSlider.qml
+Tile 1.0 Tile.qml
+Txt 1.0 Txt.qml
+ListRow 1.0 ListRow.qml
+SliderRow 1.0 SliderRow.qml
+WifiSection 1.0 WifiSection.qml
+BtSection 1.0 BtSection.qml
+AudioSection 1.0 AudioSection.qml

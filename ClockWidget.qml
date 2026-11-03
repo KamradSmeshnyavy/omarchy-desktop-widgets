@@ -1,4 +1,5 @@
 import QtQuick
+import "nihil" as Nihil
 
 // Часы. Стили (clockStyle): big — крупное время и дата под ним; stacked — часы над
 // минутами; terminal — «вывод команды date» с мигающим курсором; minimal — одна строка.
@@ -32,9 +33,38 @@ Item {
 
   Loader {
     id: content
-    sourceComponent: clock.style === "stacked" ? stacked
+    sourceComponent: clock.host.nihilWidgets ? nihilClock
+      : clock.style === "stacked" ? stacked
       : clock.style === "terminal" ? terminal
       : clock.style === "minimal" ? minimal : big
+  }
+
+  Component {
+    id: nihilClock
+    Column {
+      spacing: 2
+      Text {
+        text: "EX NIHILO"
+        font.family: Nihil.Palette.fontMono
+        font.pixelSize: 11
+        font.letterSpacing: 2.2
+        color: Nihil.Palette.muted
+      }
+      Text {
+        text: clock.time
+        font.family: Nihil.Palette.fontDot
+        font.weight: Font.Bold
+        font.pixelSize: 102
+        color: Nihil.Palette.fg
+      }
+      Text {
+        text: clock.dateText.toUpperCase()
+        font.family: Nihil.Palette.fontMono
+        font.pixelSize: 12
+        font.letterSpacing: 1.8
+        color: Nihil.Palette.dim
+      }
+    }
   }
 
   // Inline-компонент не видит id снаружи — шрифт и цвет задаются на месте.
