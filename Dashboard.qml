@@ -119,9 +119,9 @@ PanelWindow {
     }
 
     // floating: карточка с рамкой и тенью.
-    // paper: лист бумаги вместо карточки (стиль Paper).
-    PaperCard {
-      visible: !dash.attached && dash.style.paper
+    // Материал стиля (бумага, неоморфизм, брутализм, кант, неон) — StyleCard вместо карточки.
+    StyleCard {
+      visible: !dash.attached && dash.style.card
       style: dash.style
       seed: 3
       x: hit.x
@@ -131,7 +131,7 @@ PanelWindow {
       radius: Math.min(dash.style.cornerRadius, height / 2)
     }
     Rectangle {
-      visible: !dash.attached && !dash.style.paper
+      visible: !dash.attached && !dash.style.card
       x: hit.x
       y: hit.y
       width: hit.width

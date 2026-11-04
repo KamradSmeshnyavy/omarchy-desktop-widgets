@@ -118,8 +118,8 @@ PanelWindow {
 
   // Контур как у OSD у края: вогнутые углы сверху и снизу переходят в край экрана.
   // floating: карточка с рамкой и тенью.
-  PaperCard {
-    visible: !power.attached && power.style.paper
+  StyleCard {
+    visible: !power.attached && power.style.card
     style: power.style
     seed: 7
     x: hit.x
@@ -129,7 +129,7 @@ PanelWindow {
     radius: Math.min(power.bodyRadius, width / 2)
   }
   Rectangle {
-    visible: !power.attached && !power.style.paper
+    visible: !power.attached && !power.style.card
     x: hit.x
     y: hit.y
     width: hit.width
