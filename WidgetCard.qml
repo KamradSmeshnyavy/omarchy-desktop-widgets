@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import "dotmatrix" as DotMatrix
 
 // Подложка виджета рабочего стола в материале стиля Customizer (widgetStyle = style): ставится
 // под виджет `target` с полями `pad`. Материал — как у дашборда: StyleCard (бумага, рельеф,
@@ -11,23 +12,41 @@ Item {
   required property Item target
   property int pad: 16
   property int seed: 1
+  // У виджета своя карточка DOT-MATRIX (плеер) — подложку DOT-MATRIX не рисовать.
+  property bool ownDotmatrixCard: false
   readonly property var style: host.deskStyle
+  readonly property bool dotmatrixCard: host.dotmatrixWidgets && !ownDotmatrixCard
 
-  visible: host.styledWidgets && target && target.visible && target.width > 0
-  x: target ? target.x - pad : 0
+  visible: (host.styledWidgets || dotmatrixCard) && target && target.visible && target.width > 0
+  // DOT-MATRIX: карточки одной ширины (320, как в NIHIL) — колонка ровная; добор — к центру экрана.
+  readonly property real baseWidth: target ? target.width + 2 * pad : 0
+  readonly property real extra: dotmatrixCard ? Math.max(0, 320 - baseWidth) : 0
+  readonly property bool leftHalf: target && parent ? target.x + target.width / 2 < parent.width / 2 : true
+  x: target ? target.x - pad - (leftHalf ? 0 : extra) : 0
   y: target ? target.y - pad : 0
-  width: target ? target.width + 2 * pad : 0
+  width: baseWidth + extra
   height: target ? target.height + 2 * pad : 0
 
+  // DOT-MATRIX — как карточки рабочего стола NIHIL: чёрная (фон палитры) плитка с тонким контуром,
+  // читается на любых обоях.
+  Rectangle {
+    visible: card.dotmatrixCard
+    anchors.fill: parent
+    radius: Math.min(22, height / 2)
+    color: DotMatrix.Palette.bg
+    border.width: 1
+    border.color: DotMatrix.Palette.line
+  }
+
   StyleCard {
-    visible: card.style.card
+    visible: !card.dotmatrixCard && card.style.card
     anchors.fill: parent
     style: card.style
     seed: card.seed
     radius: Math.min(card.style.cornerRadius, card.height / 2)
   }
   Rectangle {
-    visible: !card.style.card
+    visible: !card.dotmatrixCard && !card.style.card
     anchors.fill: parent
     radius: Math.min(card.style.cornerRadius, height / 2)
     color: card.style.color

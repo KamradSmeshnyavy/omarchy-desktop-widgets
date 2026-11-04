@@ -10,7 +10,7 @@ Rectangle {
   readonly property var player: host.player
   readonly property bool dotmatrix: host.dotmatrixWidgets
 
-  width: 400
+  width: dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
   height: 120
   radius: 18
   // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
@@ -82,7 +82,7 @@ Rectangle {
 
     Text {
       width: parent.width
-      text: card.player ? card.player.trackTitle : ""
+      text: card.player && card.player.trackTitle ? card.player.trackTitle : card.host.tr("Nothing playing", "Ничего не играет")
       elide: Text.ElideRight
       font.family: card.dotmatrix ? DotMatrix.Palette.fontTitle : card.host.fontFamily
       font.pixelSize: 17
@@ -91,7 +91,7 @@ Rectangle {
     }
     Text {
       width: parent.width
-      text: card.player ? (card.player.trackArtist || card.player.identity) : ""
+      text: card.player ? (card.player.trackArtist || card.player.identity) : "MEDIA"
       elide: Text.ElideRight
       font.family: card.dotmatrix ? DotMatrix.Palette.fontMono : card.host.fontFamily
       font.pixelSize: card.dotmatrix ? 11 : 13

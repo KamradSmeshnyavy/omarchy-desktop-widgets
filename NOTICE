@@ -1,7 +1,8 @@
 Third-party attributions for kamradsmeshnyavy.widgets:
 
 - DOT-MATRIX hardware dashboard (`DotMatrixDashboard.qml`), right-edge control panel (`SettingsPanel.qml`),
-  edge hotzones (`EdgeHotzones.qml`), `widgetStyle: "dotmatrix"` desktop cards, and LED-matrix components
+  edge hotzones (`EdgeHotzones.qml`), `widgetStyle: "dotmatrix"` desktop cards and the network card (`NetWidget.qml`),
+  and LED-matrix components
   (`dotmatrix/{Ico,DotText,Label,Txt,DotMeter,DotScreen,DotScope,Dial,SegSlider,CircleButton,PillButton,Tile}.qml`):
   Adapted from Nihil-Shell (https://github.com/poligle/Nihil-Shell)
   Copyright (c) 2026 Pol Iglesias

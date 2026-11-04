@@ -278,11 +278,12 @@ PanelWindow {
   visible: progress > 0.001
   screen: host.focusedScreen
   anchors { top: true; right: true }
+  margins.top: attached ? -seamOverlap : 0
   margins.right: attached ? -seamOverlap : 0
   exclusionMode: ExclusionMode.Normal
   exclusiveZone: 0
-  implicitWidth: bodyWidth + seamOverlap + 2 + pad
-  implicitHeight: bodyHeight + 2 * flare + 16
+  implicitWidth: bodyWidth + seamOverlap + 2 + pad + flare
+  implicitHeight: attached ? seamOverlap + bodyHeight + flare + 4 : bodyHeight + 16
   color: "transparent"
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dotmatrix-settings"
@@ -299,7 +300,7 @@ PanelWindow {
   Item {
     id: hit
     x: panel.width - panel.seamOverlap - panel.pad - panel.w
-    y: panel.flare + 4
+    y: panel.attached ? panel.seamOverlap : 4
     width: panel.w + panel.seamOverlap
     height: panel.bodyHeight
   }
@@ -329,107 +330,89 @@ PanelWindow {
     }
   }
 
-  // Вырастает из правой рамки (бар — рамка DOT-MATRIX).
+  // Вырастает из правого верхнего угла рамки (бар — рамка DOT-MATRIX), как дашборд из верхней:
+  // стыки с верхней и правой рамкой скругляют угол свободной области (центр дуги — снаружи панели),
+  // свой у панели только нижний левый угол.
   Shape {
     id: panelShape
     visible: panel.attached
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
 
-    readonly property real baseX: panel.attached ? panel.width - panel.seamOverlap + 0.5 : panel.width - 0.5
+    readonly property real baseX: panel.width - panel.seamOverlap + 0.5   // правая внутренняя линия рамки
+    readonly property real baseY: panel.seamOverlap - 0.5                 // верхняя внутренняя линия рамки
     readonly property real leftX: panel.width - panel.seamOverlap - panel.w
-    readonly property real topY: hit.y
     readonly property real bottomY: hit.y + hit.height
     readonly property real fx: Math.min(panel.flare, panel.w)
     readonly property real cr: Math.max(0, Math.min(panel.cornerRadius, (panel.w - fx) / 2))
 
-    // Drawer in the bar colour growing leftward from the right frame bezel.
+    // Тело цвета бара; доходит до краёв окна, чтобы стереть линии рамки на стыке.
     ShapePath {
       fillColor: panel.host.panelStyle.color
       strokeWidth: -1
-      startX: panel.width
-      startY: panelShape.topY - panel.flare
+      startX: panelShape.leftX - panel.flare
+      startY: 0
 
-      PathLine { x: panelShape.baseX; y: panelShape.topY - panel.flare }
+      PathLine { x: panel.width; y: 0 }
+      PathLine { x: panel.width; y: panelShape.bottomY + panel.flare }
+      PathLine { x: panelShape.baseX; y: panelShape.bottomY + panel.flare }
       PathArc {
         x: panelShape.baseX - panelShape.fx
-        y: panelShape.topY
+        y: panelShape.bottomY
         radiusX: Math.max(0.01, panelShape.fx)
         radiusY: Math.max(0.01, panel.flare)
         direction: PathArc.Counterclockwise
       }
-      PathLine { x: panelShape.leftX + panelShape.cr; y: panelShape.topY }
+      PathLine { x: panelShape.leftX + panelShape.cr; y: panelShape.bottomY }
       PathArc {
         x: panelShape.leftX
-        y: panelShape.topY + panelShape.cr
+        y: panelShape.bottomY - panelShape.cr
         radiusX: Math.max(0.01, panelShape.cr)
         radiusY: Math.max(0.01, panelShape.cr)
-        direction: PathArc.Counterclockwise
       }
-      PathLine { x: panelShape.leftX; y: panelShape.bottomY - panelShape.cr }
+      PathLine { x: panelShape.leftX; y: panelShape.baseY + panel.flare }
       PathArc {
-        x: panelShape.leftX + panelShape.cr
-        y: panelShape.bottomY
-        radiusX: Math.max(0.01, panelShape.cr)
-        radiusY: Math.max(0.01, panelShape.cr)
-        direction: PathArc.Counterclockwise
-      }
-      PathLine { x: panelShape.baseX - panelShape.fx; y: panelShape.bottomY }
-      PathArc {
-        x: panelShape.baseX
-        y: panelShape.bottomY + panel.flare
-        radiusX: Math.max(0.01, panelShape.fx)
+        x: panelShape.leftX - panel.flare
+        y: panelShape.baseY
+        radiusX: Math.max(0.01, panel.flare)
         radiusY: Math.max(0.01, panel.flare)
         direction: PathArc.Counterclockwise
       }
-      PathLine { x: panel.width; y: panelShape.bottomY + panel.flare }
+      PathLine { x: panelShape.leftX - panel.flare; y: 0 }
     }
 
-    // 1px hairline: open-right when attached (joins ScreenBorder's right inner hairline),
-    // closed for a floating card.
+    // Линия 1px: продолжает правую и верхнюю линии рамки вокруг панели.
     ShapePath {
       fillColor: "transparent"
       strokeColor: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : DotMatrix.Palette.line
       strokeWidth: panel.w > 1 ? 1 : -1
       startX: panelShape.baseX
-      startY: panelShape.topY - panel.flare
+      startY: panelShape.bottomY + panel.flare
 
       PathArc {
         x: panelShape.baseX - panelShape.fx
-        y: panelShape.topY
+        y: panelShape.bottomY
         radiusX: Math.max(0.01, panelShape.fx)
         radiusY: Math.max(0.01, panel.flare)
         direction: PathArc.Counterclockwise
       }
-      PathLine { x: panelShape.leftX + panelShape.cr; y: panelShape.topY }
+      PathLine { x: panelShape.leftX + panelShape.cr; y: panelShape.bottomY }
       PathArc {
         x: panelShape.leftX
-        y: panelShape.topY + panelShape.cr
+        y: panelShape.bottomY - panelShape.cr
         radiusX: Math.max(0.01, panelShape.cr)
         radiusY: Math.max(0.01, panelShape.cr)
-        direction: PathArc.Counterclockwise
       }
-      PathLine { x: panelShape.leftX; y: panelShape.bottomY - panelShape.cr }
+      PathLine { x: panelShape.leftX; y: panelShape.baseY + panel.flare }
       PathArc {
-        x: panelShape.leftX + panelShape.cr
-        y: panelShape.bottomY
-        radiusX: Math.max(0.01, panelShape.cr)
-        radiusY: Math.max(0.01, panelShape.cr)
-        direction: PathArc.Counterclockwise
-      }
-      PathLine { x: panelShape.baseX - panelShape.fx; y: panelShape.bottomY }
-      PathArc {
-        x: panelShape.baseX
-        y: panelShape.bottomY + panel.flare
-        radiusX: Math.max(0.01, panelShape.fx)
+        x: panelShape.leftX - panel.flare
+        y: panelShape.baseY
+        radiusX: Math.max(0.01, panel.flare)
         radiusY: Math.max(0.01, panel.flare)
         direction: PathArc.Counterclockwise
       }
-      PathLine { x: panelShape.baseX; y: panel.attached ? panelShape.bottomY + panel.flare : panelShape.topY - panel.flare }
     }
   }
-
-
 
   Item {
     x: hit.x

@@ -34,6 +34,8 @@ Item {
     visualizerIdle: false,      // показывать и без музыки (cava тогда работает всегда)
     sysinfo: true,
     sysinfoAnchor: "top-right",
+    network: false,             // сеть: интерфейс, ↓/↑ и точечный осциллограф (NetWidget, как в NIHIL)
+    networkAnchor: "top-left",
     todo: false,                // Todo / заметки (TodoWidget, ~/.config/omarchy/widgets-todo.json)
     todoAnchor: "right",
     todoMax: 8,
@@ -43,7 +45,7 @@ Item {
     photoAnchor: "left",
     photoDir: "",
     photoInterval: 10,
-    edgeMargin: 56,
+    edgeMargin: 24,             // от внутреннего края бара / рамки до карточки
     tint: "accent",             // роль (accent foreground muted) или ключ colors.toml / #hex
     locale: "",                 // язык даты: "" — как в Customizer (customizer.json), иначе системный
     screens: "all",             // all primary
@@ -228,7 +230,17 @@ Item {
   // Обзор рабочих столов (Overview.qml).
   property bool overviewOpen: false
   onOverviewOpenChanged: if (overviewOpen) { dashboardOpen = false; settingsOpen = false; powerOpen = false }
-  onSettingsOpenChanged: if (settingsOpen) { dashboardOpen = false; powerOpen = false; overviewOpen = false }
+  onSettingsOpenChanged: {
+    if (settingsOpen) { dashboardOpen = false; powerOpen = false; overviewOpen = false }
+    settingsFlag.setText(settingsOpen ? "1\n" : "0\n")
+  }
+  // Флаг для kamradsmeshnyavy.notifications: пока открыто меню Super+M (там же история), тосты не показываются.
+  FileView {
+    id: settingsFlag
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-settings-open"
+    printErrors: false
+    Component.onCompleted: setText("0\n")
+  }
   IpcHandler {
     target: "widgets"
     function toggleDashboard(): void { root.dashboardOpen = !root.dashboardOpen }
@@ -356,8 +368,8 @@ Item {
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
-      // Скорость сети нужна только дашборду DOT-MATRIX.
-      (!root.dotmatrixDash ? "" :
+      // Скорость сети нужна дашборду DOT-MATRIX и виджету «Сеть».
+      (!root.dotmatrixDash && !root.flag("network") ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]
@@ -406,7 +418,7 @@ Item {
     interval: 2000
     repeat: true
     triggeredOnStart: true
-    running: root.flag("sysinfo") || root.dashboardOpen
+    running: root.flag("sysinfo") || root.flag("network") || root.dashboardOpen
     onTriggered: if (!sysProbe.running) sysProbe.running = true
   }
 
@@ -423,7 +435,8 @@ Item {
 
         screen: modelData
         anchors { top: true; bottom: true; left: true; right: true }
-        exclusionMode: ExclusionMode.Ignore
+        // Внутри бара и рамки: виджеты не уходят под них, отступ edgeMargin — от их внутреннего края.
+        exclusionMode: ExclusionMode.Normal
         color: "transparent"
         surfaceFormat.opaque: false
         WlrLayershell.namespace: "omarchy-widgets"
@@ -446,12 +459,21 @@ Item {
           height: Math.max(40, root.num("visualizerHeight"))
         }
 
-        WidgetCard { host: root; target: clockW; seed: 21; pad: 22 }
-        WidgetCard { host: root; target: media; seed: 22; pad: 6 }
-        WidgetCard { host: root; target: sysW; seed: 23; pad: 18 }
-        WidgetCard { host: root; target: todoW; seed: 24; pad: 18 }
-        WidgetCard { host: root; target: quoteW; seed: 25; pad: 18 }
-        WidgetCard { host: root; target: photoW; seed: 26; pad: 12 }
+        WidgetCard { host: root; target: clockW; seed: 21; pad: layer.padOf(clockW) }
+        WidgetCard { host: root; target: media; seed: 22; pad: layer.padOf(media); ownDotmatrixCard: true }
+        WidgetCard { host: root; target: sysW; seed: 23; pad: layer.padOf(sysW) }
+        WidgetCard { host: root; target: netW; seed: 27; pad: layer.padOf(netW) }
+        WidgetCard { host: root; target: todoW; seed: 24; pad: layer.padOf(todoW) }
+        WidgetCard { host: root; target: quoteW; seed: 25; pad: layer.padOf(quoteW) }
+        WidgetCard { host: root; target: photoW; seed: 26; pad: layer.padOf(photoW) }
+
+        NetWidget {
+          id: netW
+          host: root
+          visible: root.flag("network")
+          x: layer.place(netW, "networkAnchor").x
+          y: layer.place(netW, "networkAnchor").y
+        }
 
         TodoWidget {
           id: todoW
@@ -486,7 +508,8 @@ Item {
         MediaWidget {
           id: media
           host: root
-          visible: root.flag("media") && root.player !== null && root.player.trackTitle !== ""
+          // DOT-MATRIX — как в NIHIL: карточка всегда на месте, без плеера кнопки приглушены.
+          visible: root.flag("media") && (root.dotmatrixWidgets || (root.player !== null && root.player.trackTitle !== ""))
           x: layer.place(media, "mediaAnchor").x
           y: layer.place(media, "mediaAnchor").y
         }
@@ -499,13 +522,36 @@ Item {
           y: layer.place(sysW, "sysinfoAnchor").y
         }
 
-        // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от краёв.
+        // Подложки есть (стиль Customizer или DOT-MATRIX) — поля карточки вокруг виджета.
+        readonly property bool carded: root.styledWidgets || root.dotmatrixWidgets
+        function padOf(item) {
+          if (!carded) return 0
+          if (item === media) return root.dotmatrixWidgets ? 0 : 6   // у плеера DOT-MATRIX своя карточка
+          return item === clockW ? 22 : item === photoW ? 12 : 18
+        }
+        // Порядок в общей колонке у одного якоря — как в NIHIL: часы, сеть, плеер, дальше остальное.
+        readonly property var stackOrder: [
+          [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
+          [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"]
+        ]
+        // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.
+        // Виджеты с одним якорем не налезают друг на друга, а встают колонкой (снизу — колонкой вверх).
         function place(item, key) {
           var a = String(root.value(key))
           var m = root.num("edgeMargin")
-          var w = item.width, h = item.height
-          var x = a.indexOf("left") !== -1 ? m : a.indexOf("right") !== -1 ? width - w - m : (width - w) / 2
-          var y = a.indexOf("top") !== -1 ? m : a.indexOf("bottom") !== -1 ? height - h - m : (height - h) / 2
+          var gap = carded ? 14 : 24
+          var group = stackOrder.filter(function(e) { return e[0].visible && String(root.value(e[1])) === a })
+          var total = 0, offset = 0
+          for (var i = 0; i < group.length; i++) {
+            var e = group[i][0], ext = e.height + 2 * padOf(e)
+            if (e === item) offset = total + padOf(e)
+            total += ext + (i < group.length - 1 ? gap : 0)
+          }
+          var p = padOf(item), w = item.width
+          var x = a.indexOf("left") !== -1 ? m + p : a.indexOf("right") !== -1 ? width - w - m - p : (width - w) / 2
+          var y = a.indexOf("top") !== -1 ? m + offset
+            : a.indexOf("bottom") !== -1 ? height - m - total + offset
+            : (height - total) / 2 + offset
           return Qt.point(Math.round(x), Math.round(y))
         }
       }
