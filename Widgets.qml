@@ -49,6 +49,7 @@ Item {
     screens: "all",             // all primary
     weatherCity: "",            // город для погоды (open-meteo); пусто — блок погоды с подсказкой
     weatherUnits: "celsius",    // celsius fahrenheit
+    desktopWidgets: true,       // false — слой виджетов рабочего стола не создаётся вовсе
     widgetStyle: "style",       // style (по стилю Customizer) · default · nihil
     edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
     // Дашборд (Dashboard.qml / NihilDashboard.qml) и меню выключения: стиль — BarStyle.qml.
@@ -411,7 +412,8 @@ Item {
 
   // ── Окна ───────────────────────────────────────────────────────────────
   Variants {
-    model: root.value("screens") === "primary" ? Quickshell.screens.slice(0, 1) : Quickshell.screens
+    model: root.value("desktopWidgets") === false ? []
+      : root.value("screens") === "primary" ? Quickshell.screens.slice(0, 1) : Quickshell.screens
 
     delegate: Component {
       PanelWindow {
