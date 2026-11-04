@@ -1,13 +1,14 @@
 import QtQuick
 import "." as N
 
-// 24-segment discrete LED slider with drag and mouse-wheel control.
+// 24-segment discrete LED slider with drag and mouse-wheel control. Outside Nihil / Retro
+// (N.Finish.segmented) — a continuous bar with a round knob in the style's shape.
 Item {
   id: root
 
   property real value: 0
   property int segments: 24
-  property color litColor: N.Palette.lit
+  property color litColor: N.Finish.on
   property bool muted: false
 
   signal moved(real value)
@@ -15,19 +16,47 @@ Item {
   implicitHeight: 14
   implicitWidth: 220
 
-  readonly property real segWidth: Math.max(2, (width - (segments - 1) * 3) / Math.max(1, segments))
+  readonly property real segWidth: Math.max(2, (width - (segments - 1) * N.Finish.segGap) / Math.max(1, segments))
   readonly property int lit: Math.round(Math.max(0, Math.min(1, value)) * segments)
 
+  // Сплошная полоса (не Nihil / Retro).
+  Rectangle {
+    visible: !N.Finish.segmented
+    anchors.verticalCenter: parent.verticalCenter
+    width: parent.width
+    height: 6
+    radius: N.Finish.look === "flat" || N.Finish.look === "brutal" ? 0 : 3
+    color: N.Palette.surfaceHi
+    border.width: N.Finish.look === "brutal" ? 1 : 0
+    border.color: N.Palette.fg
+    Rectangle {
+      width: parent.width * Math.max(0, Math.min(1, root.value))
+      height: parent.height
+      radius: parent.radius
+      color: root.muted ? N.Palette.muted : root.litColor
+    }
+    Rectangle {
+      x: Math.max(0, Math.min(parent.width - width, parent.width * root.value - width / 2))
+      anchors.verticalCenter: parent.verticalCenter
+      width: 14
+      height: 14
+      radius: N.Finish.round(14)
+      color: root.muted ? N.Palette.muted : root.litColor
+      border.width: N.Finish.look === "brutal" ? 2 : 0
+      border.color: N.Palette.fg
+    }
+  }
+
   Repeater {
-    model: root.segments
+    model: N.Finish.segmented ? root.segments : 0
 
     Rectangle {
       required property int index
 
-      x: index * (root.segWidth + 3)
+      x: index * (root.segWidth + N.Finish.segGap)
       width: root.segWidth
       height: root.height
-      radius: 3
+      radius: N.Finish.segRadius
       color: index < root.lit ? (root.muted ? N.Palette.muted : root.litColor) : N.Palette.surfaceHi
 
       Behavior on color { ColorAnimation { duration: 110 } }

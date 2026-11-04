@@ -20,7 +20,7 @@ Rectangle {
 
   Layout.fillWidth: true
   implicitHeight: subtitle !== "" ? 46 : 38
-  radius: 12
+  radius: N.Finish.nihil ? 12 : N.Finish.radius
   color: hover.hovered ? N.Palette.surfaceHi : "transparent"
 
   // HoverHandler, not the MouseArea: the action button on top must not drop the row hover.

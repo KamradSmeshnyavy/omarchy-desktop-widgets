@@ -2,6 +2,7 @@ import QtQuick
 import "." as N
 
 // Circular quick toggle tile: active = ink disc with a background glyph (inverted LED).
+// Shape and the "on" colour follow N.Finish (Customizer style); Nihil stays as it was.
 Item {
   id: root
 
@@ -22,9 +23,9 @@ Item {
     anchors.horizontalCenter: parent.horizontalCenter
     width: 54
     height: 54
-    radius: 27
-    color: root.active ? N.Palette.lit : (area.containsMouse ? N.Palette.surfaceHi : N.Palette.surface)
-    border.width: root.active ? 0 : 1
+    radius: N.Finish.round(54)
+    color: root.active ? N.Finish.on : (area.containsMouse ? N.Palette.surfaceHi : N.Palette.surface)
+    border.width: root.active ? 0 : Math.max(1, N.Finish.borderWidth)
     border.color: N.Palette.line
 
     Behavior on color { ColorAnimation { duration: 170 } }
@@ -33,7 +34,7 @@ Item {
       anchors.centerIn: parent
       glyph: root.glyph
       font.pixelSize: 21
-      color: root.active ? N.Palette.bg : N.Palette.dim
+      color: root.active ? N.Finish.onInk : N.Palette.dim
     }
 
     MouseArea {

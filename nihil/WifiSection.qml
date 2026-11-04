@@ -327,7 +327,7 @@ ColumnLayout {
 
     Layout.fillWidth: true
     implicitHeight: 36
-    radius: 18
+    radius: N.Finish.nihil ? 18 : N.Finish.radius
     color: N.Palette.surface
     border.width: 1
     border.color: input.activeFocus ? N.Palette.dim : N.Palette.line
@@ -342,7 +342,7 @@ ColumnLayout {
       color: N.Palette.fg
       placeholderText: fld.placeholder
       placeholderTextColor: N.Palette.muted
-      font.family: N.Palette.fontMono
+      font.family: N.Finish.labelFont
       font.pixelSize: 12
       verticalAlignment: TextInput.AlignVCenter
       onAccepted: fld.accepted()

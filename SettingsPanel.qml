@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC
+import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Shapes
 import Quickshell
@@ -25,6 +26,8 @@ PanelWindow {
   readonly property int flare: attached ? host.panelStyle.flare : 0
   readonly property int cornerRadius: 18
   readonly property int seamOverlap: attached ? 2 : 0
+  // Плавающая карточка: отступ от края экрана внутри окна — с ним видны правые углы, рамка и тень.
+  readonly property int pad: attached ? 0 : 14
   readonly property int bodyWidth: 396
   readonly property int bodyHeight: Math.min((screen ? screen.height : 900) - 112, 820)
   readonly property int duration: 280
@@ -275,10 +278,10 @@ PanelWindow {
   visible: progress > 0.001
   screen: host.focusedScreen
   anchors { top: true; right: true }
-  margins.right: attached ? -seamOverlap : 10
+  margins.right: attached ? -seamOverlap : 0
   exclusionMode: ExclusionMode.Normal
   exclusiveZone: 0
-  implicitWidth: bodyWidth + seamOverlap + 2
+  implicitWidth: bodyWidth + seamOverlap + 2 + pad
   implicitHeight: bodyHeight + 2 * flare + 16
   color: "transparent"
   surfaceFormat.opaque: false
@@ -295,14 +298,41 @@ PanelWindow {
 
   Item {
     id: hit
-    x: panel.width - panel.seamOverlap - panel.w
+    x: panel.width - panel.seamOverlap - panel.pad - panel.w
     y: panel.flare + 4
     width: panel.w + panel.seamOverlap
     height: panel.bodyHeight
   }
 
+  // Плавающая карточка (бар не рамка Nihil): как дашборд — материал стиля (StyleCard) или
+  // скруглённая карточка с рамкой и тенью бара (BarStyle).
+  readonly property real cardRadius: Math.min(panel.host.panelStyle.cornerRadius, panel.w / 2)
+  StyleCard {
+    visible: !panel.attached && panel.host.panelStyle.card && panel.w > 1
+    style: panel.host.panelStyle
+    seed: 13
+    x: hit.x; y: hit.y; width: panel.w; height: panel.bodyHeight
+    radius: panel.cardRadius
+  }
+  Rectangle {
+    visible: !panel.attached && !panel.host.panelStyle.card && panel.w > 1
+    x: hit.x; y: hit.y; width: panel.w; height: panel.bodyHeight
+    radius: panel.cardRadius
+    color: panel.host.panelStyle.color
+    border.width: Math.max(1, panel.host.panelStyle.borderWidth)
+    border.color: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : Nihil.Palette.line
+    layer.enabled: panel.host.panelStyle.shadowOn
+    layer.effect: MultiEffect {
+      shadowEnabled: true; shadowColor: "#000000"
+      shadowOpacity: panel.host.panelStyle.shadowOpacity; shadowBlur: panel.host.panelStyle.shadowBlur
+      shadowVerticalOffset: 3 * panel.host.panelStyle.lift
+    }
+  }
+
+  // Вырастает из правой рамки (бар — рамка Nihil).
   Shape {
     id: panelShape
+    visible: panel.attached
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
 
@@ -573,7 +603,7 @@ PanelWindow {
               required property var modelData
               Layout.fillWidth: true
               implicitHeight: histCol.implicitHeight + 20
-              radius: 14
+              radius: Nihil.Finish.nihil ? 14 : Nihil.Finish.radius
               color: Nihil.Palette.surface
               border.width: 1
               border.color: Number(modelData.urgency) === 2 ? Nihil.Palette.danger : Nihil.Palette.unlit
