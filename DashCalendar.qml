@@ -51,7 +51,7 @@ Rectangle {
           x: modelData.step < 0 ? 4 : parent.width - width - 4
           anchors.verticalCenter: parent.verticalCenter
           text: modelData.glyph
-          font.family: cal.host.fontFamily
+          font.family: cal.host.iconFamily
           font.pixelSize: 20
           color: arrowHover.hovered ? cal.host.accent : cal.host.foreground
           HoverHandler { id: arrowHover; cursorShape: Qt.PointingHandCursor }

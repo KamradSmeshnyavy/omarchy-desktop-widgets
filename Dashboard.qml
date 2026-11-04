@@ -129,13 +129,13 @@ PanelWindow {
       color: dash.style.color
       border.width: dash.style.borderWidth
       border.color: dash.style.borderColor
-      layer.enabled: true
+      layer.enabled: dash.style.shadowOn
       layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: "#000000"
-        shadowOpacity: 0.4
-        shadowBlur: 0.8
-        shadowVerticalOffset: 4
+        shadowOpacity: dash.style.shadowOpacity
+        shadowBlur: dash.style.shadowBlur
+        shadowVerticalOffset: 4 * dash.style.lift
       }
     }
 

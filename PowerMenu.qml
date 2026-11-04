@@ -128,8 +128,8 @@ PanelWindow {
     color: power.style.color
     border.width: power.style.borderWidth
     border.color: power.style.borderColor
-    layer.enabled: true
-    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#000000"; shadowOpacity: 0.4; shadowBlur: 0.8 }
+    layer.enabled: power.style.shadowOn
+    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#000000"; shadowOpacity: power.style.shadowOpacity; shadowBlur: power.style.shadowBlur }
   }
 
   Shape {

@@ -19,6 +19,12 @@
 или плавающим баром — плавающая карточка с отступом и тенью. У стеклянного бара — стеклянная панель
 (с размытием, если оно включено в Hyprland). Всё можно задать вручную.
 
+**Токены стиля.** `~/.config/omarchy/style.json` (пишет
+[omarchy-customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) → Пресеты → Стиль) настраивает панели поверх
+бара: `elevation` 0–2 (тени), `motion` (множитель скорости анимаций, 0 — без них), `material` (`auto` / `solid` /
+`glass`), `cornerScale` (0 — прямые углы), `typeface` (`shell` — шрифт Omarchy, `profile` — sans из
+`~/.config/omarchy/fonts.json`; иконки всегда в шрифте Omarchy). Нет файла — вид как раньше.
+
 ## Установка
 
 ```sh

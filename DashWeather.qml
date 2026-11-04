@@ -49,7 +49,7 @@ Rectangle {
       id: wxIcon
       anchors.verticalCenter: parent.verticalCenter
       text: wx.w ? wx.describe(wx.w.code).glyph : ""
-      font.family: wx.host.fontFamily
+      font.family: wx.host.iconFamily
       font.pixelSize: 52
       color: wx.host.accent
     }

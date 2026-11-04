@@ -86,7 +86,9 @@ Item {
   readonly property color foreground: Commons.Color.foreground
   readonly property color muted: Commons.Color.muted
   readonly property color background: Commons.Color.background
-  readonly property string fontFamily: Commons.Style.font.family
+  // Шрифт обычных (не Nihil) карточек: Omarchy или sans профиля шрифтов — токен typeface стиля.
+  readonly property string fontFamily: dashStyle.fontFamily
+  readonly property string iconFamily: Commons.Style.font.family   // Nerd-иконки — всегда шрифт Omarchy
   readonly property bool nihilWidgets: String(value("widgetStyle")) === "nihil"
   readonly property bool nihilDash: String(value("dashStyle")) === "nihil"
 

@@ -19,6 +19,12 @@ with a solid bar glued to the edge (`frame`, `hug`, `full`) they grow out from u
 with a transparent or floating bar they are a floating card with a gap and a shadow. A glass bar gets a glass
 panel (blurred when Hyprland blur is on). Everything can be overridden.
 
+**Style tokens.** `~/.config/omarchy/style.json` (written by
+[omarchy-customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) → Presets → Style) tunes the panels on top
+of the bar: `elevation` 0–2 (shadows), `motion` (animation speed multiplier, 0 — none), `material`
+(`auto` / `solid` / `glass`), `cornerScale` (0 — square corners), `typeface` (`shell` — Omarchy font, `profile` — the
+sans of `~/.config/omarchy/fonts.json`; icons always stay on the Omarchy font). No file — the look as before.
+
 ## Install
 
 ```sh

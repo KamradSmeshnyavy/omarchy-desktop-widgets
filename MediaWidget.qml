@@ -43,7 +43,7 @@ Rectangle {
       Text {
         anchors.centerIn: parent
         text: "󰎆"
-        font.family: card.host.fontFamily
+        font.family: card.host.iconFamily
         font.pixelSize: 40
         color: card.host.accent
         visible: art.status !== Image.Ready
@@ -148,7 +148,7 @@ Rectangle {
         Text {
           anchors.centerIn: parent
           text: modelData.glyph
-          font.family: card.host.fontFamily
+          font.family: card.host.iconFamily
           font.pixelSize: 20
           color: modelData.act === "toggle" ? card.host.accent : card.host.foreground
         }
