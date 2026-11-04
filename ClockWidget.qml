@@ -1,5 +1,5 @@
 import QtQuick
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Часы. Стили (clockStyle): big — крупное время и дата под ним; stacked — часы над
 // минутами; terminal — «вывод команды date» с мигающим курсором; minimal — одна строка.
@@ -33,36 +33,36 @@ Item {
 
   Loader {
     id: content
-    sourceComponent: clock.host.nihilWidgets ? nihilClock
+    sourceComponent: clock.host.dotmatrixWidgets ? dotmatrixClock
       : clock.style === "stacked" ? stacked
       : clock.style === "terminal" ? terminal
       : clock.style === "minimal" ? minimal : big
   }
 
   Component {
-    id: nihilClock
+    id: dotmatrixClock
     Column {
       spacing: 2
       Text {
         text: "EX NIHILO"
-        font.family: Nihil.Palette.fontMono
+        font.family: DotMatrix.Palette.fontMono
         font.pixelSize: 11
         font.letterSpacing: 2.2
-        color: Nihil.Palette.muted
+        color: DotMatrix.Palette.muted
       }
       Text {
         text: clock.time
-        font.family: Nihil.Palette.fontDot
+        font.family: DotMatrix.Palette.fontDot
         font.weight: Font.Bold
         font.pixelSize: 102
-        color: Nihil.Palette.fg
+        color: DotMatrix.Palette.fg
       }
       Text {
         text: clock.dateText.toUpperCase()
-        font.family: Nihil.Palette.fontMono
+        font.family: DotMatrix.Palette.fontMono
         font.pixelSize: 12
         font.letterSpacing: 1.8
-        color: Nihil.Palette.dim
+        color: DotMatrix.Palette.dim
       }
     }
   }

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Фото-рамка: картинка из папки photoDir (widgets.json; ~ раскрывается) со сменой раз в photoInterval
 // минут и по клику; без папки — текущие обои. Под снимком — подпись (имя файла). Рамку рисует
@@ -10,8 +10,8 @@ Item {
   id: photo
 
   required property var host
-  readonly property bool nihil: host.nihilWidgets
-  readonly property string face: nihil ? Nihil.Palette.fontMono : host.fontFamily
+  readonly property bool dotmatrix: host.dotmatrixWidgets
+  readonly property string face: dotmatrix ? DotMatrix.Palette.fontMono : host.fontFamily
   readonly property string dir: String(host.value("photoDir") || "").replace(/^~\//, Quickshell.env("HOME") + "/")
   readonly property int minutes: Math.max(1, host.num("photoInterval"))
   readonly property string wallpaper: Quickshell.env("HOME") + "/.local/state/omarchy/current/background"
@@ -50,7 +50,7 @@ Item {
     width: parent.width
     height: Math.round(width * 0.72)
     color: Qt.rgba(photo.host.foreground.r, photo.host.foreground.g, photo.host.foreground.b, 0.06)
-    radius: photo.nihil ? 12 : Math.min(Nihil.Finish.radius, 10)
+    radius: photo.dotmatrix ? 12 : Math.min(DotMatrix.Finish.radius, 10)
     clip: true
     Image {
       anchors.fill: parent
@@ -70,11 +70,11 @@ Item {
     width: parent.width
     horizontalAlignment: Text.AlignHCenter
     elide: Text.ElideRight
-    text: photo.nihil ? photo.caption.toUpperCase() : photo.caption
+    text: photo.dotmatrix ? photo.caption.toUpperCase() : photo.caption
     color: photo.host.muted
     font.family: photo.face
-    font.pixelSize: photo.nihil ? 10 : 16
-    font.letterSpacing: photo.nihil ? 1.5 : 0
+    font.pixelSize: photo.dotmatrix ? 10 : 16
+    font.letterSpacing: photo.dotmatrix ? 1.5 : 0
   }
   MouseArea {
     anchors.fill: parent

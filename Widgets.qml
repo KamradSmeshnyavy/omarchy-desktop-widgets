@@ -5,7 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons as Commons
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Виджеты рабочего стола: часы, now playing, визуализатор cava, кольца системы,
 // и дашборд, выезжающий из-под бара / рамки (Dashboard.qml, IPC widgets toggleDashboard).
@@ -50,10 +50,10 @@ Item {
     weatherCity: "",            // город для погоды (open-meteo); пусто — блок погоды с подсказкой
     weatherUnits: "celsius",    // celsius fahrenheit
     desktopWidgets: true,       // false — слой виджетов рабочего стола не создаётся вовсе
-    widgetStyle: "style",       // style (по стилю Customizer) · default · nihil
+    widgetStyle: "style",       // style (по стилю Customizer) · default · dotmatrix
     edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
-    // Дашборд (Dashboard.qml / NihilDashboard.qml) и меню выключения: стиль — BarStyle.qml.
-    dashStyle: "default",       // default nihil
+    // Дашборд (Dashboard.qml / DotMatrixDashboard.qml) и меню выключения: стиль — BarStyle.qml.
+    dashStyle: "default",       // default dotmatrix
     dashFollowBar: true,
     dashAttach: "auto",         // auto attached floating
     dashBackground: "background",
@@ -97,15 +97,15 @@ Item {
   readonly property color foreground: Commons.Color.foreground
   readonly property color muted: Commons.Color.muted
   readonly property color background: Commons.Color.background
-  // Шрифт обычных (не Nihil) карточек: Omarchy или sans профиля шрифтов — токен typeface стиля.
+  // Шрифт обычных (не DOT-MATRIX) карточек: Omarchy или sans профиля шрифтов — токен typeface стиля.
   readonly property string fontFamily: dashStyle.fontFamily
   readonly property string iconFamily: Commons.Style.font.family   // Nerd-иконки — всегда шрифт Omarchy
-  // style — по стилю Customizer (~/.config/omarchy/style.json): у NIHIL — nihil-виджеты, у остальных —
+  // style — по стилю Customizer (~/.config/omarchy/style.json): у DOT-MATRIX — dotmatrix-виджеты, у остальных —
   // обычные виджеты на подложке в материале стиля (WidgetCard). default — прежний вид без подложек.
   readonly property string widgetMode: String(value("widgetStyle"))
-  readonly property bool nihilWidgets: widgetMode === "nihil" || (widgetMode === "style" && Nihil.Finish.nihil)
-  readonly property bool styledWidgets: widgetMode === "style" && !Nihil.Finish.nihil
-  readonly property bool nihilDash: String(value("dashStyle")) === "nihil"
+  readonly property bool dotmatrixWidgets: widgetMode === "dotmatrix" || (widgetMode === "style" && DotMatrix.Finish.dotmatrix)
+  readonly property bool styledWidgets: widgetMode === "style" && !DotMatrix.Finish.dotmatrix
+  readonly property bool dotmatrixDash: String(value("dashStyle")) === "dotmatrix"
 
   property string uiLang: ""
   readonly property bool ru: String(locale.name).indexOf("ru") === 0
@@ -328,7 +328,7 @@ Item {
     host: root
   }
 
-  NihilDashboard {
+  DotMatrixDashboard {
     host: root
   }
 
@@ -356,8 +356,8 @@ Item {
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
-      // Скорость сети нужна только дашборду NIHIL.
-      (!root.nihilDash ? "" :
+      // Скорость сети нужна только дашборду DOT-MATRIX.
+      (!root.dotmatrixDash ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]

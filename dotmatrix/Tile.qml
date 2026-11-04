@@ -2,7 +2,7 @@ import QtQuick
 import "." as N
 
 // Circular quick toggle tile: active = ink disc with a background glyph (inverted LED).
-// Shape and the "on" colour follow N.Finish (Customizer style); Nihil stays as it was.
+// Shape and the "on" colour follow N.Finish (Customizer style); DOT-MATRIX stays as it was.
 Item {
   id: root
 

@@ -5,10 +5,10 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import "." as N
-// Same node filtering and labels as the Omarchy audio panel (Nihil clone kamradsmeshnyavy.audio).
+// Same node filtering and labels as the Omarchy audio panel (DOT-MATRIX clone kamradsmeshnyavy.audio).
 import "../../kamradsmeshnyavy.audio/Model.js" as Model
 
-// Expanded sound section of the Nihil settings drawer — what the Omarchy audio panel does:
+// Expanded sound section of the DOT-MATRIX settings drawer — what the Omarchy audio panel does:
 // output and input devices (default, volume, mute) and per-application volume.
 ColumnLayout {
   id: sec

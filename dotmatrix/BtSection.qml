@@ -4,10 +4,10 @@ import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Services.Pipewire
 import "." as N
-// Same grouping and labels as the Omarchy Bluetooth panel (Nihil clone kamradsmeshnyavy.bluetooth).
+// Same grouping and labels as the Omarchy Bluetooth panel (DOT-MATRIX clone kamradsmeshnyavy.bluetooth).
 import "../../kamradsmeshnyavy.bluetooth/Model.js" as Model
 
-// Expanded Bluetooth section of the Nihil settings drawer — what the Omarchy Bluetooth panel does:
+// Expanded Bluetooth section of the DOT-MATRIX settings drawer — what the Omarchy Bluetooth panel does:
 // power, scan, connected / paired / found devices, connect, pair, disconnect, forget, audio output.
 ColumnLayout {
   id: sec

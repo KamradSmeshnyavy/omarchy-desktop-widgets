@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Визуализатор cava у нижнего края экрана. Стили (visualizerStyle): bars — столбики
 // снизу; mirror — столбики, отражённые от середины; wave — сглаженная линия с заливкой.
@@ -16,17 +16,17 @@ Item {
   opacity: host.playing ? 1 : 0.5
   Behavior on opacity { NumberAnimation { duration: 400 } }
 
-  readonly property bool nihil: host.nihilWidgets
+  readonly property bool dotmatrix: host.dotmatrixWidgets
 
   Row {
     id: dotRow
-    visible: viz.nihil
+    visible: viz.dotmatrix
     anchors { left: parent.left; right: parent.right; bottom: parent.bottom; bottomMargin: 8 }
     readonly property real slot: width / Math.max(1, viz.levels.length)
     readonly property int dotRows: Math.max(4, Math.min(18, Math.floor(viz.height / 9)))
 
     Repeater {
-      model: viz.nihil ? viz.levels.length : 0
+      model: viz.dotmatrix ? viz.levels.length : 0
       delegate: Column {
         id: dotCol
         required property int index
@@ -43,8 +43,8 @@ Item {
             height: 5
             radius: 2.5
             color: (dotRow.dotRows - index) <= dotCol.lit
-              ? Nihil.Palette.alpha(Nihil.Palette.lit, viz.alpha)
-              : Nihil.Palette.alpha(Nihil.Palette.unlit, Nihil.Palette.unlit.a * viz.alpha * (Nihil.Palette.mono ? 0.45 : 1))
+              ? DotMatrix.Palette.alpha(DotMatrix.Palette.lit, viz.alpha)
+              : DotMatrix.Palette.alpha(DotMatrix.Palette.unlit, DotMatrix.Palette.unlit.a * viz.alpha * (DotMatrix.Palette.mono ? 0.45 : 1))
           }
         }
       }
@@ -52,7 +52,7 @@ Item {
   }
 
   Row {
-    visible: !viz.nihil && viz.style !== "wave"
+    visible: !viz.dotmatrix && viz.style !== "wave"
     anchors.fill: parent
     readonly property real slot: width / Math.max(1, viz.levels.length)
 
@@ -81,7 +81,7 @@ Item {
   }
 
   Shape {
-    visible: !viz.nihil && viz.style === "wave"
+    visible: !viz.dotmatrix && viz.style === "wave"
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
 

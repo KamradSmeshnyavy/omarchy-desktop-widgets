@@ -9,9 +9,9 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
-// NIHIL right-edge hardware control drawer: 3x2 circular tiles, 24-segment LED
+// DOT-MATRIX right-edge hardware control drawer: 3x2 circular tiles, 24-segment LED
 // sliders, expandable Wi-Fi / Bluetooth / Audio lists, notification history,
 // and 2-click red-confirm session actions.
 PanelWindow {
@@ -21,7 +21,7 @@ PanelWindow {
 
   readonly property bool active: host.settingsOpen
   // Grows out of the right edge of a framed bar (ScreenBorder); with any other bar it is a
-  // floating card with a closed contour. Fill = bar colour (BarStyle), ink = Nihil palette.
+  // floating card with a closed contour. Fill = bar colour (BarStyle), ink = DOT-MATRIX palette.
   readonly property bool attached: host.panelStyle.attached && host.panelStyle.shape === "frame"
   readonly property int flare: attached ? host.panelStyle.flare : 0
   readonly property int cornerRadius: 18
@@ -285,7 +285,7 @@ PanelWindow {
   implicitHeight: bodyHeight + 2 * flare + 16
   color: "transparent"
   surfaceFormat.opaque: false
-  WlrLayershell.namespace: "omarchy-nihil-settings"
+  WlrLayershell.namespace: "omarchy-dotmatrix-settings"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   mask: Region { item: hit }
@@ -304,7 +304,7 @@ PanelWindow {
     height: panel.bodyHeight
   }
 
-  // Плавающая карточка (бар не рамка Nihil): как дашборд — материал стиля (StyleCard) или
+  // Плавающая карточка (бар не рамка DOT-MATRIX): как дашборд — материал стиля (StyleCard) или
   // скруглённая карточка с рамкой и тенью бара (BarStyle).
   readonly property real cardRadius: Math.min(panel.host.panelStyle.cornerRadius, panel.w / 2)
   StyleCard {
@@ -320,7 +320,7 @@ PanelWindow {
     radius: panel.cardRadius
     color: panel.host.panelStyle.color
     border.width: Math.max(1, panel.host.panelStyle.borderWidth)
-    border.color: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : Nihil.Palette.line
+    border.color: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : DotMatrix.Palette.line
     layer.enabled: panel.host.panelStyle.shadowOn
     layer.effect: MultiEffect {
       shadowEnabled: true; shadowColor: "#000000"
@@ -329,7 +329,7 @@ PanelWindow {
     }
   }
 
-  // Вырастает из правой рамки (бар — рамка Nihil).
+  // Вырастает из правой рамки (бар — рамка DOT-MATRIX).
   Shape {
     id: panelShape
     visible: panel.attached
@@ -389,7 +389,7 @@ PanelWindow {
     // closed for a floating card.
     ShapePath {
       fillColor: "transparent"
-      strokeColor: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : Nihil.Palette.line
+      strokeColor: panel.host.panelStyle.borderWidth > 0 ? panel.host.panelStyle.borderColor : DotMatrix.Palette.line
       strokeWidth: panel.w > 1 ? 1 : -1
       startX: panelShape.baseX
       startY: panelShape.topY - panel.flare
@@ -461,9 +461,9 @@ PanelWindow {
         RowLayout {
           Layout.fillWidth: true
 
-          Nihil.Label { text: panel.host.tr("CONTROL PANEL", "ПАНЕЛЬ") }
+          DotMatrix.Label { text: panel.host.tr("CONTROL PANEL", "ПАНЕЛЬ") }
           Item { Layout.fillWidth: true }
-          Nihil.Label {
+          DotMatrix.Label {
             text: panel.activeSsid || panel.activeEthernet || panel.host.tr("OFFLINE", "ОФЛАЙН")
           }
         }
@@ -475,7 +475,7 @@ PanelWindow {
           rowSpacing: 8
           columnSpacing: 0
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: panel.wifiEnabled ? String.fromCodePoint(0xF05A9) : String.fromCodePoint(0xF05AA)
             label: "WI-FI"
@@ -486,7 +486,7 @@ PanelWindow {
             onExpand: panel.toggleSection("wifi")
           }
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: panel.btEnabled ? String.fromCodePoint(0xF00AF) : String.fromCodePoint(0xF00B2)
             label: "BT"
@@ -497,7 +497,7 @@ PanelWindow {
             onExpand: panel.toggleSection("bt")
           }
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: String.fromCodePoint(0xF04C3)
             label: panel.host.tr("AUDIO", "ЗВУК")
@@ -508,7 +508,7 @@ PanelWindow {
             onExpand: panel.toggleSection("audio")
           }
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: panel.micMuted ? String.fromCodePoint(0xF036D) : String.fromCodePoint(0xF036C)
             label: panel.host.tr("MIC", "МИКР.")
@@ -516,7 +516,7 @@ PanelWindow {
             onToggled: panel.toggleMic()
           }
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: panel.dndActive ? String.fromCodePoint(0xF009B) : String.fromCodePoint(0xF009A)
             label: "DND"
@@ -524,7 +524,7 @@ PanelWindow {
             onToggled: panel.toggleDnd()
           }
 
-          Nihil.Tile {
+          DotMatrix.Tile {
             Layout.alignment: Qt.AlignHCenter
             glyph: String.fromCodePoint(0xF0594)
             label: panel.host.tr("NIGHT", "НОЧЬ")
@@ -538,7 +538,7 @@ PanelWindow {
           Layout.fillWidth: true
           spacing: 14
 
-          Nihil.SliderRow {
+          DotMatrix.SliderRow {
             Layout.fillWidth: true
             glyph: panel.volGlyph(panel.volume, panel.muted)
             value: panel.volume
@@ -547,7 +547,7 @@ PanelWindow {
             onGlyphClicked: panel.toggleMute()
           }
 
-          Nihil.SliderRow {
+          DotMatrix.SliderRow {
             Layout.fillWidth: true
             glyph: panel.micMuted ? String.fromCodePoint(0xF036D) : String.fromCodePoint(0xF036C)
             value: panel.micVolume
@@ -556,7 +556,7 @@ PanelWindow {
             onGlyphClicked: panel.toggleMic()
           }
 
-          Nihil.SliderRow {
+          DotMatrix.SliderRow {
             Layout.fillWidth: true
             visible: panel.brightnessAvailable
             glyph: String.fromCodePoint(0xF00E0)
@@ -565,16 +565,16 @@ PanelWindow {
           }
         }
 
-        // Раскрытые Wi-Fi / Bluetooth / звук — возможности панелей Omarchy (nihil/*Section.qml).
+        // Раскрытые Wi-Fi / Bluetooth / звук — возможности панелей Omarchy (dotmatrix/*Section.qml).
         // Loader: секция живёт (сканирует, опрашивает) только пока раскрыта; без клонов
         // kamradsmeshnyavy.network/bluetooth/audio (их Model.js) она просто не загрузится.
         Loader {
           Layout.fillWidth: true
           active: panel.expanded !== ""
           visible: active && status === Loader.Ready
-          source: panel.expanded === "wifi" ? "nihil/WifiSection.qml"
-            : panel.expanded === "bt" ? "nihil/BtSection.qml"
-            : panel.expanded === "audio" ? "nihil/AudioSection.qml" : ""
+          source: panel.expanded === "wifi" ? "dotmatrix/WifiSection.qml"
+            : panel.expanded === "bt" ? "dotmatrix/BtSection.qml"
+            : panel.expanded === "audio" ? "dotmatrix/AudioSection.qml" : ""
           onLoaded: item.panel = panel
         }
 
@@ -585,11 +585,11 @@ PanelWindow {
 
           RowLayout {
             Layout.fillWidth: true
-            Nihil.Label {
+            DotMatrix.Label {
               text: panel.host.tr("NOTIFICATIONS", "УВЕДОМЛЕНИЯ") + " (" + panel.notifHistory.length + ")"
             }
             Item { Layout.fillWidth: true }
-            Nihil.PillButton {
+            DotMatrix.PillButton {
               text: panel.host.tr("REPLAY", "ПОВТОР")
               visible: panel.notifHistory.length > 0
               onClicked: Quickshell.execDetached(["omarchy-shell", "notifications", "showHistory"])
@@ -603,10 +603,10 @@ PanelWindow {
               required property var modelData
               Layout.fillWidth: true
               implicitHeight: histCol.implicitHeight + 20
-              radius: Nihil.Finish.nihil ? 14 : Nihil.Finish.radius
-              color: Nihil.Palette.surface
+              radius: DotMatrix.Finish.dotmatrix ? 14 : DotMatrix.Finish.radius
+              color: DotMatrix.Palette.surface
               border.width: 1
-              border.color: Number(modelData.urgency) === 2 ? Nihil.Palette.danger : Nihil.Palette.unlit
+              border.color: Number(modelData.urgency) === 2 ? DotMatrix.Palette.danger : DotMatrix.Palette.unlit
 
               ColumnLayout {
                 id: histCol
@@ -620,16 +620,16 @@ PanelWindow {
                   Rectangle {
                     visible: Number(modelData.urgency) === 2
                     width: 6; height: 6; radius: 3
-                    color: Nihil.Palette.danger
+                    color: DotMatrix.Palette.danger
                   }
 
-                  Nihil.Label {
+                  DotMatrix.Label {
                     Layout.fillWidth: true
                     text: String(modelData.app || "SYSTEM")
                   }
                 }
 
-                Nihil.Txt {
+                DotMatrix.Txt {
                   Layout.fillWidth: true
                   visible: String(modelData.summary || "") !== ""
                   text: String(modelData.summary || "")
@@ -637,19 +637,19 @@ PanelWindow {
                   font.weight: Font.Medium
                 }
 
-                Nihil.Txt {
+                DotMatrix.Txt {
                   Layout.fillWidth: true
                   visible: String(modelData.body || "") !== ""
                   text: String(modelData.body || "")
                   font.pixelSize: 12
-                  color: Nihil.Palette.dim
+                  color: DotMatrix.Palette.dim
                   maximumLineCount: 2
                 }
               }
             }
           }
 
-          Nihil.Label {
+          DotMatrix.Label {
             visible: panel.notifHistory.length === 0
             text: panel.dndActive
               ? panel.host.tr("DO NOT DISTURB IS ON", "НЕ БЕСПОКОИТЬ ВКЛЮЧЕНО")
@@ -665,40 +665,40 @@ PanelWindow {
           Rectangle {
             Layout.fillWidth: true
             implicitHeight: 1
-            color: Nihil.Palette.line
+            color: DotMatrix.Palette.line
           }
 
           RowLayout {
             Layout.fillWidth: true
             spacing: 10
 
-            Nihil.CircleButton {
+            DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF033E)
               onClicked: {
                 panel.host.settingsOpen = false
                 Quickshell.execDetached(["omarchy-system-lock"])
               }
             }
-            Nihil.CircleButton {
+            DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF04B2)
               onClicked: {
                 panel.host.settingsOpen = false
                 Quickshell.execDetached(["systemctl", "suspend"])
               }
             }
-            Nihil.CircleButton {
+            DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF0343)
               filled: panel.armed === "logout"
               danger: panel.armed === "logout"
               onClicked: panel.sessionAction("logout", ["omarchy-system-logout"])
             }
-            Nihil.CircleButton {
+            DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF0709)
               filled: panel.armed === "reboot"
               danger: panel.armed === "reboot"
               onClicked: panel.sessionAction("reboot", ["omarchy-system-reboot"])
             }
-            Nihil.CircleButton {
+            DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF0425)
               danger: true
               filled: panel.armed === "power"
@@ -707,10 +707,10 @@ PanelWindow {
 
             Item { Layout.fillWidth: true }
 
-            Nihil.Label {
+            DotMatrix.Label {
               visible: panel.armed !== ""
               text: panel.host.tr("CLICK AGAIN", "ЕЩЁ РАЗ")
-              color: Nihil.Palette.danger
+              color: DotMatrix.Palette.danger
             }
           }
         }

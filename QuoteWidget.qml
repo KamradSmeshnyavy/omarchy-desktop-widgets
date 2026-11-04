@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Цитата дня: встроенные пословицы и изречения давно умерших авторов + свои строки из
 // ~/.config/omarchy/widgets-quotes.txt («текст — Автор», по одной на строку; # — комментарий; автор — после
@@ -11,8 +11,8 @@ Item {
   id: quote
 
   required property var host
-  readonly property bool nihil: host.nihilWidgets
-  readonly property string face: nihil ? Nihil.Palette.fontSans : host.fontFamily
+  readonly property bool dotmatrix: host.dotmatrixWidgets
+  readonly property string face: dotmatrix ? DotMatrix.Palette.fontSans : host.fontFamily
 
   readonly property var builtIn: [
     "Дорогу осилит идущий.",
@@ -73,12 +73,12 @@ Item {
     width: parent.width
     spacing: 8
     Text {
-      text: quote.nihil ? "QUOTE" : "“"
+      text: quote.dotmatrix ? "QUOTE" : "“"
       color: quote.host.accent
-      font.family: quote.nihil ? Nihil.Palette.fontMono : quote.face
-      font.pixelSize: quote.nihil ? 11 : 44
-      font.letterSpacing: quote.nihil ? 2 : 0
-      height: quote.nihil ? implicitHeight : 26
+      font.family: quote.dotmatrix ? DotMatrix.Palette.fontMono : quote.face
+      font.pixelSize: quote.dotmatrix ? 11 : 44
+      font.letterSpacing: quote.dotmatrix ? 2 : 0
+      height: quote.dotmatrix ? implicitHeight : 26
     }
     Text {
       width: parent.width
@@ -97,7 +97,7 @@ Item {
       color: quote.host.muted
       font.family: quote.face
       font.pixelSize: 13
-      font.italic: !quote.nihil
+      font.italic: !quote.dotmatrix
     }
   }
   MouseArea {

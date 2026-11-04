@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Todo / заметки на рабочем столе: ~/.config/omarchy/widgets-todo.json — [{"text": "…", "done": false}, …].
 // Клик по квадратику — сделано / не сделано, правый клик по строке — удалить, «+» — добавить (окно ввода
@@ -10,9 +10,9 @@ Item {
   id: todo
 
   required property var host
-  readonly property bool nihil: host.nihilWidgets
-  readonly property string face: nihil ? Nihil.Palette.fontSans : host.fontFamily
-  readonly property string titleFace: nihil ? Nihil.Palette.fontTitle : host.fontFamily
+  readonly property bool dotmatrix: host.dotmatrixWidgets
+  readonly property string face: dotmatrix ? DotMatrix.Palette.fontSans : host.fontFamily
+  readonly property string titleFace: dotmatrix ? DotMatrix.Palette.fontTitle : host.fontFamily
   readonly property int maxItems: Math.max(1, host.num("todoMax"))
   readonly property string path: Quickshell.env("HOME") + "/.config/omarchy/widgets-todo.json"
 
@@ -72,12 +72,12 @@ Item {
       width: parent.width
       Text {
         width: parent.width - plus.width
-        text: todo.nihil ? "TODO" : "Todo"
+        text: todo.dotmatrix ? "TODO" : "Todo"
         color: todo.host.foreground
         font.family: todo.titleFace
-        font.pixelSize: todo.nihil ? 16 : 26
-        font.weight: Nihil.Palette.titleWeight(Font.DemiBold)
-        font.letterSpacing: todo.nihil ? 2 : 0
+        font.pixelSize: todo.dotmatrix ? 16 : 26
+        font.weight: DotMatrix.Palette.titleWeight(Font.DemiBold)
+        font.letterSpacing: todo.dotmatrix ? 2 : 0
       }
       Text {
         id: plus
@@ -117,9 +117,9 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           width: 16
           height: 16
-          radius: Nihil.Finish.round(16) * (todo.nihil ? 1 : 0.5)
+          radius: DotMatrix.Finish.round(16) * (todo.dotmatrix ? 1 : 0.5)
           color: modelData.done ? todo.host.accent : "transparent"
-          border.width: Math.max(1.5, Nihil.Finish.borderWidth)
+          border.width: Math.max(1.5, DotMatrix.Finish.borderWidth)
           border.color: modelData.done ? todo.host.accent : todo.host.muted
           Text {
             anchors.centerIn: parent

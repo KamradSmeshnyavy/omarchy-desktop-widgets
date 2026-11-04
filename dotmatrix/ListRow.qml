@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "." as N
 
-// List row of the Nihil settings drawer: glyph, title (+ optional subtitle), metadata
+// List row of the DOT-MATRIX settings drawer: glyph, title (+ optional subtitle), metadata
 // label and an optional round action button on the right (forget, set default, …).
 Rectangle {
   id: lrow
@@ -20,7 +20,7 @@ Rectangle {
 
   Layout.fillWidth: true
   implicitHeight: subtitle !== "" ? 46 : 38
-  radius: N.Finish.nihil ? 12 : N.Finish.radius
+  radius: N.Finish.dotmatrix ? 12 : N.Finish.radius
   color: hover.hovered ? N.Palette.surfaceHi : "transparent"
 
   // HoverHandler, not the MouseArea: the action button on top must not drop the row hover.

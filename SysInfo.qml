@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Кольца системы: CPU, RAM, температура, батарея (если есть). Данные — Widgets.qml (/proc, /sys).
 Row {
@@ -12,22 +12,22 @@ Row {
 
   Repeater {
     model: [
-      { label: "CPU", value: sys.host.cpu, text: Math.round(sys.host.cpu * 100) + (sys.host.nihilWidgets ? "" : "%") },
-      { label: "RAM", value: sys.host.mem, text: Math.round(sys.host.mem * 100) + (sys.host.nihilWidgets ? "" : "%") },
-      { label: sys.host.nihilWidgets ? "°C" : "TEMP", value: Math.min(1, sys.host.temp / 100), text: Math.round(sys.host.temp) + (sys.host.nihilWidgets ? "" : "°"), hot: sys.host.temp >= 85 },
-      { label: sys.host.batteryStatus === "Charging" && !sys.host.nihilWidgets ? "BAT 󱐋" : "BAT", value: sys.host.battery / 100,
-        text: sys.host.battery + (sys.host.nihilWidgets ? "" : "%"), hot: sys.host.battery >= 0 && sys.host.battery <= 15, hidden: sys.host.battery < 0 }
+      { label: "CPU", value: sys.host.cpu, text: Math.round(sys.host.cpu * 100) + (sys.host.dotmatrixWidgets ? "" : "%") },
+      { label: "RAM", value: sys.host.mem, text: Math.round(sys.host.mem * 100) + (sys.host.dotmatrixWidgets ? "" : "%") },
+      { label: sys.host.dotmatrixWidgets ? "°C" : "TEMP", value: Math.min(1, sys.host.temp / 100), text: Math.round(sys.host.temp) + (sys.host.dotmatrixWidgets ? "" : "°"), hot: sys.host.temp >= 85 },
+      { label: sys.host.batteryStatus === "Charging" && !sys.host.dotmatrixWidgets ? "BAT 󱐋" : "BAT", value: sys.host.battery / 100,
+        text: sys.host.battery + (sys.host.dotmatrixWidgets ? "" : "%"), hot: sys.host.battery >= 0 && sys.host.battery <= 15, hidden: sys.host.battery < 0 }
     ]
 
     delegate: Item {
       id: slot
       required property var modelData
       visible: !modelData.hidden
-      implicitWidth: sys.host.nihilWidgets ? 84 : stdRing.implicitWidth
-      implicitHeight: sys.host.nihilWidgets ? 84 : stdRing.implicitHeight
+      implicitWidth: sys.host.dotmatrixWidgets ? 84 : stdRing.implicitWidth
+      implicitHeight: sys.host.dotmatrixWidgets ? 84 : stdRing.implicitHeight
 
-      Nihil.Dial {
-        visible: sys.host.nihilWidgets
+      DotMatrix.Dial {
+        visible: sys.host.dotmatrixWidgets
         width: 84
         height: 84
         value: slot.modelData.value
@@ -38,7 +38,7 @@ Row {
 
       Column {
         id: stdRing
-        visible: !sys.host.nihilWidgets
+        visible: !sys.host.dotmatrixWidgets
         spacing: 6
 
         readonly property int size: 72

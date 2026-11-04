@@ -5,10 +5,10 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Networking
 import "." as N
-// Same parsing/sorting as the Omarchy network panel (Nihil clone kamradsmeshnyavy.network).
+// Same parsing/sorting as the Omarchy network panel (DOT-MATRIX clone kamradsmeshnyavy.network).
 import "../../kamradsmeshnyavy.network/Model.js" as Model
 
-// Expanded Wi-Fi section of the Nihil settings drawer — what the Omarchy network panel does:
+// Expanded Wi-Fi section of the DOT-MATRIX settings drawer — what the Omarchy network panel does:
 // connection details and throughput, band, DNS, networks (password / 802.1X / forget), QR, speed test.
 ColumnLayout {
   id: sec
@@ -327,7 +327,7 @@ ColumnLayout {
 
     Layout.fillWidth: true
     implicitHeight: 36
-    radius: N.Finish.nihil ? 18 : N.Finish.radius
+    radius: N.Finish.dotmatrix ? 18 : N.Finish.radius
     color: N.Palette.surface
     border.width: 1
     border.color: input.activeFocus ? N.Palette.dim : N.Palette.line

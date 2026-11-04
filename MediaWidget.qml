@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Effects
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
 // Карточка «сейчас играет» (MPRIS): обложка, название, исполнитель, прогресс, кнопки.
 Rectangle {
@@ -8,15 +8,15 @@ Rectangle {
 
   required property var host
   readonly property var player: host.player
-  readonly property bool nihil: host.nihilWidgets
+  readonly property bool dotmatrix: host.dotmatrixWidgets
 
   width: 400
   height: 120
   radius: 18
   // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
-  color: host.styledWidgets ? "transparent" : (nihil ? Nihil.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
+  color: host.styledWidgets ? "transparent" : (dotmatrix ? DotMatrix.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
   border.width: host.styledWidgets ? 0 : 1
-  border.color: nihil ? Nihil.Palette.line : Qt.rgba(host.accent.r, host.accent.g, host.accent.b, 0.35)
+  border.color: dotmatrix ? DotMatrix.Palette.line : Qt.rgba(host.accent.r, host.accent.g, host.accent.b, 0.35)
 
   readonly property real progress: player && player.lengthSupported && player.length > 0
     ? Math.max(0, Math.min(1, player.position / player.length)) : 0
@@ -28,8 +28,8 @@ Rectangle {
     width: card.height - 24
     height: width
 
-    Nihil.DotScreen {
-      visible: card.nihil
+    DotMatrix.DotScreen {
+      visible: card.dotmatrix
       anchors.fill: parent
       source: card.player ? String(card.player.trackArtUrl || "") : ""
       pitch: 4
@@ -37,7 +37,7 @@ Rectangle {
     }
 
     Rectangle {
-      visible: !card.nihil
+      visible: !card.dotmatrix
       anchors.fill: parent
       radius: 12
       color: Qt.rgba(card.host.accent.r, card.host.accent.g, card.host.accent.b, 0.18)
@@ -53,7 +53,7 @@ Rectangle {
     Image {
       id: art
       anchors.fill: parent
-      source: !card.nihil && card.player ? card.player.trackArtUrl : ""
+      source: !card.dotmatrix && card.player ? card.player.trackArtUrl : ""
       fillMode: Image.PreserveAspectCrop
       asynchronous: true
       sourceSize.width: 192
@@ -72,7 +72,7 @@ Rectangle {
       source: art
       maskEnabled: true
       maskSource: artMask
-      visible: !card.nihil && art.status === Image.Ready
+      visible: !card.dotmatrix && art.status === Image.Ready
     }
   }
 
@@ -84,26 +84,26 @@ Rectangle {
       width: parent.width
       text: card.player ? card.player.trackTitle : ""
       elide: Text.ElideRight
-      font.family: card.nihil ? Nihil.Palette.fontTitle : card.host.fontFamily
+      font.family: card.dotmatrix ? DotMatrix.Palette.fontTitle : card.host.fontFamily
       font.pixelSize: 17
-      font.weight: card.nihil ? Nihil.Palette.titleWeight(Font.Medium) : Font.Bold
-      color: card.nihil ? Nihil.Palette.fg : card.host.foreground
+      font.weight: card.dotmatrix ? DotMatrix.Palette.titleWeight(Font.Medium) : Font.Bold
+      color: card.dotmatrix ? DotMatrix.Palette.fg : card.host.foreground
     }
     Text {
       width: parent.width
       text: card.player ? (card.player.trackArtist || card.player.identity) : ""
       elide: Text.ElideRight
-      font.family: card.nihil ? Nihil.Palette.fontMono : card.host.fontFamily
-      font.pixelSize: card.nihil ? 11 : 13
-      font.letterSpacing: card.nihil ? 1.4 : 0
-      font.capitalization: card.nihil ? Font.AllUppercase : Font.MixedCase
-      color: card.nihil ? Nihil.Palette.dim : card.host.foreground
-      opacity: card.nihil ? 1 : 0.7
+      font.family: card.dotmatrix ? DotMatrix.Palette.fontMono : card.host.fontFamily
+      font.pixelSize: card.dotmatrix ? 11 : 13
+      font.letterSpacing: card.dotmatrix ? 1.4 : 0
+      font.capitalization: card.dotmatrix ? Font.AllUppercase : Font.MixedCase
+      color: card.dotmatrix ? DotMatrix.Palette.dim : card.host.foreground
+      opacity: card.dotmatrix ? 1 : 0.7
     }
   }
 
-  Nihil.DotMeter {
-    visible: card.nihil
+  DotMatrix.DotMeter {
+    visible: card.dotmatrix
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     count: Math.max(10, Math.floor((width + 3) / 7))
     dot: 4
@@ -114,7 +114,7 @@ Rectangle {
   // Прогресс
   Rectangle {
     id: track
-    visible: !card.nihil
+    visible: !card.dotmatrix
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     height: 4
     radius: 2

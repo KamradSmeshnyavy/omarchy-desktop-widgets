@@ -1,7 +1,7 @@
 import QtQuick
 import "." as N
 
-// 24-segment discrete LED slider with drag and mouse-wheel control. Outside Nihil / Retro
+// 24-segment discrete LED slider with drag and mouse-wheel control. Outside DOT-MATRIX / Retro
 // (N.Finish.segmented) — a continuous bar with a round knob in the style's shape.
 Item {
   id: root
@@ -19,7 +19,7 @@ Item {
   readonly property real segWidth: Math.max(2, (width - (segments - 1) * N.Finish.segGap) / Math.max(1, segments))
   readonly property int lit: Math.round(Math.max(0, Math.min(1, value)) * segments)
 
-  // Сплошная полоса (не Nihil / Retro).
+  // Сплошная полоса (не DOT-MATRIX / Retro).
   Rectangle {
     visible: !N.Finish.segmented
     anchors.verticalCenter: parent.verticalCenter

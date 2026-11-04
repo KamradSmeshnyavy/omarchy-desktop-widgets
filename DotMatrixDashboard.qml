@@ -4,17 +4,17 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
-import "nihil" as Nihil
+import "dotmatrix" as DotMatrix
 
-// NIHIL hardware dashboard drawer. Attached to a solid bar (BarStyle, host.panelStyle) it grows
+// DOT-MATRIX hardware dashboard drawer. Attached to a solid bar (BarStyle, host.panelStyle) it grows
 // out of the bar with concave fillets and an open-top hairline; otherwise it hangs below the
-// bar as a separate card with a closed contour. Fill = bar colour, ink = Nihil palette.
+// bar as a separate card with a closed contour. Fill = bar colour, ink = DOT-MATRIX palette.
 PanelWindow {
   id: dash
 
   required property var host
 
-  readonly property bool active: host.nihilDash && host.dashboardOpen
+  readonly property bool active: host.dotmatrixDash && host.dashboardOpen
   readonly property bool attached: host.panelStyle.attached
   readonly property int flare: attached ? host.panelStyle.flare : 0
   readonly property int cornerRadius: 18
@@ -61,7 +61,7 @@ PanelWindow {
     return Math.round(b) + " B/S"
   }
 
-  visible: host.nihilDash && progress > 0.001
+  visible: host.dotmatrixDash && progress > 0.001
   screen: host.focusedScreen
   anchors.top: true
   margins.top: attached ? -seamOverlap : 10
@@ -71,7 +71,7 @@ PanelWindow {
   implicitHeight: bodyHeight + seamOverlap + 2
   color: "transparent"
   surfaceFormat.opaque: false
-  WlrLayershell.namespace: "omarchy-nihil-dashboard"
+  WlrLayershell.namespace: "omarchy-dotmatrix-dashboard"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   mask: Region { item: hit }
@@ -152,7 +152,7 @@ PanelWindow {
     // closed across the top for a floating card.
     ShapePath {
       fillColor: "transparent"
-      strokeColor: dash.host.panelStyle.borderWidth > 0 ? dash.host.panelStyle.borderColor : Nihil.Palette.line
+      strokeColor: dash.host.panelStyle.borderWidth > 0 ? dash.host.panelStyle.borderColor : DotMatrix.Palette.line
       strokeWidth: dash.h > 1 ? 1 : -1
       startX: dashShape.rightX + dash.flare
       startY: dashShape.baseY
@@ -213,23 +213,23 @@ PanelWindow {
         Layout.fillHeight: true
         spacing: 4
 
-        Nihil.Label { text: "ex nihilo" }
+        DotMatrix.Label { text: "ex nihilo" }
 
-        Nihil.DotText {
+        DotMatrix.DotText {
           text: Qt.formatDateTime(clock.date, "HH:mm")
           font.pixelSize: 64
         }
 
-        Nihil.Txt {
+        DotMatrix.Txt {
           Layout.fillWidth: true
           text: clock.date.toLocaleDateString(dash.host.locale, "dddd, d MMMM")
-          color: Nihil.Palette.dim
+          color: DotMatrix.Palette.dim
           font.pixelSize: 15
         }
 
         Item { Layout.fillHeight: true }
 
-        Nihil.Label {
+        DotMatrix.Label {
           Layout.fillWidth: true
           text: dash.host.battery >= 0
             ? (dash.host.tr("BATTERY ", "БАТАРЕЯ ") + dash.host.battery + "%"
@@ -241,7 +241,7 @@ PanelWindow {
       Rectangle {
         Layout.fillHeight: true
         implicitWidth: 1
-        color: Nihil.Palette.line
+        color: DotMatrix.Palette.line
       }
 
       // 2. Dot-matrix media & 24x6 LED spectrum
@@ -260,7 +260,7 @@ PanelWindow {
           Layout.fillWidth: true
           spacing: 16
 
-          Nihil.DotScreen {
+          DotMatrix.DotScreen {
             Layout.preferredWidth: 104
             Layout.preferredHeight: 104
             source: musicCol.player ? String(musicCol.player.trackArtUrl || "") : ""
@@ -271,13 +271,13 @@ PanelWindow {
             Layout.fillWidth: true
             spacing: 4
 
-            Nihil.Label {
+            DotMatrix.Label {
               text: musicCol.player && musicCol.player.identity
                 ? String(musicCol.player.identity)
                 : dash.host.tr("MEDIA", "МЕДИА")
             }
 
-            Nihil.Txt {
+            DotMatrix.Txt {
               Layout.fillWidth: true
               text: musicCol.player && musicCol.player.trackTitle
                 ? String(musicCol.player.trackTitle)
@@ -286,12 +286,12 @@ PanelWindow {
               font.weight: Font.Medium
             }
 
-            Nihil.Txt {
+            DotMatrix.Txt {
               Layout.fillWidth: true
               text: musicCol.player && musicCol.player.trackArtist
                 ? String(musicCol.player.trackArtist)
                 : ""
-              color: Nihil.Palette.dim
+              color: DotMatrix.Palette.dim
               visible: text !== ""
             }
 
@@ -299,18 +299,18 @@ PanelWindow {
               Layout.topMargin: 6
               spacing: 8
 
-              Nihil.CircleButton {
+              DotMatrix.CircleButton {
                 glyph: String.fromCodePoint(0xF04AE)
                 size: 32
                 onClicked: if (dash.host.player && dash.host.player.canGoPrevious) dash.host.player.previous()
               }
-              Nihil.CircleButton {
+              DotMatrix.CircleButton {
                 glyph: dash.host.playing ? String.fromCodePoint(0xF03E4) : String.fromCodePoint(0xF040A)
                 size: 32
                 filled: true
                 onClicked: if (dash.host.player && dash.host.player.canTogglePlaying) dash.host.player.togglePlaying()
               }
-              Nihil.CircleButton {
+              DotMatrix.CircleButton {
                 glyph: String.fromCodePoint(0xF04AD)
                 size: 32
                 onClicked: if (dash.host.player && dash.host.player.canGoNext) dash.host.player.next()
@@ -319,7 +319,7 @@ PanelWindow {
           }
         }
 
-        Nihil.DotMeter {
+        DotMatrix.DotMeter {
           id: mediaMeter
           Layout.fillWidth: true
           Layout.preferredWidth: 0
@@ -332,9 +332,9 @@ PanelWindow {
         RowLayout {
           Layout.fillWidth: true
 
-          Nihil.Label { text: dash.formatClock(musicCol.trackPos) }
+          DotMatrix.Label { text: dash.formatClock(musicCol.trackPos) }
           Item { Layout.fillWidth: true }
-          Nihil.Label { text: dash.formatClock(musicCol.trackLen) }
+          DotMatrix.Label { text: dash.formatClock(musicCol.trackLen) }
         }
 
         // 24x6 circular LED matrix visualizer
@@ -364,7 +364,7 @@ PanelWindow {
                     width: 5
                     height: 5
                     radius: 2.5
-                    color: (6 - index) <= colItem.litRows ? Nihil.Palette.lit : Nihil.Palette.unlit
+                    color: (6 - index) <= colItem.litRows ? DotMatrix.Palette.lit : DotMatrix.Palette.unlit
                     Behavior on color { ColorAnimation { duration: 70 } }
                   }
                 }
@@ -377,7 +377,7 @@ PanelWindow {
       Rectangle {
         Layout.fillHeight: true
         implicitWidth: 1
-        color: Nihil.Palette.line
+        color: DotMatrix.Palette.line
       }
 
       // 3. Instrument cluster (CPU / RAM / °C dials + rx/tx DotScope)
@@ -389,19 +389,19 @@ PanelWindow {
         Row {
           spacing: 6
 
-          Nihil.Dial {
+          DotMatrix.Dial {
             width: 84; height: 84
             value: dash.host.cpu
             text: String(Math.round(dash.host.cpu * 100))
             label: "cpu"
           }
-          Nihil.Dial {
+          DotMatrix.Dial {
             width: 84; height: 84
             value: dash.host.mem
             text: String(Math.round(dash.host.mem * 100))
             label: "ram"
           }
-          Nihil.Dial {
+          DotMatrix.Dial {
             width: 84; height: 84
             value: Math.min(1, dash.host.temp / 100)
             text: String(Math.round(dash.host.temp))
@@ -415,12 +415,12 @@ PanelWindow {
         RowLayout {
           Layout.fillWidth: true
 
-          Nihil.Label { text: "↓ " + dash.formatRate(dash.host.rxRate) }
+          DotMatrix.Label { text: "↓ " + dash.formatRate(dash.host.rxRate) }
           Item { Layout.fillWidth: true }
-          Nihil.Label { text: "↑ " + dash.formatRate(dash.host.txRate); color: Nihil.Palette.muted }
+          DotMatrix.Label { text: "↑ " + dash.formatRate(dash.host.txRate); color: DotMatrix.Palette.muted }
         }
 
-        Nihil.DotScope {
+        DotMatrix.DotScope {
           Layout.fillWidth: true
           Layout.preferredHeight: 54
           series: dash.host.rxHistory

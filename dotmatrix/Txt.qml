@@ -1,7 +1,7 @@
 import QtQuick
 import "." as N
 
-// Interface voice (Space Grotesk; outside Nihil — N.Finish.textFont).
+// Interface voice (Space Grotesk; outside DOT-MATRIX — N.Finish.textFont).
 Text {
   color: N.Palette.fg
   font.family: N.Finish.textFont
