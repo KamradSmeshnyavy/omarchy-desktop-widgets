@@ -616,8 +616,10 @@ PanelWindow {
                   Layout.fillWidth: true
                   visible: String(modelData.summary || "") !== ""
                   text: String(modelData.summary || "")
-                  font.pixelSize: 13
-                  font.weight: Font.Medium
+                  // Профиль dots — заголовки уведомлений точками.
+                  font.family: DotMatrix.Palette.fontHeading
+                  font.pixelSize: DotMatrix.Palette.dotEverywhere ? 15 : 13
+                  font.weight: DotMatrix.Palette.headingWeight(Font.Medium)
                 }
 
                 DotMatrix.Txt {
