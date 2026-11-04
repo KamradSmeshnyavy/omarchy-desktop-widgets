@@ -119,8 +119,19 @@ PanelWindow {
     }
 
     // floating: карточка с рамкой и тенью.
+    // paper: лист бумаги вместо карточки (стиль Paper).
+    PaperCard {
+      visible: !dash.attached && dash.style.paper
+      style: dash.style
+      seed: 3
+      x: hit.x
+      y: hit.y
+      width: hit.width
+      height: hit.height
+      radius: Math.min(dash.style.cornerRadius, height / 2)
+    }
     Rectangle {
-      visible: !dash.attached
+      visible: !dash.attached && !dash.style.paper
       x: hit.x
       y: hit.y
       width: hit.width

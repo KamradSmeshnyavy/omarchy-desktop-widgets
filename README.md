@@ -23,7 +23,9 @@ panel (blurred when Hyprland blur is on). Everything can be overridden.
 [omarchy-customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) → Presets → Style) tunes the panels on top
 of the bar: `elevation` 0–2 (shadows), `motion` (animation speed multiplier, 0 — none), `material`
 (`auto` / `solid` / `glass`), `cornerScale` (0 — square corners), `typeface` (`shell` — Omarchy font, `profile` — the
-sans of `~/.config/omarchy/fonts.json`; icons always stay on the Omarchy font). No file — the look as before.
+sans of `~/.config/omarchy/fonts.json`, `hand` — handwritten Caveat; icons always stay on the Omarchy font).
+`material: "paper"` draws floating panels as sheets of paper (`PaperCard.qml`: torn bottom edge, `texture` tile,
+tape). No file — the look as before.
 
 ## Install
 
@@ -74,7 +76,7 @@ hl.layer_rule({ match = { namespace = "omarchy-power" }, blur = true, ignore_alp
 Anchors: `top-left` `top` `top-right` `left` `center` `right` `bottom-left` `bottom` `bottom-right`.
 Colours: a role (`accent` `foreground` `muted` `background`), a `colors.toml` key or `#hex`.
 
-QML changes need `omarchy restart shell`. `BarStyle.qml` is shared with
+QML changes need `omarchy restart shell`. `BarStyle.qml` and `PaperCard.qml` are shared with
 [omarchy-edge-osd](https://github.com/KamradSmeshnyavy/omarchy-edge-osd) and
 [omarchy-drawer-notifications](https://github.com/KamradSmeshnyavy/omarchy-drawer-notifications).
 

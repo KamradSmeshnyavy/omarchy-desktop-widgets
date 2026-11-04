@@ -23,7 +23,8 @@
 [omarchy-customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) → Пресеты → Стиль) настраивает панели поверх
 бара: `elevation` 0–2 (тени), `motion` (множитель скорости анимаций, 0 — без них), `material` (`auto` / `solid` /
 `glass`), `cornerScale` (0 — прямые углы), `typeface` (`shell` — шрифт Omarchy, `profile` — sans из
-`~/.config/omarchy/fonts.json`; иконки всегда в шрифте Omarchy). Нет файла — вид как раньше.
+`~/.config/omarchy/fonts.json`, `hand` — рукописный Caveat; иконки всегда в шрифте Omarchy). `material: "paper"` рисует
+плавающие панели листами бумаги (`PaperCard.qml`: рваный нижний край, тайл `texture`, скотч). Нет файла — вид как раньше.
 
 ## Установка
 
@@ -41,7 +42,7 @@ omarchy plugin enable kamradsmeshnyavy.widgets
 [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) правит его в Рабочий стол → Виджеты / Дашборд.
 Ключи и значения — в [README.md](README.md#settings).
 
-Правки QML — после `omarchy restart shell`. `BarStyle.qml` общий с
+Правки QML — после `omarchy restart shell`. `BarStyle.qml` и `PaperCard.qml` общие с
 [omarchy-edge-osd](https://github.com/KamradSmeshnyavy/omarchy-edge-osd) и
 [omarchy-drawer-notifications](https://github.com/KamradSmeshnyavy/omarchy-drawer-notifications).
 
