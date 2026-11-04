@@ -5,6 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons as Commons
+import "nihil" as Nihil
 
 // Виджеты рабочего стола: часы, now playing, визуализатор cava, кольца системы,
 // и дашборд, выезжающий из-под бара / рамки (Dashboard.qml, IPC widgets toggleDashboard).
@@ -33,13 +34,22 @@ Item {
     visualizerIdle: false,      // показывать и без музыки (cava тогда работает всегда)
     sysinfo: true,
     sysinfoAnchor: "top-right",
+    todo: false,                // Todo / заметки (TodoWidget, ~/.config/omarchy/widgets-todo.json)
+    todoAnchor: "right",
+    todoMax: 8,
+    quote: false,               // цитата дня (QuoteWidget, свои — ~/.config/omarchy/widgets-quotes.txt)
+    quoteAnchor: "bottom-right",
+    photo: false,               // фото-рамка (PhotoWidget): папка photoDir или текущие обои
+    photoAnchor: "left",
+    photoDir: "",
+    photoInterval: 10,
     edgeMargin: 56,
     tint: "accent",             // роль (accent foreground muted) или ключ colors.toml / #hex
     locale: "",                 // язык даты: "" — как в Customizer (customizer.json), иначе системный
     screens: "all",             // all primary
     weatherCity: "",            // город для погоды (open-meteo); пусто — блок погоды с подсказкой
     weatherUnits: "celsius",    // celsius fahrenheit
-    widgetStyle: "default",     // default nihil
+    widgetStyle: "style",       // style (по стилю Customizer) · default · nihil
     edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
     // Дашборд (Dashboard.qml / NihilDashboard.qml) и меню выключения: стиль — BarStyle.qml.
     dashStyle: "default",       // default nihil
@@ -89,7 +99,11 @@ Item {
   // Шрифт обычных (не Nihil) карточек: Omarchy или sans профиля шрифтов — токен typeface стиля.
   readonly property string fontFamily: dashStyle.fontFamily
   readonly property string iconFamily: Commons.Style.font.family   // Nerd-иконки — всегда шрифт Omarchy
-  readonly property bool nihilWidgets: String(value("widgetStyle")) === "nihil"
+  // style — по стилю Customizer (~/.config/omarchy/style.json): у NIHIL — nihil-виджеты, у остальных —
+  // обычные виджеты на подложке в материале стиля (WidgetCard). default — прежний вид без подложек.
+  readonly property string widgetMode: String(value("widgetStyle"))
+  readonly property bool nihilWidgets: widgetMode === "nihil" || (widgetMode === "style" && Nihil.Finish.nihil)
+  readonly property bool styledWidgets: widgetMode === "style" && !Nihil.Finish.nihil
   readonly property bool nihilDash: String(value("dashStyle")) === "nihil"
 
   property string uiLang: ""
@@ -253,6 +267,18 @@ Item {
   }
   readonly property var panelStyle: dashStyle
 
+  // Подложки виджетов рабочего стола (WidgetCard): материал и токены стиля, фон — цвет фона темы.
+  BarStyle {
+    id: deskStyle
+    follow: false
+    attach: "floating"
+    background: "background"
+    alpha: 0.9
+    radius: 18
+    border: true
+  }
+  readonly property var deskStyle: deskStyle
+
   // Погода: open-meteo (без ключа), раз в 20 минут, только пока открыт дашборд.
   QtObject {
     id: weatherFetcher
@@ -401,14 +427,50 @@ Item {
         WlrLayershell.namespace: "omarchy-widgets"
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        // Клики — только по карточке плеера, остальное прозрачно для рабочего стола.
-        mask: Region { item: media.visible ? media : null }
+        // Клики — только по карточкам плеера, todo, цитаты и фото, остальное прозрачно для стола.
+        mask: Region {
+          regions: [
+            Region { item: media.visible ? media : null },
+            Region { item: todoW.visible ? todoW : null },
+            Region { item: quoteW.visible ? quoteW : null },
+            Region { item: photoW.visible ? photoW : null }
+          ]
+        }
 
         Visualizer {
           host: root
           visible: root.flag("visualizer") && root.levels.length > 0
           anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
           height: Math.max(40, root.num("visualizerHeight"))
+        }
+
+        WidgetCard { host: root; target: clockW; seed: 21; pad: 22 }
+        WidgetCard { host: root; target: media; seed: 22; pad: 6 }
+        WidgetCard { host: root; target: sysW; seed: 23; pad: 18 }
+        WidgetCard { host: root; target: todoW; seed: 24; pad: 18 }
+        WidgetCard { host: root; target: quoteW; seed: 25; pad: 18 }
+        WidgetCard { host: root; target: photoW; seed: 26; pad: 12 }
+
+        TodoWidget {
+          id: todoW
+          host: root
+          visible: root.flag("todo")
+          x: layer.place(todoW, "todoAnchor").x
+          y: layer.place(todoW, "todoAnchor").y
+        }
+        QuoteWidget {
+          id: quoteW
+          host: root
+          visible: root.flag("quote")
+          x: layer.place(quoteW, "quoteAnchor").x
+          y: layer.place(quoteW, "quoteAnchor").y
+        }
+        PhotoWidget {
+          id: photoW
+          host: root
+          visible: root.flag("photo")
+          x: layer.place(photoW, "photoAnchor").x
+          y: layer.place(photoW, "photoAnchor").y
         }
 
         ClockWidget {

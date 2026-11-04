@@ -13,8 +13,9 @@ Rectangle {
   width: 400
   height: 120
   radius: 18
-  color: nihil ? Nihil.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62)
-  border.width: 1
+  // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
+  color: host.styledWidgets ? "transparent" : (nihil ? Nihil.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
+  border.width: host.styledWidgets ? 0 : 1
   border.color: nihil ? Nihil.Palette.line : Qt.rgba(host.accent.r, host.accent.g, host.accent.b, 0.35)
 
   readonly property real progress: player && player.lengthSupported && player.length > 0
