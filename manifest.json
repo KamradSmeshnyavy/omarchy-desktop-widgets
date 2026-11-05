@@ -4,6 +4,7 @@
   "name": "Desktop Widgets",
   "version": "1.0.0",
   "author": "KamradSmeshnyavy",
+  "license": "MIT",
   "description": "Desktop widgets, a dashboard, a power menu and a workspace overview for Omarchy, styled after your bar",
   "kinds": [
     "service"

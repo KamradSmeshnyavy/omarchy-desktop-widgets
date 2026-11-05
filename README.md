@@ -30,9 +30,8 @@ paper (torn edge, `texture` tile, tape), neumorphic relief, a thick border with 
 ## Install
 
 ```sh
-git clone https://github.com/KamradSmeshnyavy/omarchy-desktop-widgets ~/.config/omarchy/plugins/kamradsmeshnyavy.widgets
-omarchy-shell shell rescanPlugins
-omarchy plugin enable kamradsmeshnyavy.widgets
+omarchy plugin add https://github.com/KamradSmeshnyavy/omarchy-desktop-widgets --enable
+omarchy restart shell
 ```
 
 Optional: `cava` (visualizer). Suggested Hyprland bindings (Lua config):
@@ -44,6 +43,23 @@ o.bind("SUPER + ESCAPE", "Power menu", "omarchy-shell widgets togglePower")
 hl.layer_rule({ match = { namespace = "omarchy-dashboard" }, blur = true, ignore_alpha = 0.2 })
 hl.layer_rule({ match = { namespace = "omarchy-power" }, blur = true, ignore_alpha = 0.2 })
 ```
+
+## Requirements
+
+Omarchy 4 (Quattro) with its shell. Tested on Omarchy 4.0.6 with Quickshell 0.3.2.
+
+- Optional: `cava` (visualizer card), `zenity` (editing a note or a quote), `brightnessctl` (brightness in Quick Settings, ships with Omarchy).
+- Optional: the [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) — its Style presets (Flat, Glass, Fluent, DOT-MATRIX) write `~/.config/omarchy/style.json`, which this plugin follows; without it the defaults are used.
+- DOT-MATRIX designs use the fonts shipped with the [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) (Doto, Space Grotesk, Space Mono); without them they fall back to the Omarchy font.
+
+## Uninstall
+
+```sh
+omarchy plugin remove kamradsmeshnyavy.widgets
+omarchy restart shell
+```
+
+Your settings stay in `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widgets-todo.json` — delete them by hand if you don't need them.
 
 ## Settings
 

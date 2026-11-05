@@ -30,12 +30,28 @@
 ## Установка
 
 ```sh
-git clone https://github.com/KamradSmeshnyavy/omarchy-desktop-widgets ~/.config/omarchy/plugins/kamradsmeshnyavy.widgets
-omarchy-shell shell rescanPlugins
-omarchy plugin enable kamradsmeshnyavy.widgets
+omarchy plugin add https://github.com/KamradSmeshnyavy/omarchy-desktop-widgets --enable
+omarchy restart shell
 ```
 
 Необязательно: `cava` (визуализатор). Клавиши и размытие для Hyprland (Lua-конфиг) — как в английском README.
+
+## Требования
+
+Omarchy 4 (Quattro) с его оболочкой. Проверено на Omarchy 4.0.6 и Quickshell 0.3.2.
+
+- Необязательно: `cava` (визуализатор), `zenity` (правка заметки или цитаты), `brightnessctl` (яркость в быстрых настройках, есть в Omarchy).
+- Необязательно: [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) — его стили (Flat, Glass, Fluent, DOT-MATRIX) пишут `~/.config/omarchy/style.json`, плагин их подхватывает; без него — значения по умолчанию.
+- Дизайны DOT-MATRIX используют шрифты из [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) (Doto, Space Grotesk, Space Mono); без них — шрифт Omarchy.
+
+## Удаление
+
+```sh
+omarchy plugin remove kamradsmeshnyavy.widgets
+omarchy restart shell
+```
+
+Настройки остаются в `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widgets-todo.json` — удалите их вручную, если не нужны.
 
 ## Настройки
 
