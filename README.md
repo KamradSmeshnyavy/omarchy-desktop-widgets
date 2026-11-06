@@ -27,6 +27,14 @@ sans of `~/.config/omarchy/fonts.json`, `hand` — handwritten Caveat; icons alw
 `material` `paper` / `soft` / `brutal` / `bevel` / `glow` draws floating panels with `StyleCard.qml`: a sheet of
 paper (torn edge, `texture` tile, tape), neumorphic relief, a thick border with a hard shadow, a retro bevel, neon glow. No file — the look as before.
 
+![Dashboard in Glass, Paper and DOT-MATRIX](screenshots/dashboard.webp)
+
+| Workspace overview | Power menu |
+| :---: | :---: |
+| ![Overview](screenshots/overview.webp) | ![Power menu](screenshots/power.webp) |
+
+<!-- Demo video: repo-videos/omarchy-desktop-widgets.mp4 — drag it here when editing this file on GitHub -->
+
 ## Install
 
 ```sh

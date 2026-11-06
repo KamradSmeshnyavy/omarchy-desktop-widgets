@@ -27,6 +27,14 @@
 `brutal` / `bevel` / `glow` рисует плавающие панели через `StyleCard.qml`: лист бумаги (рваный край, тайл `texture`, скотч),
 неоморфный рельеф, толстая рамка с жёсткой тенью, ретро-кант, неоновое свечение. Нет файла — вид как раньше.
 
+![Дашборд в стилях Стекло, Бумага и DOT-MATRIX](screenshots/dashboard.webp)
+
+| Обзор столов | Меню выключения |
+| :---: | :---: |
+| ![Обзор](screenshots/overview.webp) | ![Меню выключения](screenshots/power.webp) |
+
+<!-- Demo video: repo-videos/omarchy-desktop-widgets.mp4 — drag it here when editing this file on GitHub -->
+
 ## Установка
 
 ```sh
