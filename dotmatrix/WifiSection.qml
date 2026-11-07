@@ -69,14 +69,28 @@ ColumnLayout {
     busySsid = row.ssid
     net.connect()
   }
-  function submit(row, identity, password) {
+  // dotmatrix: 802.1X needs the RADIUS server's domain; the profile trusts only
+  // a system-CA-signed server matching it (Model.enterpriseConnectScript).
+  // An older network plugin without the check can't verify the server, so
+  // the profile isn't created through it at all.
+  function validDomain(domain) {
+    return typeof Model.isValidServerDomain === "function" && Model.isValidServerDomain(domain)
+  }
+  function submit(row, identity, domain, password) {
     var net = networkFor(row.ssid)
     if (!net || password === "") return
+    if (isEnterprise(row) && (identity === "" || !validDomain(domain))) {
+      failure = typeof Model.isValidServerDomain === "function"
+        ? tr("Enter the server domain, e.g. radius.example.org", "Укажите домен сервера, например radius.example.org")
+        : tr("Update the DOT-MATRIX Wi-Fi plugin to join 802.1X networks", "Обновите плагин DOT-MATRIX Wi-Fi для сетей 802.1X")
+      return
+    }
+    failure = ""
     busySsid = row.ssid
     promptSsid = ""
     if (isEnterprise(row)) {
       enterpriseProc.secret = password
-      enterpriseProc.command = ["bash", "-c", Model.enterpriseConnectScript, "nmcli-eap", row.ssid, identity]
+      enterpriseProc.command = ["bash", "-c", Model.enterpriseConnectScript, "nmcli-eap", row.ssid, identity, domain.trim()]
       enterpriseProc.running = true
     } else {
       net.connectWithPsk(password)
@@ -292,7 +306,7 @@ ColumnLayout {
         onActionClicked: netItem.modelData.connected ? sec.activate(netItem.modelData) : sec.forget(netItem.modelData)
       }
 
-      // Inline credentials: 802.1X asks for identity too.
+      // Inline credentials: 802.1X asks for identity and server domain too.
       ColumnLayout {
         Layout.fillWidth: true
         visible: sec.promptSsid === netItem.modelData.ssid
@@ -302,13 +316,19 @@ ColumnLayout {
           id: idField
           visible: sec.isEnterprise(netItem.modelData)
           placeholder: sec.tr("Identity (user@domain)", "Логин (user@domain)")
+          onAccepted: domainField.focusField()
+        }
+        Field {
+          id: domainField
+          visible: idField.visible
+          placeholder: sec.tr("Server domain (radius.example.org)", "Домен сервера (radius.example.org)")
           onAccepted: pwField.focusField()
         }
         Field {
           id: pwField
           password: true
           placeholder: sec.tr("Password", "Пароль")
-          onAccepted: sec.submit(netItem.modelData, idField.text, text)
+          onAccepted: sec.submit(netItem.modelData, idField.text, domainField.text, text)
         }
         onVisibleChanged: if (visible) (idField.visible ? idField : pwField).focusField()
       }
