@@ -72,15 +72,19 @@ ColumnLayout {
   // dotmatrix: 802.1X needs the RADIUS server's domain; the profile trusts only
   // a system-CA-signed server matching it (Model.enterpriseConnectScript).
   // An older network plugin without the check can't verify the server, so
-  // the profile isn't created through it at all.
+  // the profile isn't created through it at all. Same for one whose script
+  // still leaves the password in nmcli's editor history
+  // (Model.enterpriseSecretNoHistory).
+  readonly property bool siblingSafe: typeof Model.isValidServerDomain === "function"
+    && Model.enterpriseSecretNoHistory === true
   function validDomain(domain) {
-    return typeof Model.isValidServerDomain === "function" && Model.isValidServerDomain(domain)
+    return siblingSafe && Model.isValidServerDomain(domain)
   }
   function submit(row, identity, domain, password) {
     var net = networkFor(row.ssid)
     if (!net || password === "") return
     if (isEnterprise(row) && (identity === "" || !validDomain(domain))) {
-      failure = typeof Model.isValidServerDomain === "function"
+      failure = siblingSafe
         ? tr("Enter the server domain, e.g. radius.example.org", "Укажите домен сервера, например radius.example.org")
         : tr("Update the DOT-MATRIX Wi-Fi plugin to join 802.1X networks", "Обновите плагин DOT-MATRIX Wi-Fi для сетей 802.1X")
       return

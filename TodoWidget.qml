@@ -17,14 +17,35 @@ Item {
   readonly property string path: Quickshell.env("HOME") + "/.config/omarchy/widgets-todo.json"
 
   property var items: []
+  // Записи могут быть личными: файл должен быть 0600. FileView.setText сохраняет права уже
+  // существующего файла, а новый создаёт по umask (обычно 0644) — поэтому до первой записи
+  // privateProc создаёт файл с umask 077 (и ужимает права у файла от старых версий).
+  property bool storePrivate: false
+  property string pendingText: ""
 
   width: 300
   height: col.implicitHeight
 
   function save(list) {
     todo.items = list
-    store.setText(JSON.stringify(list, null, 2) + "\n")
+    var text = JSON.stringify(list, null, 2) + "\n"
+    if (todo.storePrivate) { store.setText(text); return }
+    todo.pendingText = text
+    if (!privateProc.running) privateProc.running = true
   }
+
+  Process {
+    id: privateProc
+    command: ["bash", "-c",
+      "umask 077; mkdir -p -- \"${1%/*}\" && { [[ -e $1 ]] || : >> \"$1\"; } && chmod 600 -- \"$1\"",
+      "--", todo.path]
+    onExited: function(code) {
+      if (code !== 0) return
+      todo.storePrivate = true
+      if (todo.pendingText !== "") { store.setText(todo.pendingText); todo.pendingText = "" }
+    }
+  }
+  Component.onCompleted: privateProc.running = true
   function toggle(i) {
     var l = todo.items.slice()
     l[i] = { text: l[i].text, done: !l[i].done }
