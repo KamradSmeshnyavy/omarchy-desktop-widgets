@@ -675,19 +675,19 @@ PanelWindow {
               glyph: String.fromCodePoint(0xF0343)
               filled: panel.armed === "logout"
               danger: panel.armed === "logout"
-              onClicked: panel.sessionAction("logout", ["omarchy-system-logout"])
+              onClicked: panel.sessionAction("logout", ["omarchy-system", "logout"])
             }
             DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF0709)
               filled: panel.armed === "reboot"
               danger: panel.armed === "reboot"
-              onClicked: panel.sessionAction("reboot", ["omarchy-system-reboot"])
+              onClicked: panel.sessionAction("reboot", ["omarchy-system", "reboot"])
             }
             DotMatrix.CircleButton {
               glyph: String.fromCodePoint(0xF0425)
               danger: true
               filled: panel.armed === "power"
-              onClicked: panel.sessionAction("power", ["omarchy-system-shutdown"])
+              onClicked: panel.sessionAction("power", ["omarchy-system", "shutdown"])
             }
 
             Item { Layout.fillWidth: true }

@@ -36,9 +36,9 @@ PanelWindow {
     ]
     if (suspend) out.push({ id: "suspend", icon: "󰒲", label: host.tr("Suspend", "Сон"), action: "systemctl suspend" })
     if (hibernate) out.push({ id: "hibernate", icon: "󰤁", label: host.tr("Hibernate", "Гибернация"), action: "systemctl hibernate" })
-    out.push({ id: "logout", icon: "󰍃", label: host.tr("Log out", "Выход"), action: "omarchy-system-logout", confirm: true })
-    out.push({ id: "reboot", icon: "󰜉", label: host.tr("Reboot", "Перезагрузка"), action: "omarchy-system-reboot", confirm: true })
-    out.push({ id: "shutdown", icon: "󰐥", label: host.tr("Shut down", "Выключение"), action: "omarchy-system-shutdown", confirm: true })
+    out.push({ id: "logout", icon: "󰍃", label: host.tr("Log out", "Выход"), action: "omarchy-system logout", confirm: true })
+    out.push({ id: "reboot", icon: "󰜉", label: host.tr("Reboot", "Перезагрузка"), action: "omarchy-system reboot", confirm: true })
+    out.push({ id: "shutdown", icon: "󰐥", label: host.tr("Shut down", "Выключение"), action: "omarchy-system shutdown", confirm: true })
     return out
   }
   readonly property int length: items.length * button + (items.length - 1) * gap + 2 * 18
