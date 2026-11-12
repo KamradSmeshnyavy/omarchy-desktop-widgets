@@ -9,7 +9,8 @@ import QtQuick.Shapes
 //   attached — «вытекает» из-под сплошного бара / рамки: вогнутые углы сверху переходят в полосу;
 //   floating — отдельная скруглённая карточка с отступом, рамкой и тенью (прозрачный или
 //              «островной» бар — тогда затёкам не к чему прилипать).
-// Анимация (dashAnimation): grow — растёт по высоте, slide — выезжает сверху, fade — проявляется.
+// Анимация (dashAnimation): grow — растёт по высоте, slide — выезжает сверху, fade — проявляется,
+// liquid — «вытекает» из бара: узкая капля растягивается в ширину и высоту с пружинным перелётом (Vitreus).
 // Блоки включаются ключами dashMedia / dashCalendar / dashWeather / dashStats. Esc или клик мимо — закрыть.
 PanelWindow {
   id: dash
@@ -43,11 +44,22 @@ PanelWindow {
   readonly property int duration: Math.max(60, host.num("dashDuration"))
 
   property real progress: !host.dotmatrixDash && host.dashboardOpen ? 1 : 0
-  Behavior on progress { NumberAnimation { duration: dash.duration; easing.type: Easing.OutCubic } }
-  // grow — высота растёт; slide — сдвиг сверху; fade — только прозрачность (+ лёгкий масштаб).
-  readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress) : bodyHeight
+  readonly property bool liquid: animation === "liquid"
+  // liquid открывается с перелётом (OutBack), закрывается без него — иначе капля «проваливается» в бар.
+  Behavior on progress {
+    NumberAnimation {
+      duration: dash.liquid ? Math.round(dash.duration * 1.25) : dash.duration
+      easing.type: dash.liquid && dash.host.dashboardOpen ? Easing.OutBack : Easing.OutCubic
+      easing.overshoot: 1.3
+    }
+  }
+  // grow — высота растёт; slide — сдвиг сверху; fade — только прозрачность (+ лёгкий масштаб);
+  // liquid — высота догоняет ширину: сначала капля под баром, потом лист.
+  readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress)
+    : liquid ? Math.round(bodyHeight * Math.max(0, Math.min(1.04, progress * progress))) : bodyHeight
+  readonly property real w: liquid ? Math.round(bodyWidth * Math.max(0.18, Math.min(1.02, 0.18 + 0.82 * Math.sqrt(Math.max(0, progress))))) : bodyWidth
   readonly property real slide: animation === "slide" ? (1 - progress) * -(bodyHeight + margin) : 0
-  readonly property real fadeOpacity: animation === "grow" ? 1 : progress
+  readonly property real fadeOpacity: animation === "grow" || liquid ? Math.min(1, progress * 3) : progress
 
   visible: !host.dotmatrixDash && progress > 0.001
   screen: host.focusedScreen
@@ -81,9 +93,9 @@ PanelWindow {
 
     Item {
       id: hit
-      x: (dash.width - dash.bodyWidth) / 2
+      x: (dash.width - dash.w) / 2
       y: dash.margin
-      width: dash.bodyWidth
+      width: dash.w
       height: dash.h
     }
 
@@ -152,12 +164,12 @@ PanelWindow {
 
     Item {
       id: content
-      x: hit.x
+      x: (dash.width - dash.bodyWidth) / 2
       y: hit.y
       width: dash.bodyWidth
       height: dash.h
       clip: true
-      opacity: dash.animation === "grow" ? Math.max(0, (dash.progress - 0.35) / 0.65) : 1
+      opacity: dash.animation === "grow" || dash.liquid ? Math.max(0, (Math.min(1, dash.progress) - (dash.liquid ? 0.55 : 0.35)) / (dash.liquid ? 0.45 : 0.65)) : 1
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 

@@ -93,7 +93,7 @@ Your settings stay in `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widge
   "dashAttach": "auto",           // auto | attached | floating
   "dashBackground": "background", "dashAlpha": 0.94, "dashRadius": 22, "dashBorder": false,
   "dashMedia": true, "dashCalendar": true, "dashWeather": true, "dashStats": true,
-  "dashAnimation": "grow",        // grow | slide | fade
+  "dashAnimation": "grow",        // grow | slide | fade | liquid (flows out of the bar, springs)
   "dashDuration": 340,
   "weatherCity": "", "weatherUnits": "celsius"
 }

@@ -28,10 +28,10 @@ QtObject {
   // ── форма ──
   // Радиус круглой кнопки / диска размера size.
   function round(size) {
-    return root.pick({ dotmatrix: size / 2, glass: size / 2, neumorph: size / 2, fluent: Math.round(size * 0.28),
+    return root.pick({ dotmatrix: size / 2, glass: size / 2, liquid: size / 2, neumorph: size / 2, fluent: Math.round(size * 0.28),
       paper: 4, neon: Math.round(size * 0.22), flat: 0, brutal: 0, retro: 0 })
   }
-  readonly property int radius: root.pick({ dotmatrix: 14, glass: 14, fluent: 8, paper: 3, neumorph: 16, neon: 8, flat: 0 })
+  readonly property int radius: root.pick({ dotmatrix: 14, glass: 14, liquid: 18, fluent: 8, paper: 3, neumorph: 16, neon: 8, flat: 0 })
   readonly property int borderWidth: root.pick({ brutal: 2, neumorph: 0, flat: 1 })
   readonly property bool segmented: root.dotmatrix || root.look === "retro"
   readonly property int segGap: root.look === "retro" ? 2 : 3
