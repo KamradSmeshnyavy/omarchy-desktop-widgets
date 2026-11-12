@@ -64,7 +64,7 @@ PanelWindow {
     // оказался бы под ним, и до открепленного виджета было бы не дотянуться.
     if (floating) return fl && !host.editMode && onThisScreen(name)
     if (fl && !host.editMode) return false
-    if (!free) return !host.deskOff || host.editMode
+    if (!free) return host.editMode || (!host.deskOff && !host.homeHides(screenName))
     return onThisScreen(name)
   }
 

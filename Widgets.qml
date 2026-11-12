@@ -66,8 +66,13 @@ Item {
     dashCalendar: true,
     dashWeather: true,
     dashStats: true,
-    dashAnimation: "grow",      // grow slide fade
-    dashDuration: 340
+    dashAnimation: "grow",      // grow slide fade liquid
+    dashDuration: 340,
+    // Домашний экран (HomeScreen.qml): часы, приветствие и плитки на пустом рабочем столе.
+    home: false,
+    homeName: "",               // имя в приветствии; пусто — $USER
+    homeDots: true,             // точечная сетка на фоне
+    homeHideWidgets: true       // прятать виджеты на якорях, пока виден домашний экран
   })
 
   property var raw: ({})
@@ -89,6 +94,19 @@ Item {
   // toggleEdit (Super+Ctrl+W): виджеты тащатся мышью, ПКМ — меню. Прежний якорь хранится в
   // <name>AnchorDocked, «Вернуть на место» возвращает его.
   property bool editMode: false
+
+  // Где сейчас виден домашний экран: { "<экран>": true }. Пока виден — виджеты на якорях этого
+  // экрана прячутся (homeHideWidgets), опрос системы и погоды работает.
+  property var homeShown: ({})
+  readonly property bool homeAny: Object.keys(homeShown).some(function(k) { return homeShown[k] })
+  function setHomeShown(screen, on) {
+    var o = Object.assign({}, homeShown)
+    o[screen] = on
+    homeShown = o
+    if (on) weatherFetcher.refreshIfStale()
+  }
+  function homeHides(screen) { return flag("home") && homeShown[screen] === true && value("homeHideWidgets") !== false }
+  Timer { interval: 10 * 60 * 1000; repeat: true; running: root.homeAny; onTriggered: weatherFetcher.refreshIfStale() }
   onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
   readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo"]
   readonly property bool anyFloat: widgetNames.some(function(n) {
@@ -434,7 +452,7 @@ Item {
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
       // Скорость сети нужна дашборду DOT-MATRIX и виджету «Сеть».
-      (!root.dotmatrixDash && !root.flag("network") ? "" :
+      (!root.dotmatrixDash && !root.flag("network") && !root.homeAny ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]
@@ -483,7 +501,7 @@ Item {
     interval: 2000
     repeat: true
     triggeredOnStart: true
-    running: root.flag("sysinfo") || root.flag("network") || root.dashboardOpen
+    running: root.flag("sysinfo") || root.flag("network") || root.dashboardOpen || root.homeAny
     onTriggered: if (!sysProbe.running) sysProbe.running = true
   }
 
@@ -498,6 +516,12 @@ Item {
     model: !root.deskOff || root.editMode || root.anyFree ? root.layerScreens : []
     delegate: Component {
       DesktopLayer { host: root }
+    }
+  }
+  Variants {
+    model: root.flag("home") ? root.layerScreens : []
+    delegate: Component {
+      HomeScreen { host: root }
     }
   }
   Variants {
