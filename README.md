@@ -12,7 +12,7 @@ styled after your bar. One `service` plugin: cava, MPRIS and the `/proc` probe r
 | Settings panel | DOT-MATRIX right-edge hardware drawer: 3×2 circular tiles (Wi-Fi, Bluetooth, Audio, Mic, DND, Night light), 24-segment LED sliders, expandable Wi-Fi/Bluetooth/Audio lists, notification history, 2-click red-confirm session actions | `omarchy-shell widgets toggleSettings` |
 | Power menu | lock, suspend, hibernate, log out, reboot, shut down — the last three need a second press within 3 s | `omarchy-shell widgets togglePower` |
 | Overview | workspace grid with wallpaper and live window previews; click to go, drag a window to move it | `omarchy-shell widgets toggleOverview` |
-| Home screen | on an empty workspace (no windows on that monitor): dot grid, big clock, greeting by time of day, date and a 3×3 grid of tiles — player (click — play/pause), weather (click — dashboard), day progress, CPU, RAM, battery, temperature, network, day of the year; tiles take the style material (liquid glass too) | `"home": true` |
+| Home screen | on an empty workspace (no windows on that monitor), three layouts: `glyph` — huge dot-matrix clock, date · week, two-line greeting and a bento of round and square tiles as in glyph-rice; `classic` — clock and a 3×3 grid of tiles in the style material; `minimal` — clock and greeting in the corner | `"home": true` |
 | Edit mode | drag desktop widgets anywhere (8 px grid, snaps to the edge margin); right click — keep above windows, back to its corner, hide; Esc / Enter — done | `omarchy-shell widgets toggleEdit` |
 
 **Bar style.** The dashboard and the power menu follow the bar (`~/.config/omarchy/bar-skin.json` from
@@ -102,9 +102,14 @@ Your settings stay in `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widge
 
 Anchors: `top-left` `top` `top-right` `left` `center` `right` `bottom-left` `bottom` `bottom-right` `free`.
 
-**Home screen** (idea from [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice); the code is our own): `"home": true`,
-`"homeName"` (greeting name, empty — `$USER`), `"homeDots"` (dot grid), `"homeHideWidgets"` (hide anchored widgets while
-it is shown; free and floating ones stay). Layer namespace `omarchy-home`, Bottom.
+**Home screen** (the `glyph` layout repeats the look of [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice) — GPL-3.0,
+so the code is written from scratch, not copied): `"home": true`, `"homeLayout"` (`glyph` · `classic` · `minimal`),
+`"homeScale"`, `"homeWidgets"` (glyph bento, in order: `weather` `calendar` `cpu` `ram` `battery` `temp` `disk` `cava` take
+one cell, `player` `network` two, `system` three; a tile that does not fit in three rows is dropped), `"homeCards"`
+(`glyph` — flat cards as in glyph-rice, `style` — the style material), `"homeGreeting"`, `"homeDate"`, `"homeMeta"`,
+`"homeBlink"` (blinking colon), `"homeName"` (greeting name, empty — `$USER`), `"homeDots"` (dot grid),
+`"homeHideWidgets"` (hide anchored widgets while it is shown; free and floating ones stay). The glyph layout is drawn on a
+1920×1080 grid and scaled to the screen. Layer namespace `omarchy-home`, Bottom.
 
 **Detachable widgets** (idea from [Vitreus](https://github.com/natepayn3/Vitreus); the code is our own). A dragged
 widget gets `"<name>Anchor": "free"` and `"<name>Pos": { "cx", "cy", "screen" }` — its centre as a fraction of the

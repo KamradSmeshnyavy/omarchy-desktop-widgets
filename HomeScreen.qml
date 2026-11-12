@@ -8,8 +8,11 @@ import "dotmatrix" as DotMatrix
 // Домашний экран (по мотивам glyph-rice): на слое Bottom, только пока на активном столе этого
 // монитора нет окон. Точечная сетка, крупные часы, приветствие по времени суток, дата и сетка 3×3
 // плиток (плеер, погода, CPU, RAM, батарея, температура, сеть, прогресс дня, день года).
-// Ключи widgets.json: home (выкл. по умолчанию), homeName (имя в приветствии; пусто — $USER),
-// homeDots (точечная сетка), homeHideWidgets (прятать виджеты на якорях, пока виден дом).
+// Раскладка — homeLayout: classic (HomeClassic.qml) · glyph (HomeGlyph.qml, как в glyph-rice) · minimal.
+// Ключи widgets.json: home (выкл. по умолчанию), homeLayout, homeName (имя в приветствии; пусто — $USER),
+// homeDots (точечная сетка), homeHideWidgets (прятать виджеты на якорях, пока виден дом), homeScale,
+// homeGreeting / homeDate / homeMeta (что показывать), homeBlink (мигающее двоеточие), homeCards
+// (glyph: плоские карточки glyph или материал стиля), homeWidgets (glyph: плитки бенто через запятую).
 PanelWindow {
   id: home
 
@@ -36,7 +39,8 @@ PanelWindow {
   WlrLayershell.namespace: "omarchy-home"
   WlrLayershell.layer: WlrLayer.Bottom
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-  mask: Region { item: home.shown ? grid : null }
+  // Клики — только по зоне плиток раскладки (layoutLoader.item.hit), остальное прозрачно для стола.
+  mask: Region { item: home.shown && layoutLoader.item && layoutLoader.item.hit ? layoutLoader.item.hit : null }
 
   // Окно открыли / закрыли / перенесли — toplevels обновляются по событиям, но workspace у
   // окна приходит чуть позже: короткий пересчёт после событий окон.
@@ -61,12 +65,12 @@ PanelWindow {
     var u = String(Quickshell.env("USER") || "")
     return u.length > 0 ? u.charAt(0).toUpperCase() + u.slice(1) : ""
   }
-  readonly property string greeting: {
+  readonly property string hello: {
     var h = now.getHours()
-    var g = h < 5 ? host.tr("Good night", "Доброй ночи") : h < 12 ? host.tr("Good morning", "Доброе утро")
+    return h < 5 ? host.tr("Good night", "Доброй ночи") : h < 12 ? host.tr("Good morning", "Доброе утро")
       : h < 18 ? host.tr("Good afternoon", "Добрый день") : host.tr("Good evening", "Добрый вечер")
-    return userName !== "" ? g + ", " + userName : g
   }
+  readonly property string greeting: userName !== "" ? hello + ", " + userName : hello
 
   function rate(b) {
     return b >= 1048576 ? (b / 1048576).toFixed(1) + " MB/s" : b >= 1024 ? Math.round(b / 1024) + " KB/s" : Math.round(b) + " B/s"
@@ -98,135 +102,14 @@ PanelWindow {
       }
     }
 
-    Column {
-      id: head
-      anchors.horizontalCenter: parent.horizontalCenter
-      y: Math.max(40, (parent.height - height - grid.height - 48) / 2)
-      spacing: 6
-      // Мягкая тень: текст читается и на светлых местах обоев.
-      layer.enabled: true
-      layer.effect: MultiEffect {
-        shadowEnabled: true
-        shadowColor: "#000000"
-        shadowOpacity: 0.7
-        shadowBlur: 0.9
-        shadowVerticalOffset: 2
-      }
-      Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: Qt.formatTime(home.now, home.host.value("clock24") !== false ? "HH:mm" : "h:mm")
-        font.family: home.dot ? DotMatrix.Palette.fontDot : home.host.fontFamily
-        font.pixelSize: 112
-        font.weight: Font.Light
-        color: home.fg
-      }
-      Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: home.greeting
-        font.family: home.dot ? DotMatrix.Palette.fontTitle : home.host.fontFamily
-        font.pixelSize: 24
-        color: home.fg
-      }
-      Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: home.host.locale.toString(home.now, "dddd, d MMMM")
-        font.family: home.dot ? DotMatrix.Palette.fontLabel : home.host.fontFamily
-        font.pixelSize: 15
-        font.capitalization: home.dot ? Font.AllUppercase : Font.MixedCase
-        color: home.dim
-      }
+    Loader {
+      id: layoutLoader
+      anchors.fill: parent
+      readonly property string layout: String(home.host.value("homeLayout") || "classic")
+      sourceComponent: layout === "glyph" ? glyphL : layout === "minimal" ? minimalL : classicL
     }
-
-    Grid {
-      id: grid
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: head.bottom
-      anchors.topMargin: 40
-      columns: 3
-      spacing: 14
-      readonly property int cell: Math.min(220, Math.floor((home.width - 120) / 3))
-      readonly property int cellH: 132
-
-      readonly property var p: home.host.player
-      HomeTile {
-        host: home.host; seed: 41; width: grid.cell; height: grid.cellH
-        icon: grid.p && grid.p.isPlaying ? "󰏤" : "󰐊"
-        label: home.host.tr("Now playing", "Сейчас играет")
-        value: grid.p && grid.p.trackTitle ? grid.p.trackTitle : home.host.tr("Silence", "Тишина")
-        detail: grid.p ? (grid.p.trackArtist || grid.p.identity || "") : ""
-        fill: grid.p && grid.p.lengthSupported && grid.p.length > 0 ? Math.min(1, grid.p.position / grid.p.length) : -1
-        clickable: grid.p !== null
-        onClicked: if (grid.p && grid.p.canTogglePlaying) grid.p.togglePlaying()
-      }
-      HomeTile {
-        host: home.host; seed: 42; width: grid.cell; height: grid.cellH
-        readonly property var w: home.host.weather
-        icon: "󰖐"
-        label: w && w.city ? w.city : home.host.tr("Weather", "Погода")
-        value: w && w.temp !== undefined ? Math.round(w.temp) + "°" : "—"
-        detail: w && w.error ? w.error : w && w.max !== undefined ? Math.round(w.min) + "° … " + Math.round(w.max) + "°"
-          : home.host.tr("set weatherCity", "задай weatherCity")
-        clickable: true
-        onClicked: home.host.dashboardOpen = true
-      }
-      HomeTile {
-        host: home.host; seed: 43; width: grid.cell; height: grid.cellH
-        icon: "󰔟"
-        label: home.host.tr("Day", "День")
-        readonly property real dayPart: (home.now.getHours() * 3600 + home.now.getMinutes() * 60) / 86400
-        value: Math.round(dayPart * 100) + "%"
-        detail: home.host.tr("of the day has passed", "дня позади")
-        fill: dayPart
-      }
-      HomeTile {
-        host: home.host; seed: 44; width: grid.cell; height: grid.cellH
-        icon: "󰻠"; label: "CPU"
-        value: Math.round(home.host.cpu * 100) + "%"
-        fill: home.host.cpu
-        alert: home.host.cpu > 0.9
-      }
-      HomeTile {
-        host: home.host; seed: 45; width: grid.cell; height: grid.cellH
-        icon: "󰍛"; label: "RAM"
-        value: Math.round(home.host.mem * 100) + "%"
-        fill: home.host.mem
-        alert: home.host.mem > 0.9
-      }
-      HomeTile {
-        host: home.host; seed: 46; width: grid.cell; height: grid.cellH
-        icon: home.host.batteryStatus === "Charging" ? "󰂄" : "󰁹"
-        label: home.host.tr("Battery", "Батарея")
-        value: home.host.battery >= 0 ? home.host.battery + "%" : "AC"
-        detail: home.host.batteryStatus === "Charging" ? home.host.tr("charging", "заряжается")
-          : home.host.batteryStatus === "Full" ? home.host.tr("full", "полная") : ""
-        fill: home.host.battery >= 0 ? home.host.battery / 100 : -1
-        alert: home.host.battery >= 0 && home.host.battery <= 15 && home.host.batteryStatus !== "Charging"
-      }
-      HomeTile {
-        host: home.host; seed: 47; width: grid.cell; height: grid.cellH
-        icon: "󰔏"
-        label: home.host.tr("Temperature", "Температура")
-        value: Math.round(home.host.temp) + "°"
-        fill: Math.min(1, home.host.temp / 100)
-        alert: home.host.temp >= 85
-      }
-      HomeTile {
-        host: home.host; seed: 48; width: grid.cell; height: grid.cellH
-        icon: "󰛳"
-        label: home.host.netIface !== "" ? home.host.netIface : home.host.tr("Network", "Сеть")
-        value: "↓ " + home.rate(home.host.rxRate)
-        detail: "↑ " + home.rate(home.host.txRate)
-      }
-      HomeTile {
-        host: home.host; seed: 49; width: grid.cell; height: grid.cellH
-        readonly property int doy: Math.floor((home.now - new Date(home.now.getFullYear(), 0, 0)) / 86400000)
-        readonly property int days: (new Date(home.now.getFullYear(), 1, 29).getDate() === 29) ? 366 : 365
-        icon: "󰃭"
-        label: home.host.tr("Year", "Год")
-        value: doy + " / " + days
-        detail: home.host.tr("week ", "неделя ") + Math.ceil(doy / 7)
-        fill: doy / days
-      }
-    }
+    Component { id: classicL; HomeClassic { host: home.host; homeScreen: home } }
+    Component { id: glyphL; HomeGlyph { host: home.host; homeScreen: home } }
+    Component { id: minimalL; HomeMinimal { host: home.host; homeScreen: home } }
   }
 }

@@ -72,7 +72,15 @@ Item {
     home: false,
     homeName: "",               // имя в приветствии; пусто — $USER
     homeDots: true,             // точечная сетка на фоне
-    homeHideWidgets: true       // прятать виджеты на якорях, пока виден домашний экран
+    homeHideWidgets: true,      // прятать виджеты на якорях, пока виден домашний экран
+    homeLayout: "glyph",        // classic glyph minimal
+    homeScale: 1,               // множитель размера раскладки
+    homeGreeting: true,
+    homeDate: true,
+    homeMeta: true,             // glyph: строка погоды, батареи и сети под приветствием
+    homeBlink: false,           // мигающее двоеточие часов (glyph)
+    homeCards: "glyph",         // glyph: glyph — плоские карточки как в glyph-rice · style — материал стиля
+    homeWidgets: "weather,calendar,temp,player,system"   // glyph: плитки бенто по порядку
   })
 
   property var raw: ({})
@@ -253,7 +261,9 @@ Item {
   // ── cava ───────────────────────────────────────────────────────────────
   readonly property int bars: Math.max(8, Math.min(128, Math.round(num("visualizerBars"))))
   property var levels: []
-  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen) && (playing || flag("visualizerIdle"))
+  // cava нужна визуализатору, дашборду и плитке cava домашнего экрана (пока он виден).
+  readonly property bool homeCava: homeAny && String(value("homeLayout")) === "glyph" && /(^|[\s,])cava([\s,]|$)/.test(String(value("homeWidgets")))
+  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava) && (playing || flag("visualizerIdle"))
   readonly property string cavaConfig: [
     "[general]", "bars = " + bars, "framerate = 30", "sleep_timer = 2",
     "[input]", "method = pipewire", "source = auto",
@@ -283,6 +293,8 @@ Item {
   property real cpu: 0
   property real mem: 0
   property real temp: 0
+  property real memUsedGb: 0          // занято памяти, ГБ (домашний экран glyph)
+  property real disk: 0               // занято на /, доля
   property int battery: -1
   property string batteryStatus: ""
   property var cpuPrev: null
@@ -448,6 +460,7 @@ Item {
     command: ["bash", "-c",
       "read -r _ u n s i w q sq st _ < /proc/stat; echo \"cpu $((u+n+s+i+w+q+sq+st)) $((i+w))\";" +
       "awk '/^MemTotal|^MemAvailable/{printf \"%s \", $2} END{print \"\"}' /proc/meminfo | sed 's/^/mem /';" +
+      (root.homeAny ? "df -P / 2>/dev/null | awk 'NR==2{sub(\"%\",\"\",$5); print \"disk\", $5}';" : "") +
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
@@ -472,6 +485,9 @@ Item {
             root.cpuHistory = root.cpuHistory.concat([root.cpu]).slice(-root.historyLength)
           } else if (f[0] === "mem" && f.length >= 3) {
             root.mem = Number(f[1]) > 0 ? 1 - Number(f[2]) / Number(f[1]) : 0
+            root.memUsedGb = Math.max(0, Number(f[1]) - Number(f[2])) / 1048576
+          } else if (f[0] === "disk" && f.length >= 2) {
+            root.disk = Number(f[1]) / 100
             root.memHistory = root.memHistory.concat([root.mem]).slice(-root.historyLength)
           } else if (f[0] === "temp" && f.length >= 2) {
             root.temp = Number(f[1]) / 1000
