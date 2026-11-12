@@ -45,6 +45,10 @@ Item {
     photoAnchor: "left",
     photoDir: "",
     photoInterval: 10,
+    contrib: false,             // график вкладов GitHub (ContribWidget, нужен githubUser)
+    contribAnchor: "bottom-right",
+    githubUser: "",
+    contribWeeks: 26,
     edgeMargin: 24,             // от внутреннего края бара / рамки до карточки
     tint: "accent",             // роль (accent foreground muted) или ключ colors.toml / #hex
     locale: "",                 // язык даты: "" — как в Customizer (customizer.json), иначе системный
@@ -129,7 +133,7 @@ Item {
   function homeHides(screen) { return flag("home") && homeShown[screen] === true && value("homeHideWidgets") !== false }
   Timer { interval: 10 * 60 * 1000; repeat: true; running: root.homeAny; onTriggered: weatherFetcher.refreshIfStale() }
   onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
-  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo"]
+  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib"]
   readonly property bool anyFloat: widgetNames.some(function(n) {
     return flag(n) && String(value(n + "Anchor")) === "free" && flag(n + "Float")
   })

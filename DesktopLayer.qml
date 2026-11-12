@@ -34,8 +34,8 @@ PanelWindow {
   // в режиме правки — весь экран.
   mask: Region {
     regions: desk.editing ? [editRegion]
-      : desk.floating ? [rClock, rMedia, rSys, rNet, rTodo, rQuote, rPhoto, menuRegion]
-      : [rMedia, rTodo, rQuote, rPhoto]
+      : desk.floating ? [rClock, rMedia, rSys, rNet, rTodo, rQuote, rPhoto, rContrib, menuRegion]
+      : [rMedia, rTodo, rQuote, rPhoto, rContrib]
   }
   Region { id: editRegion; item: editArea }
   Region { id: menuRegion; item: menu.visible ? menu : null }
@@ -46,6 +46,7 @@ PanelWindow {
   Region { id: rTodo; item: todoW.visible ? todoW : null }
   Region { id: rQuote; item: quoteW.visible ? quoteW : null }
   Region { id: rPhoto; item: photoW.visible ? photoW : null }
+  Region { id: rContrib; item: contribW.visible ? contribW : null }
 
   // ── Что показывать на этом слое ──
   function isFree(name) { return String(host.value(name + "Anchor")) === "free" }
@@ -70,7 +71,7 @@ PanelWindow {
 
   function label(name) {
     return ({
-      clock: host.tr("Clock", "Часы"), media: host.tr("Player", "Плеер"), sysinfo: host.tr("System", "Система"),
+      contrib: "GitHub", clock: host.tr("Clock", "Часы"), media: host.tr("Player", "Плеер"), sysinfo: host.tr("System", "Система"),
       network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), photo: host.tr("Photo", "Фото")
     })[name] || name
   }
@@ -154,6 +155,7 @@ PanelWindow {
   WidgetCard { host: desk.host; target: todoW; seed: 24; pad: desk.padOf(todoW) }
   WidgetCard { host: desk.host; target: quoteW; seed: 25; pad: desk.padOf(quoteW) }
   WidgetCard { host: desk.host; target: photoW; seed: 26; pad: desk.padOf(photoW) }
+  WidgetCard { host: desk.host; target: contribW; seed: 28; pad: desk.padOf(contribW) }
 
   NetWidget {
     id: netW
@@ -182,6 +184,13 @@ PanelWindow {
     visible: desk.host.flag("photo") && desk.shows("photo")
     x: desk.place(photoW, "photoAnchor").x
     y: desk.place(photoW, "photoAnchor").y
+  }
+  ContribWidget {
+    id: contribW
+    host: desk.host
+    visible: desk.host.flag("contrib") && desk.shows("contrib")
+    x: desk.place(contribW, "contribAnchor").x
+    y: desk.place(contribW, "contribAnchor").y
   }
   ClockWidget {
     id: clockW
@@ -216,6 +225,7 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: todoW; name: "todo"; pad: desk.padOf(todoW) }
   DragHandle { host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
+  DragHandle { host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
 
   // Плавающий слой: при наведении на открепленный виджет — кнопки «переместить» (режим правки) и
   // «вернуть на место». HoverHandler пассивный: кнопки самого виджета (плеер) продолжают работать.
@@ -282,7 +292,7 @@ PanelWindow {
   // Порядок в общей колонке у одного якоря — как в NIHIL: часы, сеть, плеер, дальше остальное.
   readonly property var entries: [
     [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
-    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"]
+    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"]
   ]
   // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.
   // Виджеты с одним якорем не налезают друг на друга, а встают колонкой (снизу — колонкой вверх).

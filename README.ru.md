@@ -7,7 +7,7 @@
 
 | Часть | Что делает | Открыть |
 |---|---|---|
-| Виджеты | часы (4 стиля + `dotmatrix` Doto), карточка «сейчас играет» (с LED-обложкой `DotScreen` в стиле `dotmatrix`), визуализатор cava (bars/mirror/wave + точки `dotmatrix`), кольца или 28-LED шкалы CPU/RAM/температуры/батареи — на слое Bottom, под окнами | всегда |
+| Виджеты | часы (4 стиля + `dotmatrix` Doto), карточка «сейчас играет» (с LED-обложкой `DotScreen` в стиле `dotmatrix`), визуализатор cava (bars/mirror/wave + точки `dotmatrix`), кольца или 28-LED шкалы CPU/RAM/температуры/батареи, график вкладов GitHub (`"contrib": true` + `"githubUser"`; публичному github-contributions-api.jogruber.de уходит только это имя; клик — профиль) — на слое Bottom, под окнами | всегда |
 | Дашборд | `default` (плеер, календарь, погода, графики CPU/RAM) или `dotmatrix` (часы Doto, LED-обложка MPRIS, 24×6 спектр, 28-LED циферблаты CPU/RAM/°C, LED-осциллограф сети rx/tx) | `omarchy-shell widgets toggleDashboard` |
 | Панель настроек | правая чёрная аппаратная панель DOT-MATRIX: 3×2 круглых тумблера (Wi-Fi, Bluetooth, звук, микрофон, DND, ночной свет), 24-сегментные LED-слайдеры, списки Wi-Fi/BT/аудио, история уведомлений и действия сессии с подтверждением | `omarchy-shell widgets toggleSettings` |
 | Меню выключения | блокировка, сон, гибернация, выход, перезагрузка, выключение — три последних со второго нажатия за 3 с | `omarchy-shell widgets togglePower` |
