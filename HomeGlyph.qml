@@ -208,6 +208,7 @@ Item {
         width: 164; height: 164
         url: parent.p ? String(parent.p.trackArtUrl || "") : ""
         spinning: g.homeScreen.shown && g.host.playing
+        off: g.s3
       }
       Column {
         anchors { left: art.right; leftMargin: 26; right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
@@ -230,8 +231,10 @@ Item {
           color: g.grey
         }
         Item { width: 1; height: 18 }
-        Seg {
+        DotSeg {
           width: parent.width
+          on: g.fg
+          off: g.s3
           readonly property var pl: parent.parent.p
           f: pl && pl.lengthSupported && pl.length > 0 ? pl.position / pl.length : 0
         }
@@ -418,89 +421,11 @@ Item {
     property string label
     property color on: g.fg
     round: true
-    Repeater {
-      model: 44
-      Rectangle {
-        required property int index
-        readonly property real a: -Math.PI / 2 + index / 44 * 2 * Math.PI
-        width: 6; height: 6; radius: 3
-        x: rc.width / 2 + Math.cos(a) * (rc.width / 2 - 18) - 3
-        y: rc.height / 2 + Math.sin(a) * (rc.height / 2 - 18) - 3
-        color: index < Math.round(Math.max(0, Math.min(1, rc.f)) * 44) ? rc.on : g.s3
-      }
-    }
+    DotRing { anchors.fill: parent; f: rc.f; on: rc.on; off: g.s3 }
     Column {
       anchors.centerIn: parent
       Num { anchors.horizontalCenter: parent.horizontalCenter; text: rc.value; font.pixelSize: 68; color: rc.on }
       Lb { anchors.horizontalCenter: parent.horizontalCenter; topPadding: 6; text: rc.label }
-    }
-  }
-  // Полоса из точек (n штук), горит долей f.
-  component Seg: Row {
-    property real f: 0
-    property int n: 24
-    spacing: (width - n * 6) / Math.max(1, n - 1)
-    Repeater {
-      model: parent.n
-      Rectangle {
-        required property int index
-        width: 6; height: 6; radius: 3
-        color: index < Math.round(Math.max(0, Math.min(1, parent.f)) * parent.n) ? g.fg : g.s3
-      }
-    }
-  }
-  // Обложка точками: серая картинка сквозь маску из точек в круге, крутится, пока играет.
-  component DotArt: Item {
-    id: da
-    property string url: ""
-    property bool spinning: false
-    property real turn: 0
-    Timer { running: da.spinning; interval: 33; repeat: true; onTriggered: da.turn = (da.turn + 0.86) % 360 }
-    Image {
-      id: cover
-      anchors.fill: parent
-      source: da.url
-      fillMode: Image.PreserveAspectCrop
-      visible: false
-      asynchronous: true
-      sourceSize: Qt.size(164, 164)
-    }
-    Canvas {
-      id: dotMask
-      anchors.fill: parent
-      visible: false
-      layer.enabled: true
-      onPaint: {
-        var ctx = getContext("2d")
-        ctx.reset()
-        ctx.fillStyle = "white"
-        var step = 6, r0 = width / 2
-        for (var y = step / 2; y < height; y += step)
-          for (var x = step / 2; x < width; x += step) {
-            var dx = x - r0, dy = y - r0
-            if (dx * dx + dy * dy > (r0 - 2) * (r0 - 2)) continue
-            ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 2 * Math.PI); ctx.fill()
-          }
-      }
-      Component.onCompleted: requestPaint()
-    }
-    MultiEffect {
-      anchors.fill: parent
-      visible: cover.status === Image.Ready
-      source: cover
-      rotation: da.turn
-      saturation: -1
-      brightness: 0.15
-      contrast: 0.4
-      maskEnabled: true
-      maskSource: dotMask
-      maskThresholdMin: 0.5
-      maskSpreadAtMin: 0.3
-    }
-    // Нет обложки — погасшие точки в круге.
-    Repeater {
-      model: cover.status === Image.Ready ? 0 : 1
-      Rectangle { anchors.fill: parent; radius: width / 2; color: "transparent"; border.width: 1; border.color: g.s3 }
     }
   }
 }

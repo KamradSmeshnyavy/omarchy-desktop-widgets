@@ -31,7 +31,8 @@ PanelWindow {
     regions: [
       Region { item: topCenter },
       Region { item: topRight },
-      Region { item: bottomCenter }
+      // Включён Deck — нижний край его (Deck.qml), лаунчер по наведению снизу не открывается.
+      Region { item: zones.host.flag("deck") ? null : bottomCenter }
     ]
   }
 

@@ -80,7 +80,13 @@ Item {
     homeMeta: true,             // glyph: строка погоды, батареи и сети под приветствием
     homeBlink: false,           // мигающее двоеточие часов (glyph)
     homeCards: "glyph",         // glyph: glyph — плоские карточки как в glyph-rice · style — материал стиля
-    homeWidgets: "weather,calendar,temp,player,system"   // glyph: плитки бенто по порядку
+    homeWidgets: "weather,calendar,temp,player,system",  // glyph: плитки бенто по порядку
+    // Deck (Deck.qml): дашборд из-под нижнего края по наведению.
+    deck: false,
+    deckSections: "clock,weather,perf,net,media",
+    deckScale: 1,
+    deckCards: "glyph",         // glyph — плоская карточка · style — материал стиля
+    deckDelay: 150              // мс курсора на полосе у края до открытия
   })
 
   property var raw: ({})
@@ -102,6 +108,10 @@ Item {
   // toggleEdit (Super+Ctrl+W): виджеты тащатся мышью, ПКМ — меню. Прежний якорь хранится в
   // <name>AnchorDocked, «Вернуть на место» возвращает его.
   property bool editMode: false
+
+  // Deck: имя экрана, где он открыт ("" — закрыт). Открыт — опрос системы, сети и погоды.
+  property string deckOn: ""
+  onDeckOnChanged: if (deckOn !== "") weatherFetcher.refreshIfStale()
 
   // Где сейчас виден домашний экран: { "<экран>": true }. Пока виден — виджеты на якорях этого
   // экрана прячутся (homeHideWidgets), опрос системы и погоды работает.
@@ -347,6 +357,7 @@ Item {
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
+    function toggleDeck(): void { root.deckOn = root.deckOn !== "" ? "" : (root.focusedScreen ? String(root.focusedScreen.name) : "") }
     function openEdit(): void { root.editMode = true }
     function closeEdit(): void { root.editMode = false }
     // Открепить / вернуть виджет: clock media sysinfo network todo quote photo.
@@ -405,13 +416,19 @@ Item {
         if (!place) { root.weather = { error: root.tr("City not found: ", "Город не найден: ") + city }; return }
         get("https://api.open-meteo.com/v1/forecast?latitude=" + place.latitude + "&longitude=" + place.longitude +
             "&current=temperature_2m,weather_code,wind_speed_10m,apparent_temperature" +
-            "&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto" +
+            "&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset&forecast_days=4&timezone=auto" +
             "&temperature_unit=" + root.value("weatherUnits"), function(f) {
           if (!f || !f.current) { root.weather = { error: root.tr("No weather data", "Нет данных о погоде") }; return }
           root.weather = {
             city: place.name, temp: f.current.temperature_2m, feels: f.current.apparent_temperature,
             code: f.current.weather_code, wind: f.current.wind_speed_10m,
-            max: f.daily.temperature_2m_max[0], min: f.daily.temperature_2m_min[0]
+            max: f.daily.temperature_2m_max[0], min: f.daily.temperature_2m_min[0],
+            // Deck: восход / закат сегодня и прогноз на 4 дня
+            sunrise: f.daily.sunrise ? f.daily.sunrise[0] : "", sunset: f.daily.sunset ? f.daily.sunset[0] : "",
+            days: (f.daily.time || []).map(function(t, i) {
+              return { date: t, code: f.daily.weather_code ? f.daily.weather_code[i] : 3,
+                       max: f.daily.temperature_2m_max[i], min: f.daily.temperature_2m_min[i] }
+            })
           }
         })
       })
@@ -460,12 +477,12 @@ Item {
     command: ["bash", "-c",
       "read -r _ u n s i w q sq st _ < /proc/stat; echo \"cpu $((u+n+s+i+w+q+sq+st)) $((i+w))\";" +
       "awk '/^MemTotal|^MemAvailable/{printf \"%s \", $2} END{print \"\"}' /proc/meminfo | sed 's/^/mem /';" +
-      (root.homeAny ? "df -P / 2>/dev/null | awk 'NR==2{sub(\"%\",\"\",$5); print \"disk\", $5}';" : "") +
+      (root.homeAny || root.deckOn !== "" ? "df -P / 2>/dev/null | awk 'NR==2{sub(\"%\",\"\",$5); print \"disk\", $5}';" : "") +
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
       // Скорость сети нужна дашборду DOT-MATRIX и виджету «Сеть».
-      (!root.dotmatrixDash && !root.flag("network") && !root.homeAny ? "" :
+      (!root.dotmatrixDash && !root.flag("network") && !root.homeAny && root.deckOn === "" ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]
@@ -517,7 +534,7 @@ Item {
     interval: 2000
     repeat: true
     triggeredOnStart: true
-    running: root.flag("sysinfo") || root.flag("network") || root.dashboardOpen || root.homeAny
+    running: root.flag("sysinfo") || root.flag("network") || root.dashboardOpen || root.homeAny || root.deckOn !== ""
     onTriggered: if (!sysProbe.running) sysProbe.running = true
   }
 
@@ -532,6 +549,12 @@ Item {
     model: !root.deskOff || root.editMode || root.anyFree ? root.layerScreens : []
     delegate: Component {
       DesktopLayer { host: root }
+    }
+  }
+  Variants {
+    model: root.flag("deck") ? Quickshell.screens : []
+    delegate: Component {
+      Deck { host: root }
     }
   }
   Variants {
