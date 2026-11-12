@@ -114,7 +114,11 @@ one cell, `player` `network` two, `system` three; a tile that does not fit in th
 
 **Deck** (look of [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice), code our own): `"deck": true`,
 `"deckSections"` (in order: `clock` `weather` `perf` `net` `media`), `"deckCards"` (`glyph` · `style`), `"deckScale"`,
-`"deckDelay"` (ms on the edge before it opens). Closed it is a 2 px strip on the Top layer, open — Overlay (namespace
+`"deckDelay"` (ms on the edge before it opens), `"deckLayout"` (`panel` — sections in one card as in glyph-rice ·
+`compact` — a thin strip: time, three mini rings, track with a play button, network · `full` — full screen: dim
+(`"deckDim"`), big clock and sections as separate cards; closes on a click outside or Esc), `"deckTrigger"` (`dwell` —
+rest at the edge · `bump` — touch the edge, back off a little and hit it again within 0.6 s; pressing *into* the edge
+cannot be told apart from resting — Hyprland holds the cursor there and sends no motion). Closed it is a 2 px strip on the Top layer, open — Overlay (namespace
 `omarchy-deck`). With Deck on, the `edgeHover` bottom-edge launcher zone is off.
 
 **Detachable widgets** (idea from [Vitreus](https://github.com/natepayn3/Vitreus); the code is our own). A dragged

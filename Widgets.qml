@@ -86,7 +86,10 @@ Item {
     deckSections: "clock,weather,perf,net,media",
     deckScale: 1,
     deckCards: "glyph",         // glyph — плоская карточка · style — материал стиля
-    deckDelay: 150              // мс курсора на полосе у края до открытия
+    deckDelay: 150,             // мс курсора на полосе у края до открытия
+    deckLayout: "panel",        // panel compact full
+    deckTrigger: "dwell",       // dwell bump
+    deckDim: 0.8                // full: затемнение фона
   })
 
   property var raw: ({})

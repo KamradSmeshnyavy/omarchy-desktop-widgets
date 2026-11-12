@@ -12,6 +12,11 @@ import "dotmatrix" as DotMatrix
 // полноэкранным окном полоса не ловит курсор (игры, видео). IPC: widgets toggleDeck.
 // Секции — deckSections по порядку: clock weather perf net media. Сцена — в пикселях макета 1920×1080,
 // масштаб под экран (deckScale — множитель). Карточка — deckCards: glyph (плоская) или style (материал стиля).
+// Раскладка — deckLayout: panel (секции колонками в одной карточке) · compact (тонкая полоска: время, кольца,
+// трек, сеть) · full (на весь экран: затемнение, крупные часы и секции карточками; закрывается кликом по фону
+// или Esc). Срабатывание — deckTrigger: dwell (задержаться у края deckDelay мс) · bump (толчок:
+// коснуться края, чуть отвести курсор и снова в край за 0.6 с). «Давить» в край нельзя различить: у края
+// Hyprland курсор держит и событий движения окну не шлёт.
 PanelWindow {
   id: win
 
@@ -30,18 +35,27 @@ PanelWindow {
   readonly property var ids: String(host.value("deckSections") || "").split(/[\s,]+/)
     .filter(function(x) { return ["clock", "weather", "perf", "net", "media"].indexOf(x) !== -1 })
   readonly property int h: 232
+  readonly property string layout: ["panel", "compact", "full"].indexOf(String(host.value("deckLayout"))) !== -1
+    ? String(host.value("deckLayout")) : "panel"
+  readonly property bool full: layout === "full"
+  readonly property bool fullOpen: full && t > 0
+  readonly property bool bump: String(host.value("deckTrigger")) === "bump"
 
   screen: modelData
   visible: (!fullscreen && ids.length > 0) || t > 0
   anchors.bottom: true
-  implicitWidth: Math.ceil(Math.max(200, panel.width) * s)
-  implicitHeight: Math.ceil((panel.height + 14) * s)
+  // full: открыт — окно на весь экран; закрыт — только полоса по центру.
+  anchors.top: fullOpen
+  anchors.left: fullOpen
+  anchors.right: fullOpen
+  implicitWidth: full ? Math.ceil(640 * s) : Math.ceil(Math.max(200, panel.width) * s)
+  implicitHeight: full ? 16 : Math.ceil((panel.height + 14) * s)
   exclusionMode: ExclusionMode.Ignore
   color: "transparent"
   surfaceFormat.opaque: false
   WlrLayershell.layer: t > 0 ? WlrLayer.Overlay : WlrLayer.Top
   WlrLayershell.namespace: "omarchy-deck"
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+  WlrLayershell.keyboardFocus: fullOpen && open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   // Закрыт — мышь ловит только полоса у края, открыт — всё окно вместе со щелью под панелью.
   mask: Region { item: win.open ? hoverRoot : strip }
 
@@ -113,14 +127,21 @@ PanelWindow {
     width: win.width
     height: win.height
 
+    // dwell — задержка на полосе; bump — второй заход на полосу за 0.6 с после ухода с неё.
+    // full не закрывается уходом курсора (он и так внутри) — кликом по фону или Esc.
+    property double leftAt: 0
     HoverHandler {
       onHoveredChanged: {
         if (hovered) {
           leave.stop()
-          if (!win.open && !win.fullscreen) dwell.restart()
+          if (win.open || win.fullscreen) return
+          if (!win.bump) { dwell.restart(); return }
+          // Вернулся на полосу вскоре после ухода с неё — толчок. Первый подход сверху не считается.
+          if (Date.now() - hoverRoot.leftAt < 600) win.host.deckOn = win.name
         } else {
           dwell.stop()
-          if (win.open) leave.restart()
+          hoverRoot.leftAt = Date.now()
+          if (win.open && !win.full) leave.restart()
         }
       }
     }
@@ -139,12 +160,65 @@ PanelWindow {
       scale: win.s
       transformOrigin: Item.TopLeft
 
+      // ── full: на весь экран ──
+      Item {
+        id: fullView
+        visible: win.full && win.t > 0
+        anchors.fill: parent
+        opacity: win.t
+        focus: win.fullOpen
+        Keys.onEscapePressed: win.host.deckOn = ""
+        Rectangle {
+          anchors.fill: parent
+          color: "#000000"
+          opacity: Math.max(0, Math.min(0.95, Number(win.host.value("deckDim")) || 0.8))
+          MouseArea { anchors.fill: parent; onClicked: win.host.deckOn = "" }
+        }
+        Column {
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: 90 + (1 - win.t) * 60
+          spacing: 36
+          Column {
+            anchors.horizontalCenter: parent.horizontalCenter
+            Num { anchors.horizontalCenter: parent.horizontalCenter; text: win.hm(win.now); font.pixelSize: 180 }
+            Lb {
+              anchors.horizontalCenter: parent.horizontalCenter
+              text: win.loc.toString(win.now, "dddd · d MMMM") + " · " + win.host.tr("week ", "неделя ") + win.week(win.now)
+              font.pixelSize: 15
+            }
+          }
+          Flow {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.min(stage.width - 160, 1500)
+            spacing: 24
+            Repeater {
+              model: win.ids.filter(function(x) { return x !== "clock" })
+              Item {
+                id: fcell
+                required property string modelData
+                width: fl.item ? fl.item.width + 52 : 0
+                height: win.h + 52
+                DeckCard { anchors.fill: parent }
+                Loader { id: fl; x: 26; y: 26; sourceComponent: ({ weather: weatherC, perf: perfC, net: netC, media: mediaC })[fcell.modelData] }
+              }
+            }
+          }
+        }
+        Lb {
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          anchors.bottomMargin: 40
+          text: win.host.tr("Esc · click outside — close", "Esc · клик мимо — закрыть")
+        }
+      }
+
       Item {
         id: panel
+        visible: !win.full
         anchors.horizontalCenter: parent.horizontalCenter
         y: (1 - win.t) * (height + 14)
-        width: row.width + 52
-        height: win.h + 52
+        width: (win.layout === "compact" ? compactRow.width : row.width) + 52
+        height: (win.layout === "compact" ? compactRow.height : win.h) + 52
         opacity: win.t
 
         Rectangle {
@@ -172,6 +246,7 @@ PanelWindow {
 
         Row {
           id: row
+          visible: win.layout === "panel"
           x: 26; y: 26
           spacing: 16
           Repeater {
@@ -189,6 +264,65 @@ PanelWindow {
               }
               Loader { sourceComponent: ({ clock: clockC, weather: weatherC, perf: perfC, net: netC, media: mediaC })[cell.modelData] }
             }
+          }
+        }
+        // compact: тонкая полоска — время, три мини-кольца, трек с кнопкой, скорость сети.
+        Row {
+          id: compactRow
+          visible: win.layout === "compact"
+          x: 26; y: 26
+          height: 84
+          spacing: 26
+          readonly property var p: win.host.player
+          Column {
+            anchors.verticalCenter: parent.verticalCenter
+            Num { text: win.hm(win.now); font.pixelSize: 54 }
+            Lb { text: win.loc.toString(win.now, "ddd · d MMM") }
+          }
+          Repeater {
+            model: [
+              { f: win.host.cpu, v: Math.round(win.host.cpu * 100), l: "cpu" },
+              { f: win.host.mem, v: Math.round(win.host.mem * 100), l: "mem" },
+              { f: Math.min(1, win.host.temp / 100), v: Math.round(win.host.temp), l: "°c" }
+            ]
+            Item {
+              required property var modelData
+              anchors.verticalCenter: parent.verticalCenter
+              width: 74; height: 74
+              DotRing { anchors.fill: parent; n: 24; dot: 4; inset: 6; f: parent.modelData.f; on: win.fg; off: win.s3 }
+              Column {
+                anchors.centerIn: parent
+                Num { anchors.horizontalCenter: parent.horizontalCenter; text: parent.parent.modelData.v; font.pixelSize: 22 }
+                Lb { anchors.horizontalCenter: parent.horizontalCenter; text: parent.parent.modelData.l; font.pixelSize: 9 }
+              }
+            }
+          }
+          Row {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 14
+            Rectangle {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 44; height: 44; radius: 22
+              color: win.red
+              Text { anchors.centerIn: parent; text: win.host.playing ? "󰏤" : "󰐊"; font.family: win.host.iconFamily; font.pixelSize: 18; color: "#ffffff" }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { var pl = compactRow.p; if (pl && pl.canTogglePlaying) pl.togglePlaying() } }
+            }
+            Column {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 200
+              Text {
+                width: parent.width; elide: Text.ElideRight
+                text: compactRow.p && compactRow.p.trackTitle ? compactRow.p.trackTitle : win.host.tr("Nothing on", "Ничего не играет")
+                font { family: win.uiFont; pixelSize: 16; weight: Font.DemiBold }
+                color: win.fg
+              }
+              Lb { width: parent.width; elide: Text.ElideRight; text: compactRow.p ? String(compactRow.p.trackArtist || compactRow.p.identity || "") : "" }
+            }
+          }
+          Column {
+            anchors.verticalCenter: parent.verticalCenter
+            Lb { text: "↓ " + win.kb(win.host.rxRate) + " " + win.unit(win.host.rxRate); color: win.fg }
+            Lb { text: "↑ " + win.kb(win.host.txRate) + " " + win.unit(win.host.txRate) }
           }
         }
       }
@@ -443,6 +577,31 @@ PanelWindow {
     }
   }
 
+  // Подложка карточки секции в full: плоская glyph или материал стиля (deckCards).
+  component DeckCard: Item {
+    Rectangle {
+      visible: String(win.host.value("deckCards")) !== "style"
+      anchors.fill: parent
+      radius: 40
+      color: win.s1
+      border { width: 1; color: win.s2 }
+    }
+    StyleCard {
+      visible: String(win.host.value("deckCards")) === "style" && win.host.deskStyle.card
+      anchors.fill: parent
+      style: win.host.deskStyle
+      tape: false
+      radius: 40
+    }
+    Rectangle {
+      visible: String(win.host.value("deckCards")) === "style" && !win.host.deskStyle.card
+      anchors.fill: parent
+      radius: 40
+      color: win.host.deskStyle.color
+      border.width: 1
+      border.color: win.host.deskStyle.borderWidth > 0 ? win.host.deskStyle.borderColor : win.s2
+    }
+  }
   component Num: Text {
     font.family: win.dotFont
     color: win.fg
