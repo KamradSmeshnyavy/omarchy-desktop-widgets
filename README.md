@@ -107,7 +107,7 @@ screen, so the layout survives a resolution change; the previous anchor is kept 
 «Back to its corner». `"<name>Float": true` puts a free widget on a separate layer **above windows** (namespace
 `omarchy-widgets-float`, created only while there is such a widget) — like a floating window. The pin button on the
 dashboard player (`omarchy-shell widgets detach media`) sends the card there; `omarchy-shell widgets dock <name>`
-brings it back. Names: `clock` `media` `sysinfo` `network` `todo` `quote` `photo`. With `"desktopWidgets": false`
+brings it back. Hovering a floating widget shows two buttons: move (opens edit mode) and back to its place. Names: `clock` `media` `sysinfo` `network` `todo` `quote` `photo`. With `"desktopWidgets": false`
 anchored widgets stay hidden, but free and floating ones are shown, and edit mode shows everything.
 Colours: a role (`accent` `foreground` `muted` `background`), a `colors.toml` key or `#hex`.
 

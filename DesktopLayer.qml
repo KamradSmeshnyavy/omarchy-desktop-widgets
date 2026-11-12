@@ -60,8 +60,10 @@ PanelWindow {
   function shows(name) {
     var free = isFree(name)
     var fl = free && host.flag(name + "Float")
-    if (floating) return fl && onThisScreen(name)
-    if (fl) return false
+    // В режиме правки всё на обычном слое (он тогда на Top и ловит ввод целиком): плавающий слой
+    // оказался бы под ним, и до открепленного виджета было бы не дотянуться.
+    if (floating) return fl && !host.editMode && onThisScreen(name)
+    if (fl && !host.editMode) return false
     if (!free) return !host.deskOff || host.editMode
     return onThisScreen(name)
   }
@@ -215,6 +217,61 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
 
+  // Плавающий слой: при наведении на открепленный виджет — кнопки «переместить» (режим правки) и
+  // «вернуть на место». HoverHandler пассивный: кнопки самого виджета (плеер) продолжают работать.
+  Repeater {
+    model: desk.floating ? desk.entries : []
+    delegate: Item {
+      id: fc
+      required property var modelData
+      readonly property Item w: modelData[0]
+      readonly property string name: String(modelData[1]).replace(/Anchor$/, "")
+      readonly property int p: desk.padOf(w)
+      visible: w.visible
+      x: w.x - p; y: w.y - p
+      width: w.width + 2 * p; height: w.height + 2 * p
+      z: 60
+      HoverHandler { id: hov }
+      Row {
+        anchors { top: parent.top; right: parent.right; margins: 6 }
+        spacing: 4
+        opacity: hov.hovered ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 120 } }
+        Repeater {
+          model: [
+            { icon: "󰆾", act: "edit", tip: desk.host.tr("Move", "Переместить") },
+            { icon: "󰐄", act: "dock", tip: desk.host.tr("Back to its place", "Вернуть на место") }
+          ]
+          delegate: Rectangle {
+            required property var modelData
+            width: 26; height: 26; radius: 13
+            color: bm.containsMouse ? desk.host.accent : desk.host.background
+            border.width: 1
+            border.color: Qt.rgba(desk.host.foreground.r, desk.host.foreground.g, desk.host.foreground.b, 0.25)
+            Text {
+              anchors.centerIn: parent
+              text: parent.modelData.icon
+              font.family: desk.host.iconFamily
+              font.pixelSize: 13
+              color: bm.containsMouse ? desk.host.background : desk.host.foreground
+            }
+            MouseArea {
+              id: bm
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: {
+                if (parent.modelData.act === "dock") desk.host.dock(fc.name)
+                else desk.host.editMode = true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Подложки есть (стиль Customizer или DOT-MATRIX) — поля карточки вокруг виджета.
   readonly property bool carded: host.styledWidgets || host.dotmatrixWidgets
   function padOf(item) {
@@ -313,11 +370,13 @@ PanelWindow {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: {
-              var n = desk.menuFor
+              // Всё нужное — до closeMenu: смена menuFor пересобирает items, Repeater пересоздаёт строки,
+              // и этот делегат (вместе с parent.modelData) пропадает посреди обработчика.
+              var n = desk.menuFor, act = parent.modelData.id, wasFloat = menu.fl
+              if (act === "float") desk.host.setFloat(n, !wasFloat, desk.screenName)
+              else if (act === "dock") desk.host.dock(n)
+              else if (act === "hide") desk.host.saveKeys(({ [n]: false }))
               desk.closeMenu()
-              if (parent.modelData.id === "float") desk.host.setFloat(n, !menu.fl, desk.screenName)
-              else if (parent.modelData.id === "dock") desk.host.dock(n)
-              else if (parent.modelData.id === "hide") desk.host.saveKeys(({ [n]: false }))
             }
           }
         }
