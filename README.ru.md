@@ -12,6 +12,7 @@
 | Панель настроек | правая чёрная аппаратная панель DOT-MATRIX: 3×2 круглых тумблера (Wi-Fi, Bluetooth, звук, микрофон, DND, ночной свет), 24-сегментные LED-слайдеры, списки Wi-Fi/BT/аудио, история уведомлений и действия сессии с подтверждением | `omarchy-shell widgets toggleSettings` |
 | Меню выключения | блокировка, сон, гибернация, выход, перезагрузка, выключение — три последних со второго нажатия за 3 с | `omarchy-shell widgets togglePower` |
 | Обзор | сетка рабочих столов с обоями и живыми превью окон; клик — перейти, перетащить окно — перенести | `omarchy-shell widgets toggleOverview` |
+| Режим правки | виджеты рабочего стола перетаскиваются куда угодно (сетка 8 px, прилипание к отступу от края); ПКМ — поверх окон, вернуть на место, скрыть; Esc / Enter — готово | `omarchy-shell widgets toggleEdit` |
 
 **Стиль бара.** Дашборд и меню выключения следуют бару (`~/.config/omarchy/bar-skin.json` из
 [omarchy-bar-skins](https://github.com/KamradSmeshnyavy/omarchy-bar-skins), без него — стоковые цвета):
@@ -66,6 +67,16 @@ omarchy restart shell
 `~/.config/omarchy/widgets.json`, применяются на лету (нет файла — значения по умолчанию).
 [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) правит его в Рабочий стол → Виджеты / Дашборд.
 Ключи и значения — в [README.md](README.md#settings).
+
+**Открепляемые виджеты** (идея из [Vitreus](https://github.com/natepayn3/Vitreus), код свой). Super+Ctrl+W
+(`omarchy-shell widgets toggleEdit`) — режим правки: виджеты перетаскиваются мышью, ПКМ — «Поверх окон», «Вернуть
+на место», «Скрыть». Перетащенный виджет получает `"<имя>Anchor": "free"` и `"<имя>Pos": { "cx", "cy", "screen" }` —
+центр в долях экрана, так раскладка переживает смену разрешения; прежний якорь хранится в `<имя>AnchorDocked`.
+`"<имя>Float": true` выносит свободный виджет на отдельный слой **поверх окон** (namespace `omarchy-widgets-float`,
+создаётся, только пока такой виджет есть) — как плавающее окно. Кнопка-булавка на плеере дашборда
+(`omarchy-shell widgets detach media`) отправляет карточку туда; `omarchy-shell widgets dock <имя>` возвращает.
+Имена: `clock` `media` `sysinfo` `network` `todo` `quote` `photo`. При `"desktopWidgets": false` виджеты на якорях
+скрыты, но свободные и плавающие показываются, а режим правки показывает всё.
 
 Правки QML — после `omarchy restart shell`. `BarStyle.qml` и `StyleCard.qml` общие с
 [omarchy-edge-osd](https://github.com/KamradSmeshnyavy/omarchy-edge-osd) и

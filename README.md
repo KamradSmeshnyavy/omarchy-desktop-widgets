@@ -12,6 +12,7 @@ styled after your bar. One `service` plugin: cava, MPRIS and the `/proc` probe r
 | Settings panel | DOT-MATRIX right-edge hardware drawer: 3×2 circular tiles (Wi-Fi, Bluetooth, Audio, Mic, DND, Night light), 24-segment LED sliders, expandable Wi-Fi/Bluetooth/Audio lists, notification history, 2-click red-confirm session actions | `omarchy-shell widgets toggleSettings` |
 | Power menu | lock, suspend, hibernate, log out, reboot, shut down — the last three need a second press within 3 s | `omarchy-shell widgets togglePower` |
 | Overview | workspace grid with wallpaper and live window previews; click to go, drag a window to move it | `omarchy-shell widgets toggleOverview` |
+| Edit mode | drag desktop widgets anywhere (8 px grid, snaps to the edge margin); right click — keep above windows, back to its corner, hide; Esc / Enter — done | `omarchy-shell widgets toggleEdit` |
 
 **Bar style.** The dashboard and the power menu follow the bar (`~/.config/omarchy/bar-skin.json` from
 [omarchy-bar-skins](https://github.com/KamradSmeshnyavy/omarchy-bar-skins), stock colours without it):
@@ -47,6 +48,7 @@ Optional: `cava` (visualizer). Suggested Hyprland bindings (Lua config):
 ```lua
 o.bind("SUPER + ALT + D", "Dashboard", "omarchy-shell widgets toggleDashboard")
 o.bind("SUPER + grave", "Workspace overview", "omarchy-shell widgets toggleOverview")
+o.bind("SUPER + CTRL + W", "Edit desktop widgets", "omarchy-shell widgets toggleEdit")
 o.bind("SUPER + ESCAPE", "Power menu", "omarchy-shell widgets togglePower")
 hl.layer_rule({ match = { namespace = "omarchy-dashboard" }, blur = true, ignore_alpha = 0.2 })
 hl.layer_rule({ match = { namespace = "omarchy-power" }, blur = true, ignore_alpha = 0.2 })
@@ -97,7 +99,16 @@ Your settings stay in `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widge
 }
 ```
 
-Anchors: `top-left` `top` `top-right` `left` `center` `right` `bottom-left` `bottom` `bottom-right`.
+Anchors: `top-left` `top` `top-right` `left` `center` `right` `bottom-left` `bottom` `bottom-right` `free`.
+
+**Detachable widgets** (idea from [Vitreus](https://github.com/natepayn3/Vitreus); the code is our own). A dragged
+widget gets `"<name>Anchor": "free"` and `"<name>Pos": { "cx", "cy", "screen" }` — its centre as a fraction of the
+screen, so the layout survives a resolution change; the previous anchor is kept in `<name>AnchorDocked` for
+«Back to its corner». `"<name>Float": true` puts a free widget on a separate layer **above windows** (namespace
+`omarchy-widgets-float`, created only while there is such a widget) — like a floating window. The pin button on the
+dashboard player (`omarchy-shell widgets detach media`) sends the card there; `omarchy-shell widgets dock <name>`
+brings it back. Names: `clock` `media` `sysinfo` `network` `todo` `quote` `photo`. With `"desktopWidgets": false`
+anchored widgets stay hidden, but free and floating ones are shown, and edit mode shows everything.
 Colours: a role (`accent` `foreground` `muted` `background`), a `colors.toml` key or `#hex`.
 
 QML changes need `omarchy restart shell`. `BarStyle.qml` and `StyleCard.qml` are shared with

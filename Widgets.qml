@@ -83,6 +83,64 @@ Item {
   }
   function flag(key) { return value(key) === true }
 
+  // ── Открепляемые виджеты ───────────────────────────────────────────────
+  // <name>Anchor = "free" + <name>Pos { cx, cy, screen } — свободное место (центр в долях экрана);
+  // <name>Float = true — на слое поверх окон (DesktopLayer floating). Режим правки — IPC widgets
+  // toggleEdit (Super+Ctrl+W): виджеты тащатся мышью, ПКМ — меню. Прежний якорь хранится в
+  // <name>AnchorDocked, «Вернуть на место» возвращает его.
+  property bool editMode: false
+  onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
+  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo"]
+  readonly property bool anyFloat: widgetNames.some(function(n) {
+    return flag(n) && String(value(n + "Anchor")) === "free" && flag(n + "Float")
+  })
+  readonly property bool anyFree: widgetNames.some(function(n) { return flag(n) && String(value(n + "Anchor")) === "free" })
+  // desktopWidgets = false — обычные (на якорях) виджеты не показываются; свободные, которые
+  // расставили руками, остаются.
+  readonly property bool deskOff: value("desktopWidgets") === false
+
+  // Слить ключи в widgets.json (тот же файл правит Customizer — пишем всё содержимое разом).
+  function saveKeys(obj) {
+    var next = Object.assign({}, raw)
+    for (var k in obj) {
+      if (obj[k] === undefined) delete next[k]
+      else next[k] = obj[k]
+    }
+    raw = next
+    configFile.setText(JSON.stringify(next, null, 2) + "\n")
+  }
+  function freeKeys(name, screen, cx, cy) {
+    var o = {}
+    var a = String(value(name + "Anchor"))
+    if (a !== "free") o[name + "AnchorDocked"] = a
+    o[name + "Anchor"] = "free"
+    o[name + "Pos"] = { cx: Math.round(cx * 10000) / 10000, cy: Math.round(cy * 10000) / 10000, screen: screen }
+    return o
+  }
+  function placeFree(name, screen, cx, cy) { saveKeys(freeKeys(name, screen, cx, cy)) }
+  function setFloat(name, on, screen) {
+    var o = String(value(name + "Anchor")) === "free" ? {}
+      : freeKeys(name, screen, 0.5, 0.5)
+    o[name + "Float"] = on
+    saveKeys(o)
+  }
+  function dock(name) {
+    var o = {}
+    o[name + "Anchor"] = String(value(name + "AnchorDocked") || defaults[name + "Anchor"] || "top-left")
+    o[name + "AnchorDocked"] = undefined
+    o[name + "Float"] = undefined
+    o[name + "Pos"] = undefined
+    saveKeys(o)
+  }
+  // Карточку из дашборда — на стол поверх окон, под дашбордом (как плеер Vitreus).
+  function detach(name) {
+    var o = freeKeys(name, focusedScreen ? String(focusedScreen.name) : "", 0.5, 0.22)
+    o[name] = true
+    o[name + "Float"] = true
+    saveKeys(o)
+    dashboardOpen = false
+  }
+
   function resolve(spec, fallback) {
     var s = String(spec || "").trim()
     if (s === "") return fallback
@@ -127,6 +185,7 @@ Item {
   }
 
   FileView {
+    id: configFile
     path: root.configPath
     watchChanges: true
     printErrors: false
@@ -257,6 +316,12 @@ Item {
     function toggleOverview(): void { root.overviewOpen = !root.overviewOpen }
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
+    function toggleEdit(): void { root.editMode = !root.editMode }
+    function openEdit(): void { root.editMode = true }
+    function closeEdit(): void { root.editMode = false }
+    // Открепить / вернуть виджет: clock media sysinfo network todo quote photo.
+    function detach(name: string): void { root.detach(name) }
+    function dock(name: string): void { root.dock(name) }
   }
   onDashboardOpenChanged: if (dashboardOpen) { settingsOpen = false; powerOpen = false; overviewOpen = false; dashStyle.refresh(); weatherFetcher.refreshIfStale() }
 
@@ -423,138 +488,22 @@ Item {
   }
 
   // ── Окна ───────────────────────────────────────────────────────────────
+  // Обычный слой виджетов (Bottom) на каждом экране и слой «поверх окон» — только пока есть
+  // открепленные виджеты с <name>Float (лишних поверхностей и копий виджетов не держим).
+  // desktopWidgets = false прячет виджеты на якорях, но не расставленные руками и не открепленные
+  // поверх окон; режим правки показывает всё — иначе нечего расставлять.
+  readonly property var layerScreens: root.value("screens") === "primary" ? Quickshell.screens.slice(0, 1) : Quickshell.screens
+
   Variants {
-    model: root.value("desktopWidgets") === false ? []
-      : root.value("screens") === "primary" ? Quickshell.screens.slice(0, 1) : Quickshell.screens
-
+    model: !root.deskOff || root.editMode || root.anyFree ? root.layerScreens : []
     delegate: Component {
-      PanelWindow {
-        id: layer
-
-        required property var modelData
-
-        screen: modelData
-        anchors { top: true; bottom: true; left: true; right: true }
-        // Внутри бара и рамки: виджеты не уходят под них, отступ edgeMargin — от их внутреннего края.
-        exclusionMode: ExclusionMode.Normal
-        color: "transparent"
-        surfaceFormat.opaque: false
-        WlrLayershell.namespace: "omarchy-widgets"
-        WlrLayershell.layer: WlrLayer.Bottom
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        // Клики — только по карточкам плеера, todo, цитаты и фото, остальное прозрачно для стола.
-        mask: Region {
-          regions: [
-            Region { item: media.visible ? media : null },
-            Region { item: todoW.visible ? todoW : null },
-            Region { item: quoteW.visible ? quoteW : null },
-            Region { item: photoW.visible ? photoW : null }
-          ]
-        }
-
-        Visualizer {
-          host: root
-          visible: root.flag("visualizer") && root.levels.length > 0
-          anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-          height: Math.max(40, root.num("visualizerHeight"))
-        }
-
-        WidgetCard { host: root; target: clockW; seed: 21; pad: layer.padOf(clockW) }
-        WidgetCard { host: root; target: media; seed: 22; pad: layer.padOf(media); ownDotmatrixCard: true }
-        WidgetCard { host: root; target: sysW; seed: 23; pad: layer.padOf(sysW) }
-        WidgetCard { host: root; target: netW; seed: 27; pad: layer.padOf(netW) }
-        WidgetCard { host: root; target: todoW; seed: 24; pad: layer.padOf(todoW) }
-        WidgetCard { host: root; target: quoteW; seed: 25; pad: layer.padOf(quoteW) }
-        WidgetCard { host: root; target: photoW; seed: 26; pad: layer.padOf(photoW) }
-
-        NetWidget {
-          id: netW
-          host: root
-          visible: root.flag("network")
-          x: layer.place(netW, "networkAnchor").x
-          y: layer.place(netW, "networkAnchor").y
-        }
-
-        TodoWidget {
-          id: todoW
-          host: root
-          visible: root.flag("todo")
-          x: layer.place(todoW, "todoAnchor").x
-          y: layer.place(todoW, "todoAnchor").y
-        }
-        QuoteWidget {
-          id: quoteW
-          host: root
-          visible: root.flag("quote")
-          x: layer.place(quoteW, "quoteAnchor").x
-          y: layer.place(quoteW, "quoteAnchor").y
-        }
-        PhotoWidget {
-          id: photoW
-          host: root
-          visible: root.flag("photo")
-          x: layer.place(photoW, "photoAnchor").x
-          y: layer.place(photoW, "photoAnchor").y
-        }
-
-        ClockWidget {
-          id: clockW
-          host: root
-          visible: root.flag("clock")
-          x: layer.place(clockW, "clockAnchor").x
-          y: layer.place(clockW, "clockAnchor").y
-        }
-
-        MediaWidget {
-          id: media
-          host: root
-          // DOT-MATRIX — как в NIHIL: карточка всегда на месте, без плеера кнопки приглушены.
-          visible: root.flag("media") && (root.dotmatrixWidgets || (root.player !== null && root.player.trackTitle !== ""))
-          x: layer.place(media, "mediaAnchor").x
-          y: layer.place(media, "mediaAnchor").y
-        }
-
-        SysInfo {
-          id: sysW
-          host: root
-          visible: root.flag("sysinfo")
-          x: layer.place(sysW, "sysinfoAnchor").x
-          y: layer.place(sysW, "sysinfoAnchor").y
-        }
-
-        // Подложки есть (стиль Customizer или DOT-MATRIX) — поля карточки вокруг виджета.
-        readonly property bool carded: root.styledWidgets || root.dotmatrixWidgets
-        function padOf(item) {
-          if (!carded) return 0
-          if (item === media) return root.dotmatrixWidgets ? 0 : 6   // у плеера DOT-MATRIX своя карточка
-          return item === clockW ? 22 : item === photoW ? 12 : 18
-        }
-        // Порядок в общей колонке у одного якоря — как в NIHIL: часы, сеть, плеер, дальше остальное.
-        readonly property var stackOrder: [
-          [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
-          [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"]
-        ]
-        // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.
-        // Виджеты с одним якорем не налезают друг на друга, а встают колонкой (снизу — колонкой вверх).
-        function place(item, key) {
-          var a = String(root.value(key))
-          var m = root.num("edgeMargin")
-          var gap = carded ? 14 : 24
-          var group = stackOrder.filter(function(e) { return e[0].visible && String(root.value(e[1])) === a })
-          var total = 0, offset = 0
-          for (var i = 0; i < group.length; i++) {
-            var e = group[i][0], ext = e.height + 2 * padOf(e)
-            if (e === item) offset = total + padOf(e)
-            total += ext + (i < group.length - 1 ? gap : 0)
-          }
-          var p = padOf(item), w = item.width
-          var x = a.indexOf("left") !== -1 ? m + p : a.indexOf("right") !== -1 ? width - w - m - p : (width - w) / 2
-          var y = a.indexOf("top") !== -1 ? m + offset
-            : a.indexOf("bottom") !== -1 ? height - m - total + offset
-            : (height - total) / 2 + offset
-          return Qt.point(Math.round(x), Math.round(y))
-        }
-      }
+      DesktopLayer { host: root }
+    }
+  }
+  Variants {
+    model: root.anyFloat ? root.layerScreens : []
+    delegate: Component {
+      DesktopLayer { host: root; floating: true }
     }
   }
 }

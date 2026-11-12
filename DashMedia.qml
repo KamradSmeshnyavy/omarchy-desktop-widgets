@@ -19,6 +19,30 @@ Rectangle {
     return m + ":" + (s < 10 ? "0" : "") + s
   }
 
+  // Открепить плеер на рабочий стол поверх окон (Widgets.detach) — карточка остаётся там, пока не вернёшь
+  // её через режим правки (Super+Ctrl+W → ПКМ → «Вернуть на место»).
+  Rectangle {
+    z: 10
+    anchors { top: parent.top; right: parent.right; margins: 8 }
+    width: 28; height: 28; radius: 14
+    color: pinMouse.containsMouse ? Qt.rgba(media.host.accent.r, media.host.accent.g, media.host.accent.b, 0.25) : "transparent"
+    Text {
+      anchors.centerIn: parent
+      text: "󰐃"
+      font.family: media.host.iconFamily
+      font.pixelSize: 15
+      color: pinMouse.containsMouse ? media.host.accent : media.host.foreground
+      opacity: pinMouse.containsMouse ? 1 : 0.55
+    }
+    MouseArea {
+      id: pinMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: media.host.detach("media")
+    }
+  }
+
   Text {
     visible: media.player === null
     anchors.centerIn: parent
