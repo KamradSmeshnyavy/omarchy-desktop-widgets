@@ -93,7 +93,9 @@ Item {
     deckDelay: 150,             // мс курсора на полосе у края до открытия
     deckLayout: "panel",        // panel compact full
     deckTrigger: "dwell",       // dwell bump
-    deckDim: 0.8                // full: затемнение фона
+    deckDim: 0.8,               // full: затемнение фона
+    // Панель Super+M: drawer — панель настроек DOT-MATRIX (SettingsPanel), quick — Quick из glyph-rice (QuickPanel)
+    settingsPanel: "drawer"
   })
 
   property var raw: ({})
@@ -464,6 +466,11 @@ Item {
   }
 
   SettingsPanel {
+    host: root
+  }
+
+  // Super+M: settingsPanel "quick" — Quick из glyph-rice вместо панели настроек
+  QuickPanel {
     host: root
   }
 

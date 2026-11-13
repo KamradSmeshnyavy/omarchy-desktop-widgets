@@ -1,3 +1,6 @@
+kamradsmeshnyavy.widgets is licensed under the GNU General Public License v3.0 (see LICENSE).
+Versions before Quick were released under the MIT License.
+
 Third-party attributions for kamradsmeshnyavy.widgets:
 
 - DOT-MATRIX hardware dashboard (`DotMatrixDashboard.qml`), right-edge control panel (`SettingsPanel.qml`),
@@ -7,3 +10,9 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   Adapted from Nihil-Shell (https://github.com/poligle/Nihil-Shell)
   Copyright (c) 2026 Pol Iglesias
   Licensed under the MIT License.
+
+- Quick settings (`QuickPanel.qml`, `glyph/{GTheme,Lb,Num,Icon,Art,Dm,Picker,Rec}.qml`, `glyph/shaders/dm.frag`):
+  Adapted from glyph-rice (`quick/Quick.qml`, `quick/Picker.qml`, `quick/Rec.qml`, `components/*`,
+  https://github.com/Nebelung-cloud/glyph-rice)
+  Copyright (c) Nebelung-cloud
+  Licensed under the GNU General Public License v3.0.

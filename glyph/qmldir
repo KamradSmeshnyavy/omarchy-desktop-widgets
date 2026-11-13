@@ -1,0 +1,8 @@
+singleton GTheme GTheme.qml
+Lb Lb.qml
+Num Num.qml
+Icon Icon.qml
+Dm Dm.qml
+Art Art.qml
+Picker Picker.qml
+Rec Rec.qml
