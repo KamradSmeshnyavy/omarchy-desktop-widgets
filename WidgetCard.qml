@@ -14,6 +14,9 @@ Item {
   property int seed: 1
   // У виджета своя карточка DOT-MATRIX (плеер) — подложку DOT-MATRIX не рисовать.
   property bool ownDotmatrixCard: false
+  // жидкое стекло: слой окна виджетов (место на экране — у Hyprland) и лежит ли он под окнами
+  property string glassNs: "omarchy-widgets"
+  property bool glassBelowWin: true
   readonly property var style: host.deskStyle
   readonly property bool dotmatrixCard: host.dotmatrixWidgets && !ownDotmatrixCard
 
@@ -44,6 +47,9 @@ Item {
     style: card.style
     seed: card.seed
     radius: Math.min(card.style.cornerRadius, card.height / 2)
+    // жидкое стекло: окно слоя виджетов на весь экран — место на экране спросить у Hyprland по имени слоя
+    glassLayer: card.glassNs
+    glassBelow: card.glassBelowWin
   }
   Rectangle {
     visible: !card.dotmatrixCard && !card.style.card

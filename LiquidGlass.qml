@@ -29,6 +29,8 @@ Item {
   property real tintAlpha: cfg.tint
   // На время анимаций (морф из бара) панель может попросить плёнку, чтобы не пересчитывать перекрытие.
   property bool forceFilm: false
+  // слой ниже окон (виджеты рабочего стола): окна над стеклом, а не под ним — обои под ним видны всегда
+  property bool belowWindows: false
   property bool active: visible
   // окно панели прячется целиком, а элемент остаётся visible — смотреть и на окно
   readonly property bool live: active && Window.visibility !== Window.Hidden
@@ -159,7 +161,7 @@ Item {
     }
     return false
   }
-  readonly property real film: forceFilm || !placed || liveWall || !wallReady || (cfg.overWindows !== "glass" && overWindow) ? 1 : 0
+  readonly property real film: forceFilm || !placed || liveWall || !wallReady || (cfg.overWindows !== "glass" && !belowWindows && overWindow) ? 1 : 0
   property real filmAnim: film
   Behavior on filmAnim { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
 

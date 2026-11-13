@@ -148,14 +148,14 @@ PanelWindow {
     }
   }
 
-  WidgetCard { host: desk.host; target: clockW; seed: 21; pad: desk.padOf(clockW) }
-  WidgetCard { host: desk.host; target: media; seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
-  WidgetCard { host: desk.host; target: sysW; seed: 23; pad: desk.padOf(sysW) }
-  WidgetCard { host: desk.host; target: netW; seed: 27; pad: desk.padOf(netW) }
-  WidgetCard { host: desk.host; target: todoW; seed: 24; pad: desk.padOf(todoW) }
-  WidgetCard { host: desk.host; target: quoteW; seed: 25; pad: desk.padOf(quoteW) }
-  WidgetCard { host: desk.host; target: photoW; seed: 26; pad: desk.padOf(photoW) }
-  WidgetCard { host: desk.host; target: contribW; seed: 28; pad: desk.padOf(contribW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; seed: 21; pad: desk.padOf(clockW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; seed: 23; pad: desk.padOf(sysW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; seed: 27; pad: desk.padOf(netW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: todoW; seed: 24; pad: desk.padOf(todoW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; seed: 25; pad: desk.padOf(quoteW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; seed: 26; pad: desk.padOf(photoW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; seed: 28; pad: desk.padOf(contribW) }
 
   NetWidget {
     id: netW

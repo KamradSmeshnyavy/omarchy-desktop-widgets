@@ -122,6 +122,7 @@ PanelWindow {
   StyleCard {
     visible: !power.attached && power.style.card
     style: power.style
+    glassLayer: "omarchy-power"
     seed: 7
     x: hit.x
     y: hit.y

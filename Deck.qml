@@ -232,6 +232,7 @@ PanelWindow {
           visible: String(win.host.value("deckCards")) === "style" && win.host.deskStyle.card
           anchors.fill: parent
           style: win.host.deskStyle
+          glassLayer: "omarchy-deck"
           tape: false
           radius: 40
         }
@@ -590,6 +591,7 @@ PanelWindow {
       visible: String(win.host.value("deckCards")) === "style" && win.host.deskStyle.card
       anchors.fill: parent
       style: win.host.deskStyle
+      glassLayer: "omarchy-deck"
       tape: false
       radius: 40
     }

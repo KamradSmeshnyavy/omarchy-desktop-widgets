@@ -29,6 +29,7 @@ Item {
   property string glassLayer: ""
   // или сразу место карточки на экране (окно у левого верхнего угла монитора — его координаты и есть экранные)
   property point glassOrigin: Qt.point(NaN, NaN)
+  property bool glassBelow: false
   readonly property bool realGlass: card.material === "liquid" && (card.glassLayer !== "" || !isNaN(card.glassOrigin.x))
 
   // Точки контура: обход по часовой со скруглёнными углами, шаг ~9 px, сдвиг по
@@ -198,6 +199,7 @@ Item {
       radius: card.radius
       layerNamespace: card.glassLayer
       screenOrigin: card.glassOrigin
+      belowWindows: card.glassBelow
       tintColor: Qt.rgba(card.style.color.r, card.style.color.g, card.style.color.b, 1)
     }
     Rectangle {   visible: !card.realGlass  // свет сверху: мягкий градиент на верхней трети
