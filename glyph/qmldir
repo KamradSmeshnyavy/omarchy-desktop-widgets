@@ -14,3 +14,7 @@ ShotChip ShotChip.qml
 ShotPill ShotPill.qml
 Clip Clip.qml
 GlyphPower GlyphPower.qml
+Toggle Toggle.qml
+Dial Dial.qml
+Pick Pick.qml
+Prefs Prefs.qml

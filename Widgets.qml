@@ -336,6 +336,8 @@ Item {
   // ── Дашборд и панель настроек ──────────────────────────────────────────
   property bool dashboardOpen: false
   property bool settingsOpen: false
+  // Prefs (glyph/Prefs.qml): быстрые настройки Glyph, Super+Alt+I
+  property bool prefsOpen: false
   property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
   // Меню выключения (PowerMenu.qml). Открытие одного закрывает другое.
   property bool powerOpen: false
@@ -373,6 +375,7 @@ Item {
     function toggleEdit(): void { root.editMode = !root.editMode }
     // Shot: скриншот / запись области, окна или экрана с правкой снимка
     function shot(): void { glyphShot.open() }
+    function togglePrefs(): void { root.prefsOpen = !root.prefsOpen }
     // Clip: история буфера обмена (cliphist) в виде glyph-rice
     function clip(): void {
       if (root.value("clipboardPanel") === "glyph") glyphClip.toggle()
@@ -491,6 +494,7 @@ Item {
   // Clip — буфер обмена glyph-rice; GlyphPower — меню выключения glyph (powerStyle: "glyph")
   Glyph.Clip { id: glyphClip; screen: root.focusedScreen }
   Glyph.GlyphPower { host: root }
+  Glyph.Prefs { host: root }
 
   EdgeHotzones {
     host: root
