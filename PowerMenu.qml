@@ -47,7 +47,7 @@ PanelWindow {
   property string armed: ""   // id пункта, ждущего подтверждения
   Timer { id: disarm; interval: 3000; onTriggered: power.armed = "" }
 
-  property real progress: host.powerOpen ? 1 : 0
+  property real progress: host.powerOpen && host.value("powerStyle") !== "glyph" ? 1 : 0
   Behavior on progress { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
   readonly property real w: Math.round(thickness * progress)
 
@@ -97,11 +97,12 @@ PanelWindow {
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-power"
   WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: host.powerOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+  WlrLayershell.keyboardFocus: power.own ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
   mask: Region { item: hit }
 
+  readonly property bool own: host.powerOpen && host.value("powerStyle") !== "glyph"
   HyprlandFocusGrab {
-    active: power.host.powerOpen
+    active: power.own
     windows: [power]
     onCleared: power.host.powerOpen = false
   }

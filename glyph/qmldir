@@ -12,3 +12,5 @@ Shot Shot.qml
 ShotEditor ShotEditor.qml
 ShotChip ShotChip.qml
 ShotPill ShotPill.qml
+Clip Clip.qml
+GlyphPower GlyphPower.qml

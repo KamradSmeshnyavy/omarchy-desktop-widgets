@@ -96,7 +96,11 @@ Item {
     deckTrigger: "dwell",       // dwell bump
     deckDim: 0.8,               // full: затемнение фона
     // Панель Super+M: drawer — панель настроек DOT-MATRIX (SettingsPanel), quick — Quick из glyph-rice (QuickPanel)
-    settingsPanel: "drawer"
+    settingsPanel: "drawer",
+    // Меню выключения: edge — полоса у края (PowerMenu), glyph — столбец слов Doto из glyph-rice (glyph/GlyphPower)
+    powerStyle: "edge",
+    // Super+Ctrl+V: stock — стоковый менеджер буфера Omarchy, glyph — Clip из glyph-rice (glyph/Clip.qml)
+    clipboardPanel: "stock"
   })
 
   property var raw: ({})
@@ -369,6 +373,11 @@ Item {
     function toggleEdit(): void { root.editMode = !root.editMode }
     // Shot: скриншот / запись области, окна или экрана с правкой снимка
     function shot(): void { glyphShot.open() }
+    // Clip: история буфера обмена (cliphist) в виде glyph-rice
+    function clip(): void {
+      if (root.value("clipboardPanel") === "glyph") glyphClip.toggle()
+      else Quickshell.execDetached(["omarchy-shell", "shell", "toggle", "omarchy.clipboard"])
+    }
     function toggleDeck(): void { root.deckOn = root.deckOn !== "" ? "" : (root.focusedScreen ? String(root.focusedScreen.name) : "") }
     function openEdit(): void { root.editMode = true }
     function closeEdit(): void { root.editMode = false }
@@ -479,6 +488,9 @@ Item {
 
   // Shot — скриншот из glyph-rice (glyph/Shot.qml): прицел над замёрзшим кадром, лупа, запись, редактор
   Glyph.Shot { id: glyphShot }
+  // Clip — буфер обмена glyph-rice; GlyphPower — меню выключения glyph (powerStyle: "glyph")
+  Glyph.Clip { id: glyphClip; screen: root.focusedScreen }
+  Glyph.GlyphPower { host: root }
 
   EdgeHotzones {
     host: root
