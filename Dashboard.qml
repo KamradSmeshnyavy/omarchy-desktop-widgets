@@ -55,19 +55,45 @@ PanelWindow {
   }
   // grow — высота растёт; slide — сдвиг сверху; fade — только прозрачность (+ лёгкий масштаб);
   // liquid — высота догоняет ширину: сначала капля под баром, потом лист.
+  // liquid (Vitreus): окно — вся полоса сверху поверх бара (Ignore), панель начинается прямо на пилюле бара
+  // (BarGeom) и растягивается в карточку: ширина ведёт, высота догоняет, скругление — от пилюли к карточке.
+  BarGeom { id: geo }
+  onVisibleChanged: if (visible) geo.refresh()
+  Connections {
+    target: dash.host
+    function onDashboardOpenChanged() {
+      if (dash.host.dashboardOpen) { geo.refresh(); wave.stop() }
+      else if (dash.fromBar) waveDelay.restart()
+    }
+  }
+  // Волна: панель втянулась — по пилюле бара расходятся два световых кольца (у Vitreus бар качается).
+  Timer { id: waveDelay; interval: Math.round(dash.duration * 0.7); onTriggered: if (!dash.host.dashboardOpen) wave.restart() }
+  property real wv: 0
+  NumberAnimation { id: wave; target: dash; property: "wv"; from: 0; to: 1; duration: 620; easing.type: Easing.OutCubic }
+  readonly property bool fromBar: liquid && geo.barLayer.width > 0 && geo.edge === "top"
+  readonly property real m: Math.max(0, progress)
+  readonly property real mw: Math.min(1.03, m * 1.35)
+  readonly property real mh: Math.pow(Math.min(1.04, m), 1.35)
+  readonly property rect startRect: Qt.rect((width - Math.min(geo.pill.width, 240)) / 2, geo.pill.y, Math.min(geo.pill.width, 240), geo.pill.height)
+  readonly property rect endRect: Qt.rect((width - bodyWidth) / 2, geo.pill.y + geo.pill.height + 10, bodyWidth, bodyHeight)
+  readonly property rect morph: Qt.rect(startRect.x + (endRect.x - startRect.x) * mw, startRect.y + (endRect.y - startRect.y) * Math.min(1, mh),
+                                        startRect.width + (endRect.width - startRect.width) * mw, startRect.height + (endRect.height - startRect.height) * mh)
+  readonly property real morphRadius: geo.radius + (style.cornerRadius - geo.radius) * Math.min(1, m * 2)
   readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress)
     : liquid ? Math.round(bodyHeight * Math.max(0, Math.min(1.04, progress * progress))) : bodyHeight
   readonly property real w: liquid ? Math.round(bodyWidth * Math.max(0.18, Math.min(1.02, 0.18 + 0.82 * Math.sqrt(Math.max(0, progress))))) : bodyWidth
   readonly property real slide: animation === "slide" ? (1 - progress) * -(bodyHeight + margin) : 0
   readonly property real fadeOpacity: animation === "grow" || liquid ? Math.min(1, progress * 3) : progress
 
-  visible: !host.dotmatrixDash && progress > 0.001
+  visible: !host.dotmatrixDash && (progress > 0.001 || wave.running)
   screen: host.focusedScreen
   anchors.top: true
-  exclusionMode: ExclusionMode.Normal
+  anchors.left: fromBar
+  anchors.right: fromBar
+  exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: bodyWidth + 2 * Math.max(flare, shadowPad)
-  implicitHeight: bodyHeight + margin + shadowPad
+  implicitHeight: fromBar ? geo.pill.y + geo.pill.height + 10 + bodyHeight * 1.06 + shadowPad : bodyHeight + margin + shadowPad
   color: "transparent"
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dashboard"
@@ -79,6 +105,22 @@ PanelWindow {
     active: !dash.host.dotmatrixDash && dash.host.dashboardOpen
     windows: [dash]
     onCleared: dash.host.dashboardOpen = false
+  }
+
+  Repeater {
+    model: dash.fromBar && wave.running ? 2 : 0
+    Rectangle {
+      required property int index
+      readonly property real k: Math.max(0, Math.min(1, dash.wv * 1.25 - index * 0.25))
+      x: dash.startRect.x - 18 * k * (index + 1)
+      y: dash.startRect.y - 4 * k * (index + 1)
+      width: dash.startRect.width + 36 * k * (index + 1)
+      height: dash.startRect.height + 8 * k * (index + 1)
+      radius: height / 2
+      color: "transparent"
+      border.width: 1.5
+      border.color: Qt.rgba(1, 1, 1, 0.55 * (1 - k))
+    }
   }
 
   // Всё содержимое — в «листе», который сдвигается при slide.
@@ -93,10 +135,10 @@ PanelWindow {
 
     Item {
       id: hit
-      x: (dash.width - dash.w) / 2
-      y: dash.margin
-      width: dash.w
-      height: dash.h
+      x: dash.fromBar ? dash.morph.x : (dash.width - dash.w) / 2
+      y: dash.fromBar ? dash.morph.y : dash.margin
+      width: dash.fromBar ? dash.morph.width : dash.w
+      height: dash.fromBar ? dash.morph.height : dash.h
     }
 
     // attached: контур с вогнутыми углами сверху.
@@ -136,11 +178,13 @@ PanelWindow {
       visible: !dash.attached && dash.style.card
       style: dash.style
       seed: 3
+      glassLayer: "omarchy-dashboard"
+      glassOrigin: dash.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
       x: hit.x
       y: hit.y
       width: hit.width
       height: hit.height
-      radius: Math.min(dash.style.cornerRadius, height / 2)
+      radius: dash.fromBar ? Math.min(dash.morphRadius, height / 2) : Math.min(dash.style.cornerRadius, height / 2)
     }
     Rectangle {
       visible: !dash.attached && !dash.style.card
@@ -164,11 +208,11 @@ PanelWindow {
 
     Item {
       id: content
-      x: (dash.width - dash.bodyWidth) / 2
-      y: hit.y
+      x: dash.fromBar ? dash.endRect.x : (dash.width - dash.bodyWidth) / 2
+      y: dash.fromBar ? dash.endRect.y + 14 * (1 - Math.min(1, dash.m)) : hit.y
       width: dash.bodyWidth
-      height: dash.h
-      clip: true
+      height: dash.fromBar ? dash.bodyHeight : dash.h
+      clip: !dash.fromBar
       opacity: dash.animation === "grow" || dash.liquid ? Math.max(0, (Math.min(1, dash.progress) - (dash.liquid ? 0.55 : 0.35)) / (dash.liquid ? 0.45 : 0.65)) : 1
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
