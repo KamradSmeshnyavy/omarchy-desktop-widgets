@@ -182,6 +182,14 @@ Item {
     o[name + "Pos"] = undefined
     saveKeys(o)
   }
+  // Карточку вытянули из дашборда мышью и отпустили в точке (cx, cy — доли экрана).
+  function detachAt(name, screen, cx, cy) {
+    var o = freeKeys(name, screen, cx, cy)
+    o[name] = true
+    o[name + "Float"] = true
+    saveKeys(o)
+    dashboardOpen = false
+  }
   // Карточку из дашборда — на стол поверх окон, под дашбордом (как плеер Vitreus).
   function detach(name) {
     var o = freeKeys(name, focusedScreen ? String(focusedScreen.name) : "", 0.5, 0.22)

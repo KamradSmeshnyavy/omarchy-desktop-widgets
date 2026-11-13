@@ -25,10 +25,12 @@ Item {
   readonly property real baseWidth: target ? target.width + 2 * pad : 0
   readonly property real extra: dotmatrixCard ? Math.max(0, 320 - baseWidth) : 0
   readonly property bool leftHalf: target && parent ? target.x + target.width / 2 < parent.width / 2 : true
-  x: target ? target.x - pad - (leftHalf ? 0 : extra) : 0
-  y: target ? target.y - pad : 0
-  width: baseWidth + extra
-  height: target ? target.height + 2 * pad : 0
+  // масштаб виджета (DirectGrab, от центра)
+  property real s: 1
+  x: target ? target.x + target.width * (1 - s) / 2 - pad - (leftHalf ? 0 : extra) : 0
+  y: target ? target.y + target.height * (1 - s) / 2 - pad : 0
+  width: (target ? target.width * s + 2 * pad : 0) + extra
+  height: target ? target.height * s + 2 * pad : 0
 
   // DOT-MATRIX — как карточки рабочего стола NIHIL: чёрная (фон палитры) плитка с тонким контуром,
   // читается на любых обоях.

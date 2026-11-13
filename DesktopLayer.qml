@@ -33,11 +33,22 @@ PanelWindow {
   // Клики — только по интерактивным карточкам (на плавающем слое — по всем его виджетам);
   // в режиме правки — весь экран.
   mask: Region {
-    regions: desk.editing ? [editRegion]
-      : desk.floating ? [rClock, rMedia, rSys, rNet, rTodo, rQuote, rPhoto, rContrib, menuRegion]
+    // пока виджет держат (DirectGrab тянет или растягивает) — весь экран: курсор уходит за край виджета
+    regions: desk.editing ? [editRegion] : desk.holding ? [allRegion]
+      : desk.floating ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, menuRegion]
+      : desk.host.value("directMove") !== false ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib]
       : [rMedia, rTodo, rQuote, rPhoto, rContrib]
   }
   Region { id: editRegion; item: editArea }
+  Region { id: allRegion; x: 0; y: 0; width: desk.width; height: desk.height }
+  Region { id: gClock; item: g_clock.visible ? g_clock : null }
+  Region { id: gMedia; item: g_media.visible ? g_media : null }
+  Region { id: gSys; item: g_sysinfo.visible ? g_sysinfo : null }
+  Region { id: gNet; item: g_network.visible ? g_network : null }
+  Region { id: gTodo; item: g_todo.visible ? g_todo : null }
+  Region { id: gQuote; item: g_quote.visible ? g_quote : null }
+  Region { id: gPhoto; item: g_photo.visible ? g_photo : null }
+  Region { id: gContrib; item: g_contrib.visible ? g_contrib : null }
   Region { id: menuRegion; item: menu.visible ? menu : null }
   Region { id: rClock; item: clockW.visible ? clockW : null }
   Region { id: rMedia; item: media.visible ? media : null }
@@ -78,6 +89,15 @@ PanelWindow {
 
   // Пока тащим — позиция виджета с этим якорем отсюда, а не из конфига.
   property string dragKey: ""
+  // Размер виджета (<name>Scale, тянут за угол — DirectGrab): пока тянут — liveScale у scaleKey.
+  property string scaleKey: ""
+  readonly property bool holding: dragKey !== "" || scaleKey !== ""
+  property real liveScale: 1
+  function scaleOf(name) {
+    if (scaleKey === name) return liveScale
+    var v = Number(host.value(name + "Scale"))
+    return isFinite(v) && v > 0 ? v : 1
+  }
   property point dragPt: Qt.point(0, 0)
   readonly property int grid: 8
   // Привязка: к сетке 8 px и к отступу edgeMargin от краёв, не за пределы экрана.
@@ -148,20 +168,21 @@ PanelWindow {
     }
   }
 
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; seed: 21; pad: desk.padOf(clockW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; seed: 23; pad: desk.padOf(sysW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; seed: 27; pad: desk.padOf(netW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: todoW; seed: 24; pad: desk.padOf(todoW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; seed: 25; pad: desk.padOf(quoteW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; seed: 26; pad: desk.padOf(photoW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; seed: 28; pad: desk.padOf(contribW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; s: desk.scaleOf("media"); seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; s: desk.scaleOf("sysinfo"); seed: 23; pad: desk.padOf(sysW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; s: desk.scaleOf("network"); seed: 27; pad: desk.padOf(netW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: todoW; s: desk.scaleOf("todo"); seed: 24; pad: desk.padOf(todoW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; s: desk.scaleOf("quote"); seed: 25; pad: desk.padOf(quoteW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; s: desk.scaleOf("photo"); seed: 26; pad: desk.padOf(photoW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; s: desk.scaleOf("contrib"); seed: 28; pad: desk.padOf(contribW) }
 
   NetWidget {
     id: netW
     host: desk.host
     visible: desk.host.flag("network") && desk.shows("network")
     x: desk.place(netW, "networkAnchor").x
+    scale: desk.scaleOf("network")
     y: desk.place(netW, "networkAnchor").y
   }
   TodoWidget {
@@ -169,6 +190,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("todo") && desk.shows("todo")
     x: desk.place(todoW, "todoAnchor").x
+    scale: desk.scaleOf("todo")
     y: desk.place(todoW, "todoAnchor").y
   }
   QuoteWidget {
@@ -176,6 +198,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("quote") && desk.shows("quote")
     x: desk.place(quoteW, "quoteAnchor").x
+    scale: desk.scaleOf("quote")
     y: desk.place(quoteW, "quoteAnchor").y
   }
   PhotoWidget {
@@ -183,6 +206,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("photo") && desk.shows("photo")
     x: desk.place(photoW, "photoAnchor").x
+    scale: desk.scaleOf("photo")
     y: desk.place(photoW, "photoAnchor").y
   }
   ContribWidget {
@@ -190,6 +214,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("contrib") && desk.shows("contrib")
     x: desk.place(contribW, "contribAnchor").x
+    scale: desk.scaleOf("contrib")
     y: desk.place(contribW, "contribAnchor").y
   }
   ClockWidget {
@@ -197,6 +222,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("clock") && desk.shows("clock")
     x: desk.place(clockW, "clockAnchor").x
+    scale: desk.scaleOf("clock")
     y: desk.place(clockW, "clockAnchor").y
   }
   MediaWidget {
@@ -207,6 +233,7 @@ PanelWindow {
     visible: desk.host.flag("media") && desk.shows("media")
       && (desk.host.dotmatrixWidgets || desk.isFree("media") || (desk.host.player !== null && desk.host.player.trackTitle !== ""))
     x: desk.place(media, "mediaAnchor").x
+    scale: desk.scaleOf("media")
     y: desk.place(media, "mediaAnchor").y
   }
   SysInfo {
@@ -214,6 +241,7 @@ PanelWindow {
     host: desk.host
     visible: desk.host.flag("sysinfo") && desk.shows("sysinfo")
     x: desk.place(sysW, "sysinfoAnchor").x
+    scale: desk.scaleOf("sysinfo")
     y: desk.place(sysW, "sysinfoAnchor").y
   }
 
@@ -226,6 +254,16 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DragHandle { host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
+
+  // Перенос без режима правки: взять и тянуть, углы — размер, булавка — на место (DirectGrab).
+  DirectGrab { id: g_clock; host: desk.host; desk: desk; target: clockW; name: "clock"; pad: desk.padOf(clockW) }
+  DirectGrab { id: g_media; host: desk.host; desk: desk; target: media; name: "media"; pad: desk.padOf(media) }
+  DirectGrab { id: g_sysinfo; host: desk.host; desk: desk; target: sysW; name: "sysinfo"; pad: desk.padOf(sysW) }
+  DirectGrab { id: g_network; host: desk.host; desk: desk; target: netW; name: "network"; pad: desk.padOf(netW) }
+  DirectGrab { id: g_todo; host: desk.host; desk: desk; target: todoW; name: "todo"; pad: desk.padOf(todoW) }
+  DirectGrab { id: g_quote; host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
+  DirectGrab { id: g_photo; host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
+  DirectGrab { id: g_contrib; host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
 
   // Плавающий слой: при наведении на открепленный виджет — кнопки «переместить» (режим правки) и
   // «вернуть на место». HoverHandler пассивный: кнопки самого виджета (плеер) продолжают работать.
@@ -299,7 +337,10 @@ PanelWindow {
   // "free" — центр из <name>Pos, в пределах экрана.
   function place(item, key) {
     if (dragKey === key) return dragPt
-    var a = String(host.value(key))
+    return placeAt(item, key, String(host.value(key)))
+  }
+  // Позиция при якоре a (для DirectGrab — куда виджет прилипнет, вернувшись на место).
+  function placeAt(item, key, a) {
     var p = padOf(item), w = item.width
     if (a === "free") {
       var pos = host.value(key.replace(/Anchor$/, "Pos")) || {}

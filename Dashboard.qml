@@ -93,13 +93,17 @@ PanelWindow {
   exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: bodyWidth + 2 * Math.max(flare, shadowPad)
-  implicitHeight: fromBar ? geo.pill.y + geo.pill.height + 10 + bodyHeight * 1.06 + shadowPad : bodyHeight + margin + shadowPad
+  implicitHeight: fromBar ? (cardDrag && screen ? screen.height : geo.pill.y + geo.pill.height + 10 + bodyHeight * 1.06 + shadowPad) : bodyHeight + margin + shadowPad
   color: "transparent"
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: !host.dotmatrixDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-  mask: Region { item: hit }
+  mask: Region { item: dash.cardDrag ? null : hit; regions: dash.cardDrag ? [dragAll] : [] }
+  Region { id: dragAll; x: 0; y: 0; width: dash.width; height: dash.height }
+  // Плеер берут мышью и вытягивают из дашборда (как у Vitreus): отпустил за его краем — плеер остаётся на столе
+  // поверх окон в этой точке, внутри — возвращается на место. Пока тянут, окно — до низа экрана (fromBar).
+  property bool cardDrag: false
 
   HyprlandFocusGrab {
     active: !dash.host.dotmatrixDash && dash.host.dashboardOpen
@@ -223,7 +227,32 @@ PanelWindow {
         height: dash.bodyHeight - 36
         spacing: dash.gap
 
-        DashMedia { visible: dash.showMedia; host: dash.host; width: 360; height: parent.height }
+        DashMedia {
+          id: dm
+          visible: dash.showMedia; host: dash.host; width: 360; height: parent.height
+          z: dash.cardDrag ? 10 : 0
+          transform: Translate { id: dmT }
+          DragHandler {
+            id: dmDrag
+            target: null
+            enabled: dash.fromBar
+            dragThreshold: 10
+            onActiveChanged: {
+              if (active) { dash.cardDrag = true; return }
+              var c = dm.mapToItem(null, dm.width / 2 + 0, dm.height / 2 + 0)
+              var out = c.y > hit.y + hit.height + 30 || c.y < hit.y - 30 || c.x < hit.x - 30 || c.x > hit.x + hit.width + 30
+              if (out && dash.screen) dash.host.detachAt("media", String(dash.screen.name), c.x / dash.screen.width, c.y / dash.screen.height)
+              back.restart()
+              dash.cardDrag = false
+            }
+            onTranslationChanged: if (active) { dmT.x = translation.x; dmT.y = translation.y }
+          }
+          ParallelAnimation {
+            id: back
+            NumberAnimation { target: dmT; property: "x"; to: 0; duration: 260; easing.type: Easing.OutBack }
+            NumberAnimation { target: dmT; property: "y"; to: 0; duration: 260; easing.type: Easing.OutBack }
+          }
+        }
         DashCalendar { visible: dash.showCalendar; host: dash.host; width: 250; height: parent.height }
         Column {
           visible: dash.showSide
