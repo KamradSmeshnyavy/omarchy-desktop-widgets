@@ -1,0 +1,9 @@
+#!/bin/bash
+# Shot (glyph/Shot.qml): область уже выбрана в прицеле — стоковая запись Omarchy (omarchy-capture-screenrecording)
+# берёт её отсюда, а не из своего пикера. Без SHOT_REGION — обычный omarchy-capture-region.
+if [[ -n ${SHOT_REGION:-} ]]; then
+  printf '%s\n' "$SHOT_REGION"
+  exit 0
+fi
+PATH=${PATH#*shot-region:}
+exec omarchy-capture-region "$@"

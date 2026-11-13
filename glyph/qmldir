@@ -6,3 +6,9 @@ Dm Dm.qml
 Art Art.qml
 Picker Picker.qml
 Rec Rec.qml
+Ring Ring.qml
+Stage Stage.qml
+Shot Shot.qml
+ShotEditor ShotEditor.qml
+ShotChip ShotChip.qml
+ShotPill ShotPill.qml

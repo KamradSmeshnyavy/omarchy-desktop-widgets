@@ -18,6 +18,8 @@ QtObject {
   readonly property color ink: light ? s1 : bg
   readonly property color accent: Commons.Color.urgent
   function fade(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
+  function hexOf(c) { return c.toString().slice(1, 7).toUpperCase() }
+  readonly property color glow: light ? Qt.rgba(0, 0, 0, 0.3) : Qt.rgba(1, 1, 1, 0.6)
 
   readonly property string dot: "Doto"
   readonly property string mono: "Space Mono"

@@ -11,6 +11,7 @@
 | Дашборд | `default` (плеер, календарь, погода, графики CPU/RAM) или `dotmatrix` (часы Doto, LED-обложка MPRIS, 24×6 спектр, 28-LED циферблаты CPU/RAM/°C, LED-осциллограф сети rx/tx) | `omarchy-shell widgets toggleDashboard` |
 | Панель настроек | правая чёрная аппаратная панель DOT-MATRIX: 3×2 круглых тумблера (Wi-Fi, Bluetooth, звук, микрофон, DND, ночной свет), 24-сегментные LED-слайдеры, списки Wi-Fi/BT/аудио, история уведомлений и действия сессии с подтверждением | `omarchy-shell widgets toggleSettings` |
 | Quick | при `"settingsPanel": "quick"` та же клавиша открывает Quick из [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice): карточка справа внизу — часы, пилюли Wi-Fi / Bluetooth (правый клик — сети со строкой пароля / устройства для сопряжения), круглые плитки (не беспокоить, ночной свет, авиарежим, не засыпать, микрофон, запись экрана — правый клик: область / экран, звук системы / микрофона, камера — режим чтения, пипетка), слайдеры яркости и громкости из точек, профили питания (если есть power-profiles-daemon), мини-плеер и последние уведомления (replay; clear all — повторное нажатие за 3 с, история удаляется насовсем). Настройки записи — в `~/.config/omarchy/quick.json` | `omarchy-shell widgets toggleSettings` |
+| Shot | скриншот из [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice): экран замирает и гаснет, белая рамка 1 px с точками по углам и размером цифрами Doto, лупа из точек с цветом пикселя; режимы область / окно (Space) / экран / запись (Tab), таймер 3 / 13 с (T). Снимок — в `$OMARCHY_SCREENSHOT_DIR` или `~/Pictures/Screenshots` и в буфер; в углу выезжает карточка — клик открывает правку: перо, стрелка, рамка, пикселизация, текст, 4 цвета, 3 толщины, Ctrl+Z, Enter сохраняет и копирует. Запись — стоковой `omarchy-capture-screenrecording` с выбранной областью (звук и камера — из Quick) | `omarchy-shell widgets shot` · Print |
 | Меню выключения | блокировка, сон, гибернация, выход, перезагрузка, выключение — три последних со второго нажатия за 3 с | `omarchy-shell widgets togglePower` |
 | Обзор | сетка рабочих столов с обоями и живыми превью окон; клик — перейти, перетащить окно — перенести | `omarchy-shell widgets toggleOverview` |
 | Режим правки | виджеты рабочего стола перетаскиваются куда угодно (сетка 8 px, прилипание к отступу от края); ПКМ — поверх окон, вернуть на место, скрыть; Esc / Enter — готово | `omarchy-shell widgets toggleEdit` |
@@ -108,5 +109,5 @@ Customizer → Рабочий стол → Виджеты → Deck.
 
 ## Лицензия
 
-GPL-3.0 (см. [LICENSE](LICENSE); прежние версии — MIT), авторы заимствований — в [NOTICE](NOTICE). Quick
+GPL-3.0 (см. [LICENSE](LICENSE); прежние версии — MIT), авторы заимствований — в [NOTICE](NOTICE). Quick и Shot
 (`QuickPanel.qml`, `glyph/`) — из [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice) (GPL-3.0).

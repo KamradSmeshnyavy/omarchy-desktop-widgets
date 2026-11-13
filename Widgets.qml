@@ -5,6 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons as Commons
+import "glyph" as Glyph
 import "dotmatrix" as DotMatrix
 
 // Виджеты рабочего стола: часы, now playing, визуализатор cava, кольца системы,
@@ -366,6 +367,8 @@ Item {
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
+    // Shot: скриншот / запись области, окна или экрана с правкой снимка
+    function shot(): void { glyphShot.open() }
     function toggleDeck(): void { root.deckOn = root.deckOn !== "" ? "" : (root.focusedScreen ? String(root.focusedScreen.name) : "") }
     function openEdit(): void { root.editMode = true }
     function closeEdit(): void { root.editMode = false }
@@ -473,6 +476,9 @@ Item {
   QuickPanel {
     host: root
   }
+
+  // Shot — скриншот из glyph-rice (glyph/Shot.qml): прицел над замёрзшим кадром, лупа, запись, редактор
+  Glyph.Shot { id: glyphShot }
 
   EdgeHotzones {
     host: root
