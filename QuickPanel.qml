@@ -27,7 +27,7 @@ PanelWindow {
   property string pick: ""
   onOpenChanged: {
     if (open) refresh()
-    else pick = ""
+    else { pick = ""; clearArmed = false }
   }
 
   property real t: open ? 1 : 0
@@ -72,6 +72,8 @@ PanelWindow {
   property var profiles: []      // power-profiles-daemon: ["power-saver", "balanced", "performance"]
   property string profile: ""
   property var notes: []
+  property bool clearArmed: false
+  Timer { id: clearDisarm; interval: 3000; onTriggered: root.clearArmed = false }
 
   readonly property string readingScript: Quickshell.env("HOME") + "/.config/omarchy/plugins/kamradsmeshnyavy.customizer/scripts/reading-mode.sh"
   readonly property string videosDir: "~/Videos"
@@ -390,13 +392,31 @@ PanelWindow {
           width: parent.width
           height: 20
           Lb { x: 6; text: "notifications · " + root.notes.length }
-          Lb {
+          Row {
             anchors.right: parent.right
             rightPadding: 6
+            spacing: 18
             visible: root.notes.length > 0
-            text: "replay"
-            color: GTheme.fg
-            TapHandler { onTapped: { root.close(); Quickshell.execDetached(["omarchy-shell", "notifications", "showHistory"]) } }
+            Lb {
+              text: "replay"
+              color: GTheme.fg
+              TapHandler { onTapped: { root.close(); Quickshell.execDetached(["omarchy-shell", "notifications", "showHistory"]) } }
+              HoverHandler { cursorShape: Qt.PointingHandCursor }
+            }
+            // история удаляется безвозвратно (rm в kamradsmeshnyavy.notifications) — второе нажатие за 3 с, первое красное
+            Lb {
+              text: root.clearArmed ? "sure? clear" : "clear all"
+              color: root.clearArmed ? GTheme.accent : GTheme.fg
+              TapHandler {
+                onTapped: {
+                  if (!root.clearArmed) { root.clearArmed = true; clearDisarm.restart(); return }
+                  root.clearArmed = false
+                  root.notes = []
+                  Quickshell.execDetached(["sh", "-c", "omarchy-shell notifications dismissAll >/dev/null 2>&1; omarchy-shell notifications clear >/dev/null 2>&1"])
+                }
+              }
+              HoverHandler { cursorShape: Qt.PointingHandCursor }
+            }
           }
         }
 
