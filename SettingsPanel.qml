@@ -285,7 +285,7 @@ PanelWindow {
     bodyWidth: panel.bodyWidth
     bodyHeight: panel.bodyHeight
     progress: panel.progress
-    anchorIds: ["omarchy.audio", "kamradsmeshnyavy.audio", "omarchy.network", "kamradsmeshnyavy.network", "omarchy.bluetooth", "kamradsmeshnyavy.bluetooth", "omarchy.tray"]
+    anchorIds: ["omarchy.audio", "kamradsmeshnyavy.audio", "omarchy.network", "kamradsmeshnyavy.network", "omarchy.bluetooth", "kamradsmeshnyavy.bluetooth", "vit-icons", "omarchy.tray"]
     scrW: panel.screen ? panel.screen.width : 1440
     scrH: panel.screen ? panel.screen.height : 900
   }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)

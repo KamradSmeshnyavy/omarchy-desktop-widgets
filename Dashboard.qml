@@ -85,7 +85,7 @@ PanelWindow {
     bodyWidth: dash.bodyWidth
     bodyHeight: dash.bodyHeight
     progress: dash.progress
-    anchorIds: ["omarchy.clock", "glyph-clock", "dot-clock"]
+    anchorIds: ["vit-clock", "omarchy.clock", "glyph-clock", "dot-clock"]
     scrW: dash.scrW
     scrH: dash.scrH
   }
