@@ -27,10 +27,15 @@ PanelWindow {
   readonly property bool showSide: showWeather || showStats
   readonly property int pad: 20
   readonly property int gap: 16
-  // «из воды» (dashStyle vitreus): плитки и карандаши-ползунки (DashVitreus.qml) вместо колонок
-  readonly property bool vit: String(host.value("dashStyle")) === "vitreus"
+  // vitreus — стеклянные плитки по образцу Vitreus (DashGlass.qml), pencils — плитки с карандашами (DashVitreus.qml);
+  // обе всплывают «из воды» (rise), экран слегка темнеет
+  readonly property string dstyle: String(host.value("dashStyle"))
+  readonly property bool glassTiles: dstyle === "vitreus"
+  readonly property bool pencils: dstyle === "pencils"
+  readonly property bool vit: glassTiles || pencils
   readonly property int contentWidth: {
-    if (vit) return 64 + 12 + 4 * 200 + 3 * 12
+    if (glassTiles) return 1205
+    if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
     if (showCalendar) w.push(250)
@@ -39,7 +44,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: vit ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -346,8 +351,15 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashGlass {
+        visible: dash.glassTiles
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+      }
       DashVitreus {
-        visible: dash.vit
+        visible: dash.pencils
         x: dash.pad
         y: 16
         host: dash.host

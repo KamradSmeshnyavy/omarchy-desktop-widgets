@@ -65,7 +65,7 @@ Item {
     widgetStyle: "style",       // style (по стилю Customizer) · default · dotmatrix
     edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
     // Дашборд (Dashboard.qml / DotMatrixDashboard.qml) и меню выключения: стиль — BarStyle.qml.
-    dashStyle: "default",       // default dotmatrix
+    dashStyle: "default",       // default dotmatrix vitreus pencils
     dashFollowBar: true,
     dashAttach: "auto",         // auto attached floating
     dashBackground: "background",
@@ -357,7 +357,7 @@ Item {
   property real uptime: 0             // с
   readonly property bool vitSys: flag("sysinfo") && String(value("sysinfoStyle")) === "vitreus"
   // дашборд «из воды» (dashStyle vitreus) тоже показывает хост, аптайм и скорость сети
-  readonly property bool vitDash: String(value("dashStyle")) === "vitreus"
+  readonly property bool vitDash: ["vitreus", "pencils"].indexOf(String(value("dashStyle"))) !== -1
   readonly property bool vitData: vitSys || vitDash
   property real disk: 0               // занято на /, доля
   property int battery: -1
@@ -482,15 +482,18 @@ Item {
         var place = geo && geo.results && geo.results[0]
         if (!place) { root.weather = { error: root.tr("City not found: ", "Город не найден: ") + city }; return }
         get("https://api.open-meteo.com/v1/forecast?latitude=" + place.latitude + "&longitude=" + place.longitude +
-            "&current=temperature_2m,weather_code,wind_speed_10m,apparent_temperature" +
-            "&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset&forecast_days=4&timezone=auto" +
+            "&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,apparent_temperature,relative_humidity_2m" +
+            "&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_probability_max&forecast_days=7&timezone=auto" +
             "&temperature_unit=" + root.value("weatherUnits"), function(f) {
           if (!f || !f.current) { root.weather = { error: root.tr("No weather data", "Нет данных о погоде") }; return }
           root.weather = {
             city: place.name, temp: f.current.temperature_2m, feels: f.current.apparent_temperature,
             code: f.current.weather_code, wind: f.current.wind_speed_10m,
+            // дашборд Vitreus: влажность, направление ветра, вероятность дождя сегодня
+            humidity: f.current.relative_humidity_2m, windDir: f.current.wind_direction_10m,
+            rain: f.daily.precipitation_probability_max ? f.daily.precipitation_probability_max[0] : null,
             max: f.daily.temperature_2m_max[0], min: f.daily.temperature_2m_min[0],
-            // Deck: восход / закат сегодня и прогноз на 4 дня
+            // Deck: восход / закат сегодня и прогноз (Deck берёт 4 дня, дашборд Vitreus — 7)
             sunrise: f.daily.sunrise ? f.daily.sunrise[0] : "", sunset: f.daily.sunset ? f.daily.sunset[0] : "",
             days: (f.daily.time || []).map(function(t, i) {
               return { date: t, code: f.daily.weather_code ? f.daily.weather_code[i] : 3,
