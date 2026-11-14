@@ -22,7 +22,9 @@ Item {
 
   readonly property var defaults: ({
     clock: true,
-    clockStyle: "big",          // big stacked terminal minimal
+    clockStyle: "big",          // big stacked terminal minimal vitreus
+    clockVitreusLayout: "rule", // vitreus: rule (часы над минутами) pipe digital
+    clockVitreusSize: 1.4,
     clockAnchor: "top-left",
     clock24: true,
     clockSeconds: false,

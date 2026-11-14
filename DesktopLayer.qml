@@ -168,7 +168,7 @@ PanelWindow {
     }
   }
 
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
+  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; noCard: desk.host.value("clockStyle") === "vitreus"; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
   WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; s: desk.scaleOf("media"); seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
   WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; s: desk.scaleOf("sysinfo"); seed: 23; pad: desk.padOf(sysW) }
   WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; s: desk.scaleOf("network"); seed: 27; pad: desk.padOf(netW) }

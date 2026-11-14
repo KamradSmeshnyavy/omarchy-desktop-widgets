@@ -20,7 +20,9 @@ Item {
   readonly property var style: host.deskStyle
   readonly property bool dotmatrixCard: host.dotmatrixWidgets && !ownDotmatrixCard
 
-  visible: (host.styledWidgets || dotmatrixCard) && target && target.visible && target.width > 0
+  // у виджета своё стекло (часы vitreus) — подложка не нужна
+  property bool noCard: false
+  visible: !noCard && (host.styledWidgets || dotmatrixCard) && target && target.visible && target.width > 0
   // DOT-MATRIX: карточки одной ширины (320, как в NIHIL) — колонка ровная; добор — к центру экрана.
   readonly property real baseWidth: target ? target.width + 2 * pad : 0
   readonly property real extra: dotmatrixCard ? Math.max(0, 320 - baseWidth) : 0

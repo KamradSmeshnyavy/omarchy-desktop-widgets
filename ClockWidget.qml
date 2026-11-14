@@ -2,7 +2,7 @@ import QtQuick
 import "dotmatrix" as DotMatrix
 
 // Часы. Стили (clockStyle): big — крупное время и дата под ним; stacked — часы над
-// минутами; terminal — «вывод команды date» с мигающим курсором; minimal — одна строка.
+// минутами; terminal — «вывод команды date» с мигающим курсором; minimal — одна строка; vitreus — стеклянные цифры.
 Item {
   id: clock
 
@@ -36,7 +36,20 @@ Item {
     sourceComponent: clock.host.dotmatrixWidgets ? dotmatrixClock
       : clock.style === "stacked" ? stacked
       : clock.style === "terminal" ? terminal
-      : clock.style === "minimal" ? minimal : big
+      : clock.style === "minimal" ? minimal
+      : clock.style === "vitreus" ? vitreusClock : big
+  }
+
+  // vitreus: стеклянные цифры-трубки (VitClock), раскладка clockVitreusLayout: rule | pipe | digital
+  Component {
+    id: vitreusClock
+    VitClock {
+      hours: clock.hours
+      minutes: clock.minutes
+      layout: String(clock.host.value("clockVitreusLayout") || "rule")
+      k: Math.max(0.6, Number(clock.host.value("clockVitreusSize")) || 1.4)
+      tint: clock.host.background
+    }
   }
 
   Component {
