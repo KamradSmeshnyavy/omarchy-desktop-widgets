@@ -33,6 +33,8 @@ PanelWindow {
   }
   Component { id: proc; Process {} }
   function w(key) { return host.value(key) }
+  // как записано (auto не раскрыт) — для выбора частей райса
+  function wr(key) { var v = host.raw[key]; return v === undefined || v === null ? host.defaults[key] : v }
   function setW(key, v) { cz(["tweak", key, "set", String(v)]) }
   function setWin(key, v) { cz(["tweak", key, "set", String(v)], function() { winFile.reload() }) }
 
@@ -208,7 +210,7 @@ PanelWindow {
           Toggle { text: "greeting"; on: root.w("homeGreeting") !== false; onFlip: root.setW("homeGreeting", !on) }
           Toggle { text: "blink"; on: root.w("homeBlink") === true; onFlip: root.setW("homeBlink", !on) }
         }
-        Pick { label: "layout"; opts: ["glyph", "classic", "minimal"]; cur: opts.indexOf(String(root.w("homeLayout"))); onPicked: function(i) { root.setW("homeLayout", opts[i]) } }
+        Pick { label: "layout"; opts: ["auto", "glyph", "classic", "minimal"]; cur: opts.indexOf(String(root.wr("homeLayout"))); onPicked: function(i) { root.setW("homeLayout", opts[i]) } }
         Item {
           width: 3 * 120 + 2 * 12
           height: width
@@ -257,7 +259,7 @@ PanelWindow {
           Toggle { text: "deck"; on: root.w("deck") === true; onFlip: root.setW("deck", !on) }
           Pick { label: "open"; opts: ["dwell", "bump"]; cur: opts.indexOf(String(root.w("deckTrigger"))); onPicked: function(i) { root.setW("deckTrigger", opts[i]) } }
         }
-        Pick { label: "layout"; opts: ["panel", "compact", "full"]; cur: opts.indexOf(String(root.w("deckLayout"))); onPicked: function(i) { root.setW("deckLayout", opts[i]) } }
+        Pick { label: "layout"; opts: ["auto", "panel", "compact", "full"]; cur: opts.indexOf(String(root.wr("deckLayout"))); onPicked: function(i) { root.setW("deckLayout", opts[i]) } }
         Rectangle {
           width: 640; height: 360; radius: PTheme.r(24)
           color: "transparent"
@@ -401,9 +403,9 @@ PanelWindow {
         visible: root.sel === 6
         spacing: 22
         Lb { text: "parts of the rice · " + PTheme.rice }
-        Pick { label: "super+m"; opts: ["drawer", "quick"]; cur: opts.indexOf(String(root.w("settingsPanel"))); onPicked: function(i) { root.setW("settingsPanel", opts[i]) } }
-        Pick { label: "power"; opts: ["edge", "glyph"]; cur: opts.indexOf(String(root.w("powerStyle"))); onPicked: function(i) { root.setW("powerStyle", opts[i]) } }
-        Pick { label: "clipboard"; opts: ["stock", "glyph"]; cur: opts.indexOf(String(root.w("clipboardPanel"))); onPicked: function(i) { root.setW("clipboardPanel", opts[i]) } }
+        Pick { label: "super+m"; opts: ["auto", "drawer", "quick"]; cur: opts.indexOf(String(root.wr("settingsPanel"))); onPicked: function(i) { root.setW("settingsPanel", opts[i]) } }
+        Pick { label: "power"; opts: ["auto", "edge", "glyph"]; cur: opts.indexOf(String(root.wr("powerStyle"))); onPicked: function(i) { root.setW("powerStyle", opts[i]) } }
+        Pick { label: "clipboard"; opts: ["auto", "stock", "glyph"]; cur: opts.indexOf(String(root.wr("clipboardPanel"))); onPicked: function(i) { root.setW("clipboardPanel", opts[i]) } }
         Pick {
           label: "walls"; opts: ["glyph", "dots", "slices"]; cur: opts.indexOf(root.pickerStyle)
           onPicked: function(i) { root.pickerStyle = opts[i]; root.cz(["apply", "theme-switcher", "style:" + opts[i]]) }

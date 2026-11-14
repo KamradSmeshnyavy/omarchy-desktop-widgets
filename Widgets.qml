@@ -83,29 +83,29 @@ Item {
     homeName: "",               // имя в приветствии; пусто — $USER
     homeDots: true,             // точечная сетка на фоне
     homeHideWidgets: true,      // прятать виджеты на якорях, пока виден домашний экран
-    homeLayout: "glyph",        // classic glyph minimal
+    homeLayout: "auto",        // classic glyph minimal
     homeScale: 1,               // множитель размера раскладки
     homeGreeting: true,
     homeDate: true,
     homeMeta: true,             // glyph: строка погоды, батареи и сети под приветствием
     homeBlink: false,           // мигающее двоеточие часов (glyph)
-    homeCards: "glyph",         // glyph: glyph — плоские карточки как в glyph-rice · style — материал стиля
+    homeCards: "auto",         // glyph: glyph — плоские карточки как в glyph-rice · style — материал стиля
     homeWidgets: "weather,calendar,temp,player,system",  // glyph: плитки бенто по порядку
     // Deck (Deck.qml): дашборд из-под нижнего края по наведению.
     deck: false,
     deckSections: "clock,weather,perf,net,media",
     deckScale: 1,
-    deckCards: "glyph",         // glyph — плоская карточка · style — материал стиля
+    deckCards: "auto",         // glyph — плоская карточка · style — материал стиля
     deckDelay: 150,             // мс курсора на полосе у края до открытия
-    deckLayout: "panel",        // panel compact full
+    deckLayout: "auto",        // panel compact full
     deckTrigger: "dwell",       // dwell bump
     deckDim: 0.8,               // full: затемнение фона
     // Панель Super+M: drawer — панель настроек DOT-MATRIX (SettingsPanel), quick — Quick из glyph-rice (QuickPanel)
-    settingsPanel: "drawer",
+    settingsPanel: "auto",
     // Меню выключения: edge — полоса у края (PowerMenu), glyph — столбец слов Doto из glyph-rice (glyph/GlyphPower)
-    powerStyle: "edge",
+    powerStyle: "auto",
     // Super+Ctrl+V: stock — стоковый менеджер буфера Omarchy, glyph — Clip из glyph-rice (glyph/Clip.qml)
-    clipboardPanel: "stock"
+    clipboardPanel: "auto"
   })
 
   property var raw: ({})
@@ -113,7 +113,26 @@ Item {
 
   function value(key) {
     var v = raw[key]
-    return v === undefined || v === null ? defaults[key] : v
+    v = v === undefined || v === null ? defaults[key] : v
+    return v === "auto" && partDefaults.default[key] !== undefined ? partFor(key) : v
+  }
+  // Части райса со значением auto: вид выбирается по активному райсу (style.json "rice" — пишет вкладка «Райсы»
+  // Customizer), без райса — по стилю (style.json "id"); стиль liquid — облик Vitreus.
+  readonly property string rice: {
+    var l = deskStyle.look || {}
+    var r = String(l.rice || l.id || "")
+    return r === "liquid" ? "vitreus" : r
+  }
+  readonly property var partDefaults: ({
+    "default":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    "glyph":     { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
+    "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
+    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" }
+  })
+  function partFor(key) {
+    var t = partDefaults[rice] || partDefaults["default"]
+    return t[key] !== undefined ? t[key] : partDefaults["default"][key]
   }
   function num(key) {
     var n = Number(value(key))

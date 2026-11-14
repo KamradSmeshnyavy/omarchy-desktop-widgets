@@ -73,6 +73,8 @@ omarchy restart shell
 [Customizer](https://github.com/KamradSmeshnyavy/omarchy-customizer) правит его в Рабочий стол → Виджеты / Дашборд.
 Ключи и значения — в [README.md](README.md#settings).
 
+**Части следуют райсу.** `homeLayout`, `homeCards`, `deckLayout`, `deckCards`, `settingsPanel`, `powerStyle` и `clipboardPanel` по умолчанию `auto` (встроенные стили тоже пишут `auto`): виджет сам выбирает вид по активному райсу — `"rice"` в `~/.config/omarchy/style.json`, его пишет вкладка Customizer **Райсы**, — а без райса по id стиля. У Glyph — свои дом, Deck, Quick, меню выключения и Clip; у DOT-MATRIX — дом и Deck glyph с панелью-шторкой; у Vitreus (и стиля `liquid`) — дом minimal, Deck во весь экран в материале основы и панели из бара; у остальных стилей — дом и Deck glyph в материале стиля. Явное значение важнее `auto`.
+
 **Домашний экран** (раскладка `glyph` повторяет вид [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice) — у него
 GPL-3.0, поэтому код написан с нуля, а не скопирован): на пустом столе (на мониторе нет окон). Раскладки:
 `glyph` — огромные точечные часы, «дата · неделя», приветствие в две строки и бенто из круглых и квадратных плиток;

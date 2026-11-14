@@ -108,6 +108,8 @@ Your settings stay in `~/.config/omarchy/widgets.json`, `~/.config/omarchy/widge
 
 Anchors: `top-left` `top` `top-right` `left` `center` `right` `bottom-left` `bottom` `bottom-right` `free`.
 
+**Rice parts follow the rice.** `homeLayout`, `homeCards`, `deckLayout`, `deckCards`, `settingsPanel`, `powerStyle` and `clipboardPanel` default to `auto` (the bundled styles write `auto` too): the widget picks its look from the active rice — `"rice"` in `~/.config/omarchy/style.json`, written by the Customizer **Rices** tab — or, without a rice, from the style id. Glyph gets its own home, deck, Quick, power menu and Clip; DOT-MATRIX the glyph home and deck with the drawer; Vitreus (and the `liquid` style) the minimal home, a full-screen deck in the base material and panels growing out of the bar; other styles the glyph home and deck in the style material. Any explicit value wins over `auto`.
+
 **Home screen** (the `glyph` layout repeats the look of [glyph-rice](https://github.com/Nebelung-cloud/glyph-rice) — GPL-3.0,
 so the code is written from scratch, not copied): `"home": true`, `"homeLayout"` (`glyph` · `classic` · `minimal`),
 `"homeScale"`, `"homeWidgets"` (glyph bento, in order: `weather` `calendar` `cpu` `ram` `battery` `temp` `disk` `cava` take
