@@ -27,7 +27,10 @@ PanelWindow {
   readonly property bool showSide: showWeather || showStats
   readonly property int pad: 20
   readonly property int gap: 16
+  // «из воды» (dashStyle vitreus): плитки и карандаши-ползунки (DashVitreus.qml) вместо колонок
+  readonly property bool vit: String(host.value("dashStyle")) === "vitreus"
   readonly property int contentWidth: {
+    if (vit) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
     if (showCalendar) w.push(250)
@@ -36,7 +39,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: 300
+  readonly property int bodyHeight: vit ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -148,6 +151,26 @@ PanelWindow {
     windows: [dash]
     onCleared: dash.host.dashboardOpen = false
   }
+
+  // «из воды»: плитки всплывают по очереди (rise), экран слегка темнеет, по кромке у бара бежит волна
+  property real rise: 0
+  SequentialAnimation {
+    id: riseAnim
+    PauseAnimation { duration: Math.round(dash.duration * 0.45) }
+    NumberAnimation { target: dash; property: "rise"; from: 0; to: 1; duration: 1100; easing.type: Easing.Linear }
+  }
+  Connections {
+    target: dash.host
+    function onDashboardOpenChanged() { if (dash.host.dashboardOpen && dash.vit) riseAnim.restart(); else { riseAnim.stop(); dash.rise = 0 } }
+  }
+  Rectangle {
+    visible: dash.vit && dash.fromBar
+    anchors.fill: parent
+    color: "black"
+    opacity: 0.18 * Math.min(1, Math.max(0, dash.progress))
+  }
+  property real wavePhase: 0
+  NumberAnimation on wavePhase { from: 0; to: 1; duration: 1400; loops: Animation.Infinite; running: dash.vit && dash.visible && dash.rise < 1 }
 
   Repeater {
     model: dash.fromBar && wave.running ? 2 : 0
@@ -280,6 +303,38 @@ PanelWindow {
       }
     }
 
+    // волна вдоль кромки у бара, пока плитки всплывают («из воды»): два гребня, бегут вдоль кромки и стихают
+    Repeater {
+      model: dash.vit && dash.fromBar && dash.rise < 1 ? 2 : 0
+      Shape {
+        id: crest
+        required property int index
+        readonly property bool side: dash.edge === "left" || dash.edge === "right"
+        readonly property real amp: (5 - crest.index * 2) * (1 - dash.rise)
+        readonly property real inset: 6 + crest.index * 7
+        anchors.fill: parent
+        opacity: 0.55 - crest.index * 0.2
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+          strokeColor: dash.host.accent; strokeWidth: 2 - crest.index * 0.6; fillColor: "transparent"; capStyle: ShapePath.RoundCap
+          PathPolyline {
+            path: {
+              var pts = [], n = 48, r = Qt.rect(hit.x, hit.y, hit.width, hit.height)
+              var L = crest.side ? r.height : r.width
+              for (var i = 0; i <= n; i++) {
+                var a = i / n * L
+                var off = crest.amp * Math.sin(2 * Math.PI * (a / 70 - dash.wavePhase - crest.index * 0.3)) * Math.sin(Math.PI * i / n)
+                if (dash.edge === "left") pts.push(Qt.point(r.x + crest.inset + off, r.y + a))
+                else if (dash.edge === "right") pts.push(Qt.point(r.x + r.width - crest.inset + off, r.y + a))
+                else if (dash.edge === "bottom") pts.push(Qt.point(r.x + a, r.y + r.height - crest.inset + off))
+                else pts.push(Qt.point(r.x + a, r.y + crest.inset + off))
+              }
+              return pts
+            }
+          }
+        }
+      }
+    }
     Item {
       id: content
       x: dash.loose ? hit.x : dash.fromBar ? dash.endRect.x : (dash.width - dash.bodyWidth) / 2
@@ -291,7 +346,16 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashVitreus {
+        visible: dash.vit
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+        edge: dash.edge
+      }
       Row {
+        visible: !dash.vit
         x: dash.pad
         y: 16
         height: dash.bodyHeight - 36

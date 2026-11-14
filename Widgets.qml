@@ -356,6 +356,9 @@ Item {
   property string hostName: ""
   property real uptime: 0             // с
   readonly property bool vitSys: flag("sysinfo") && String(value("sysinfoStyle")) === "vitreus"
+  // дашборд «из воды» (dashStyle vitreus) тоже показывает хост, аптайм и скорость сети
+  readonly property bool vitDash: String(value("dashStyle")) === "vitreus"
+  readonly property bool vitData: vitSys || vitDash
   property real disk: 0               // занято на /, доля
   property int battery: -1
   property string batteryStatus: ""
@@ -553,14 +556,14 @@ Item {
     command: ["bash", "-c",
       "read -r _ u n s i w q sq st _ < /proc/stat; echo \"cpu $((u+n+s+i+w+q+sq+st)) $((i+w))\";" +
       "awk '/^MemTotal|^MemAvailable/{printf \"%s \", $2} END{print \"\"}' /proc/meminfo | sed 's/^/mem /';" +
-      (root.vitSys ? "echo \"up $(cut -d' ' -f1 /proc/uptime)\"; echo \"host $(</proc/sys/kernel/hostname)\";" +
+      (root.vitData ? "echo \"up $(cut -d' ' -f1 /proc/uptime)\"; echo \"host $(</proc/sys/kernel/hostname)\";" +
         "for g in /sys/class/drm/card*/device/gpu_busy_percent; do [ -r \"$g\" ] && { d=${g%/gpu_busy_percent}; echo \"gpu $(<$g) $(basename $(readlink -f $d/driver) 2>/dev/null)\"; break; }; done;" : "") +
       (root.homeAny || root.deckOn !== "" ? "df -P / 2>/dev/null | awk 'NR==2{sub(\"%\",\"\",$5); print \"disk\", $5}';" : "") +
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
       // Скорость сети нужна дашборду DOT-MATRIX и виджету «Сеть».
-      (!root.dotmatrixDash && !root.flag("network") && !root.vitSys && !root.homeAny && root.deckOn === "" ? "" :
+      (!root.dotmatrixDash && !root.flag("network") && !root.vitData && !root.homeAny && root.deckOn === "" ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]
