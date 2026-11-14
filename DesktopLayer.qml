@@ -104,7 +104,7 @@ PanelWindow {
   // у рамки — у всех четырёх, у сплошного бара во всю длину края — у него; у плавающей пилюли — ни у каких.
   // Карточка с якорем у такого края встаёт вплотную (без edgeMargin), отпущенная рядом — прилипает.
   BarGeom { id: bgeo }
-  readonly property bool mergeOn: host.value("edgeMerge") !== false && carded && host.deskStyle.card && bgeo.exported.position !== undefined
+  readonly property bool mergeOn: host.value("edgeMerge") !== false && carded && host.deskStyle.card && host.deskStyle.material === "liquid" && bgeo.exported.position !== undefined
   readonly property var mergeable: !mergeOn ? [] : bgeo.framed ? ["top", "bottom", "left", "right"]
     : !bgeo.floatingPill && bgeo.exported.hidden !== true ? [String(bgeo.exported.position)] : []
   function mOf(side) { return mergeable.indexOf(side) !== -1 ? 0 : host.num("edgeMargin") }
