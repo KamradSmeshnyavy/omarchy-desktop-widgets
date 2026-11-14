@@ -66,6 +66,7 @@ PanelWindow {
     target: power.host
     function onPowerOpenChanged() {
       if (!power.host.powerOpen) return
+      geo.refresh()
       power.selected = 0
       power.armed = ""
       probe.running = true
@@ -86,10 +87,24 @@ PanelWindow {
     Quickshell.execDetached(["bash", "-c", it.action])
   }
 
+  // liquid (Vitreus): растёт из кнопки питания на баре и сливается с ним (DrawerGeom); окно — весь экран
+  BarGeom { id: geo }
+  readonly property bool fromBar: !attached && style.material === "liquid" && geo.barLayer.width > 0
+  DrawerGeom {
+    id: dg
+    geo: geo
+    bodyWidth: power.thickness
+    bodyHeight: power.length
+    progress: power.progress
+    anchorIds: ["omarchy.power"]
+    scrW: power.screen ? power.screen.width : 1440
+    scrH: power.screen ? power.screen.height : 900
+  }
+
   visible: progress > 0.001
   screen: host.focusedScreen
-  anchors.right: true
-  exclusionMode: ExclusionMode.Normal
+  anchors { right: true; left: fromBar; top: fromBar; bottom: fromBar }
+  exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: thickness + edgeGap + shadowPad
   implicitHeight: length + 2 * Math.max(flare, shadowPad)
@@ -111,10 +126,10 @@ PanelWindow {
 
   Item {
     id: hit
-    x: power.width - power.edgeGap - power.w
-    y: power.bodyTop
-    width: power.w
-    height: power.length
+    x: power.fromBar ? dg.morph.x : power.width - power.edgeGap - power.w
+    y: power.fromBar ? dg.morph.y : power.bodyTop
+    width: power.fromBar ? dg.morph.width : power.w
+    height: power.fromBar ? dg.morph.height : power.length
   }
 
   // Контур как у OSD у края: вогнутые углы сверху и снизу переходят в край экрана.
@@ -122,13 +137,25 @@ PanelWindow {
   StyleCard {
     visible: !power.attached && power.style.card
     style: power.style
-    glassLayer: "omarchy-power"
+    glassLayer: power.fromBar ? "" : "omarchy-power"
     seed: 7
     x: hit.x
     y: hit.y
     width: hit.width
     height: hit.height
-    radius: Math.min(power.bodyRadius, width / 2)
+    radius: Math.min(power.bodyRadius, power.fromBar ? 28 : 999, width / 2, height / 2)
+    // из бара: одним куском с ним (перешеек вдоль стороны, крылья у рамки), стекло внутри бара не рисуется
+    readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
+    glassOrigin: power.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
+    glassBleed: power.fromBar ? 2 * dg.fillet + 60 : 0
+    glassJoin: power.fromBar ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
+    glassJoinRadius: 2.5
+    glassJoinK: power.fromBar ? dg.neckK : 0
+    glassJoin2: power.fromBar && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin2K: dg.fillet
+    glassCut: power.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
+    glassCut2: power.fromBar && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+    mergeEdges: power.fromBar && power.progress > 0.6 ? dg.mergeEdges : []
   }
   Rectangle {
     visible: !power.attached && !power.style.card
@@ -176,11 +203,11 @@ PanelWindow {
 
   Item {
     id: content
-    x: hit.x
-    y: hit.y
-    width: power.w
+    x: power.fromBar ? dg.endRect.x : hit.x
+    y: power.fromBar ? dg.endRect.y : hit.y
+    width: power.fromBar ? power.thickness : power.w
     height: power.length
-    clip: true
+    clip: !power.fromBar
     opacity: Math.max(0, (power.progress - 0.4) / 0.6)
     focus: power.host.powerOpen
 

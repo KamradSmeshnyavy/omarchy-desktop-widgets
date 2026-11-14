@@ -161,6 +161,7 @@ PanelWindow {
   }
 
   onActiveChanged: {
+    if (active) geo.refresh()
     if (active) {
       if (panel.host.settingsSection !== "") {
         expanded = panel.host.settingsSection
@@ -275,12 +276,26 @@ PanelWindow {
     }
   }
 
+  // liquid (Vitreus): растёт из кнопок звука / сети на баре и сливается с ним (DrawerGeom); окно — весь экран
+  BarGeom { id: geo }
+  readonly property bool fromBar: !attached && host.panelStyle.material === "liquid" && geo.barLayer.width > 0
+  DrawerGeom {
+    id: dg
+    geo: geo
+    bodyWidth: panel.bodyWidth
+    bodyHeight: panel.bodyHeight
+    progress: panel.progress
+    anchorIds: ["omarchy.audio", "kamradsmeshnyavy.audio", "omarchy.network", "kamradsmeshnyavy.network", "omarchy.bluetooth", "kamradsmeshnyavy.bluetooth", "omarchy.tray"]
+    scrW: panel.screen ? panel.screen.width : 1440
+    scrH: panel.screen ? panel.screen.height : 900
+  }
+
   visible: progress > 0.001
   screen: host.focusedScreen
-  anchors { top: true; right: true }
+  anchors { top: true; right: true; left: fromBar; bottom: fromBar }
   margins.top: attached ? -seamOverlap : 0
   margins.right: attached ? -seamOverlap : 0
-  exclusionMode: ExclusionMode.Normal
+  exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: bodyWidth + seamOverlap + 2 + pad + flare
   implicitHeight: attached ? seamOverlap + bodyHeight + flare + 4 : bodyHeight + 16
@@ -299,10 +314,10 @@ PanelWindow {
 
   Item {
     id: hit
-    x: panel.width - panel.seamOverlap - panel.pad - panel.w
-    y: panel.attached ? panel.seamOverlap : 4
-    width: panel.w + panel.seamOverlap
-    height: panel.bodyHeight
+    x: panel.fromBar ? dg.morph.x : panel.width - panel.seamOverlap - panel.pad - panel.w
+    y: panel.fromBar ? dg.morph.y : panel.attached ? panel.seamOverlap : 4
+    width: panel.fromBar ? dg.morph.width : panel.w + panel.seamOverlap
+    height: panel.fromBar ? dg.morph.height : panel.bodyHeight
   }
 
   // Плавающая карточка (бар не рамка DOT-MATRIX): как дашборд — материал стиля (StyleCard) или
@@ -312,8 +327,22 @@ PanelWindow {
     visible: !panel.attached && panel.host.panelStyle.card && panel.w > 1
     style: panel.host.panelStyle
     seed: 13
-    x: hit.x; y: hit.y; width: panel.w; height: panel.bodyHeight
-    radius: panel.cardRadius
+    x: hit.x; y: hit.y
+    width: panel.fromBar ? hit.width : panel.w
+    height: panel.fromBar ? hit.height : panel.bodyHeight
+    radius: panel.fromBar ? Math.min(Math.min(panel.host.panelStyle.cornerRadius, 28), width / 2, height / 2) : panel.cardRadius
+    // из бара: одним куском с ним (перешеек вдоль стороны, крылья у рамки), стекло внутри бара не рисуется
+    readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
+    glassOrigin: panel.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
+    glassBleed: panel.fromBar ? 2 * dg.fillet + 60 : 0
+    glassJoin: panel.fromBar ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
+    glassJoinRadius: 2.5
+    glassJoinK: panel.fromBar ? dg.neckK : 0
+    glassJoin2: panel.fromBar && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin2K: dg.fillet
+    glassCut: panel.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
+    glassCut2: panel.fromBar && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+    mergeEdges: panel.fromBar && panel.progress > 0.6 ? dg.mergeEdges : []
   }
   Rectangle {
     visible: !panel.attached && !panel.host.panelStyle.card && panel.w > 1
@@ -415,9 +444,9 @@ PanelWindow {
   }
 
   Item {
-    x: hit.x
-    y: hit.y
-    width: panel.w
+    x: panel.fromBar ? dg.endRect.x : hit.x
+    y: panel.fromBar ? dg.endRect.y : hit.y
+    width: panel.fromBar ? panel.bodyWidth : panel.w
     height: panel.bodyHeight
     clip: true
     opacity: panel.contentReveal

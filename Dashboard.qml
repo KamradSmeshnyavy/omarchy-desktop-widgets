@@ -74,30 +74,25 @@ PanelWindow {
   // перешеек выходит из внутренней кромки пилюли. Окно — весь экран (Ignore), клики — только по панели (mask).
   readonly property bool fromBar: liquid && geo.barLayer.width > 0
   readonly property string edge: geo.edge
-  readonly property bool sideBar: edge === "left" || edge === "right"
+  readonly property bool sideBar: dg.sideBar
   readonly property real scrW: screen ? screen.width : width
   readonly property real scrH: screen ? screen.height : height
   readonly property real m: Math.max(0, progress)
-  readonly property real mw: Math.min(1.03, m * 1.35)
-  readonly property real mh: Math.pow(Math.min(1.04, m), 1.35)
-  // кусок пилюли напротив панели, откуда она начинается
-  readonly property rect startRect: !sideBar
-    ? Qt.rect((scrW - Math.min(geo.pill.width, 240)) / 2, geo.pill.y, Math.min(geo.pill.width, 240), geo.pill.height)
-    : Qt.rect(geo.pill.x, (scrH - Math.min(geo.pill.height, 240)) / 2, geo.pill.width, Math.min(geo.pill.height, 240))
-  readonly property rect endRect: edge === "top" ? Qt.rect((scrW - bodyWidth) / 2, geo.pill.y + geo.pill.height + 10, bodyWidth, bodyHeight)
-    : edge === "bottom" ? Qt.rect((scrW - bodyWidth) / 2, geo.pill.y - 10 - bodyHeight, bodyWidth, bodyHeight)
-    : edge === "left" ? Qt.rect(geo.pill.x + geo.pill.width + 10, (scrH - bodyHeight) / 2, bodyWidth, bodyHeight)
-    : Qt.rect(geo.pill.x - 10 - bodyWidth, (scrH - bodyHeight) / 2, bodyWidth, bodyHeight)
-  // вдоль бара растёт быстрее (mw), от бара — догоняет (mh)
-  readonly property real mAlongX: sideBar ? mh : mw
-  readonly property real mAlongY: sideBar ? mw : mh
-  readonly property rect morph: Qt.rect(startRect.x + (endRect.x - startRect.x) * Math.min(1, mAlongX), startRect.y + (endRect.y - startRect.y) * Math.min(1, mAlongY),
-                                        startRect.width + (endRect.width - startRect.width) * mAlongX, startRect.height + (endRect.height - startRect.height) * mAlongY)
-  // опора перешейка: тонкая полоска у внутренней кромки пилюли
-  readonly property rect neckBase: edge === "top" ? Qt.rect(scrW / 2 - 70, geo.pill.y + geo.pill.height - 5, 140, 5)
-    : edge === "bottom" ? Qt.rect(scrW / 2 - 70, geo.pill.y, 140, 5)
-    : edge === "left" ? Qt.rect(geo.pill.x + geo.pill.width - 5, scrH / 2 - 70, 5, 140)
-    : Qt.rect(geo.pill.x, scrH / 2 - 70, 5, 140)
+  // откуда и куда растёт: против часов на баре, у бара во всю длину — вплотную и одним куском с ним (DrawerGeom)
+  DrawerGeom {
+    id: dg
+    geo: geo
+    bodyWidth: dash.bodyWidth
+    bodyHeight: dash.bodyHeight
+    progress: dash.progress
+    anchorIds: ["omarchy.clock", "glyph-clock", "dot-clock"]
+    scrW: dash.scrW
+    scrH: dash.scrH
+  }
+  readonly property rect startRect: dg.startRect
+  readonly property rect endRect: dg.endRect
+  readonly property rect morph: dg.morph
+  readonly property rect neckBase: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
   // скругление панели — не пилюля, даже если бар полностью круглый (glyph-pill: radius 99)
   readonly property real panelRadius: Math.min(style.cornerRadius, 28)
   readonly property real morphRadius: geo.radius + (panelRadius - geo.radius) * Math.min(1, m * 2)
@@ -137,7 +132,7 @@ PanelWindow {
   readonly property bool loose: fromBar && (detached || pulling)
   readonly property real pullDist: loose ? Math.hypot(freePos.x - endRect.x, freePos.y - endRect.y) : 0
   // перешеек: держится, пока панель рядом, тянется и рвётся у 170 px
-  readonly property real neckK: !fromBar ? 0 : !loose ? 26 : pulling && pullDist < 170 ? 26 + pullDist * 0.35 : 0
+  readonly property real neckK: !fromBar ? 0 : !loose ? dg.neckK : pulling && pullDist < 170 ? dg.neckK + pullDist * 0.35 : 0
 
   HyprlandFocusGrab {
     active: !dash.host.dotmatrixDash && dash.host.dashboardOpen && !dash.detached
@@ -263,11 +258,18 @@ PanelWindow {
       glassOrigin: dash.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
       // перешеек к пилюле бара: панель стекает из бара одним куском стекла (Vitreus)
       glassBleed: dash.fromBar && dash.neckK > 0 ? Math.max(Math.max(dash.neckBase.x - hit.x - hit.width, hit.x - dash.neckBase.x - dash.neckBase.width),
-                                                             Math.max(dash.neckBase.y - hit.y - hit.height, hit.y - dash.neckBase.y - dash.neckBase.height), 0) + 40 : 0
+                                                             Math.max(dash.neckBase.y - hit.y - hit.height, hit.y - dash.neckBase.y - dash.neckBase.height), 0) + 40 + dg.fillet + 6 : 0
       // опора — тонкая полоска у нижней кромки пилюли: перешеек выходит из края бара, не закрывая его содержимое
       glassJoin: dash.fromBar && dash.neckK > 0 ? Qt.rect(dash.neckBase.x - hit.x, dash.neckBase.y - hit.y, dash.neckBase.width, dash.neckBase.height) : Qt.rect(0, 0, 0, 0)
       glassJoinRadius: 2.5
       glassJoinK: dash.neckK
+      // у рамки — ещё и крыло в её кромку; стекло внутри бара и рамки не рисуется (там своё)
+      readonly property bool docked: dash.fromBar && !dash.loose
+      glassJoin2: docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+      glassJoin2K: dg.fillet
+      glassCut: dash.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
+      glassCut2: docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+      mergeEdges: docked && dash.m > 0.6 ? dg.mergeEdges : []
       x: hit.x
       y: hit.y
       width: hit.width
