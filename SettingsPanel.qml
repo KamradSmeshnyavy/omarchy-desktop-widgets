@@ -161,7 +161,7 @@ PanelWindow {
   }
 
   onActiveChanged: {
-    if (active) geo.refresh()
+    if (active) { geo.refresh(); pull.restore() }
     if (active) {
       if (panel.host.settingsSection !== "") {
         expanded = panel.host.settingsSection
@@ -288,7 +288,18 @@ PanelWindow {
     anchorIds: ["omarchy.audio", "kamradsmeshnyavy.audio", "omarchy.network", "kamradsmeshnyavy.network", "omarchy.bluetooth", "kamradsmeshnyavy.bluetooth", "omarchy.tray"]
     scrW: panel.screen ? panel.screen.width : 1440
     scrH: panel.screen ? panel.screen.height : 900
+  }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)
+  DrawerPull {
+    id: pull
+    dg: dg
+    key: "settings"
+    screenName: panel.screen ? String(panel.screen.name) : ""
+    bodyWidth: panel.bodyWidth
+    bodyHeight: panel.bodyHeight
   }
+  readonly property bool loose: fromBar && pull.loose
+  readonly property bool docked: fromBar && !pull.loose
+
 
   visible: progress > 0.001
   screen: host.focusedScreen
@@ -304,7 +315,9 @@ PanelWindow {
   WlrLayershell.namespace: "omarchy-dotmatrix-settings"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-  mask: Region { item: hit }
+  mask: Region { item: pull.pulling ? null : hit; regions: pull.pulling ? [dragAll] : grips.tabItem.visible ? [tabRegion] : [] }
+  Region { id: tabRegion; item: grips.tabItem }
+  Region { id: dragAll; x: 0; y: 0; width: panel.width; height: panel.height }
 
   HyprlandFocusGrab {
     active: panel.active
@@ -314,10 +327,21 @@ PanelWindow {
 
   Item {
     id: hit
-    x: panel.fromBar ? dg.morph.x : panel.width - panel.seamOverlap - panel.pad - panel.w
-    y: panel.fromBar ? dg.morph.y : panel.attached ? panel.seamOverlap : 4
-    width: panel.fromBar ? dg.morph.width : panel.w + panel.seamOverlap
-    height: panel.fromBar ? dg.morph.height : panel.bodyHeight
+    x: panel.loose ? pull.freePos.x : panel.fromBar ? dg.morph.x : panel.width - panel.seamOverlap - panel.pad - panel.w
+    y: panel.loose ? pull.freePos.y : panel.fromBar ? dg.morph.y : panel.attached ? panel.seamOverlap : 4
+    width: panel.loose ? panel.bodyWidth : panel.fromBar ? dg.morph.width : panel.w + panel.seamOverlap
+    height: panel.loose ? panel.bodyHeight : panel.fromBar ? dg.morph.height : panel.bodyHeight
+    Behavior on x { enabled: pull.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+    Behavior on y { enabled: pull.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+    PullGrip {
+      id: grips
+      pull: pull
+      active: panel.fromBar && panel.active
+      stripHeight: 12
+      ink: panel.host.foreground
+      tabShown: panel.host.panelStyle.plastic && panel.host.panelStyle.base === "retro"
+        && (panel.docked ? dg.mergeEdges : pull.mergeEdges).indexOf("top") === -1
+    }
   }
 
   // Плавающая карточка (бар не рамка DOT-MATRIX): как дашборд — материал стиля (StyleCard) или
@@ -327,6 +351,7 @@ PanelWindow {
     visible: !panel.attached && panel.host.panelStyle.card && panel.w > 1
     style: panel.host.panelStyle
     seed: 13
+    decor: panel.fromBar
     x: hit.x; y: hit.y
     width: panel.fromBar ? hit.width : panel.w
     height: panel.fromBar ? hit.height : panel.bodyHeight
@@ -335,14 +360,16 @@ PanelWindow {
     readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
     glassOrigin: panel.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
     glassBleed: panel.fromBar ? 2 * dg.fillet + 60 : 0
-    glassJoin: panel.fromBar ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin: pull.stuck && panel.fromBar ? Qt.rect(pull.strip.x - hit.x, pull.strip.y - hit.y, pull.strip.width, pull.strip.height)
+      : panel.docked || (pull.pulling && pull.dist < 170) ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
     glassJoinRadius: 2.5
-    glassJoinK: panel.fromBar ? dg.neckK : 0
-    glassJoin2: panel.fromBar && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoinK: pull.stuck ? dg.fillet : panel.docked ? dg.neckK : pull.pulling && pull.dist < 170 ? dg.neckK + pull.dist * 0.35 : 0
+    glassJoin2: panel.docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
     glassJoin2K: dg.fillet
     glassCut: panel.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
-    glassCut2: panel.fromBar && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
-    mergeEdges: panel.fromBar && panel.progress > 0.6 ? dg.mergeEdges : []
+    glassCut2: panel.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
+      : panel.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+    mergeEdges: panel.fromBar && panel.progress > 0.6 ? (panel.docked ? dg.mergeEdges : pull.mergeEdges) : []
   }
   Rectangle {
     visible: !panel.attached && !panel.host.panelStyle.card && panel.w > 1
@@ -444,8 +471,8 @@ PanelWindow {
   }
 
   Item {
-    x: panel.fromBar ? dg.endRect.x : hit.x
-    y: panel.fromBar ? dg.endRect.y : hit.y
+    x: panel.docked ? dg.endRect.x : hit.x
+    y: panel.docked ? dg.endRect.y : hit.y
     width: panel.fromBar ? panel.bodyWidth : panel.w
     height: panel.bodyHeight
     clip: true

@@ -67,6 +67,7 @@ PanelWindow {
     function onPowerOpenChanged() {
       if (!power.host.powerOpen) return
       geo.refresh()
+      pull.restore()
       power.selected = 0
       power.armed = ""
       probe.running = true
@@ -99,7 +100,18 @@ PanelWindow {
     anchorIds: ["omarchy.power"]
     scrW: power.screen ? power.screen.width : 1440
     scrH: power.screen ? power.screen.height : 900
+  }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)
+  DrawerPull {
+    id: pull
+    dg: dg
+    key: "power"
+    screenName: power.screen ? String(power.screen.name) : ""
+    bodyWidth: power.thickness
+    bodyHeight: power.length
   }
+  readonly property bool loose: fromBar && pull.loose
+  readonly property bool docked: fromBar && !pull.loose
+
 
   visible: progress > 0.001
   screen: host.focusedScreen
@@ -113,7 +125,9 @@ PanelWindow {
   WlrLayershell.namespace: "omarchy-power"
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: power.own ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-  mask: Region { item: hit }
+  mask: Region { item: pull.pulling ? null : hit; regions: pull.pulling ? [dragAll] : grips.tabItem.visible ? [tabRegion] : [] }
+  Region { id: tabRegion; item: grips.tabItem }
+  Region { id: dragAll; x: 0; y: 0; width: power.width; height: power.height }
 
   readonly property bool own: host.powerOpen && host.value("powerStyle") !== "glyph"
   HyprlandFocusGrab {
@@ -126,10 +140,21 @@ PanelWindow {
 
   Item {
     id: hit
-    x: power.fromBar ? dg.morph.x : power.width - power.edgeGap - power.w
-    y: power.fromBar ? dg.morph.y : power.bodyTop
-    width: power.fromBar ? dg.morph.width : power.w
-    height: power.fromBar ? dg.morph.height : power.length
+    x: power.loose ? pull.freePos.x : power.fromBar ? dg.morph.x : power.width - power.edgeGap - power.w
+    y: power.loose ? pull.freePos.y : power.fromBar ? dg.morph.y : power.bodyTop
+    width: power.loose ? power.thickness : power.fromBar ? dg.morph.width : power.w
+    height: power.loose ? power.length : power.fromBar ? dg.morph.height : power.length
+    Behavior on x { enabled: pull.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+    Behavior on y { enabled: pull.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+    PullGrip {
+      id: grips
+      pull: pull
+      active: power.fromBar && power.host.powerOpen
+      stripHeight: 12
+      ink: power.host.foreground
+      tabShown: power.style.plastic && power.style.base === "retro"
+        && (power.docked ? dg.mergeEdges : pull.mergeEdges).indexOf("top") === -1
+    }
   }
 
   // Контур как у OSD у края: вогнутые углы сверху и снизу переходят в край экрана.
@@ -139,6 +164,7 @@ PanelWindow {
     style: power.style
     glassLayer: power.fromBar ? "" : "omarchy-power"
     seed: 7
+    decor: power.fromBar
     x: hit.x
     y: hit.y
     width: hit.width
@@ -148,14 +174,16 @@ PanelWindow {
     readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
     glassOrigin: power.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
     glassBleed: power.fromBar ? 2 * dg.fillet + 60 : 0
-    glassJoin: power.fromBar ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin: pull.stuck && power.fromBar ? Qt.rect(pull.strip.x - hit.x, pull.strip.y - hit.y, pull.strip.width, pull.strip.height)
+      : power.docked || (pull.pulling && pull.dist < 170) ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
     glassJoinRadius: 2.5
-    glassJoinK: power.fromBar ? dg.neckK : 0
-    glassJoin2: power.fromBar && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoinK: pull.stuck ? dg.fillet : power.docked ? dg.neckK : pull.pulling && pull.dist < 170 ? dg.neckK + pull.dist * 0.35 : 0
+    glassJoin2: power.docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
     glassJoin2K: dg.fillet
     glassCut: power.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
-    glassCut2: power.fromBar && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
-    mergeEdges: power.fromBar && power.progress > 0.6 ? dg.mergeEdges : []
+    glassCut2: power.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
+      : power.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+    mergeEdges: power.fromBar && power.progress > 0.6 ? (power.docked ? dg.mergeEdges : pull.mergeEdges) : []
   }
   Rectangle {
     visible: !power.attached && !power.style.card
@@ -203,8 +231,8 @@ PanelWindow {
 
   Item {
     id: content
-    x: power.fromBar ? dg.endRect.x : hit.x
-    y: power.fromBar ? dg.endRect.y : hit.y
+    x: power.docked ? dg.endRect.x : hit.x
+    y: power.docked ? dg.endRect.y : hit.y
     width: power.fromBar ? power.thickness : power.w
     height: power.length
     clip: !power.fromBar

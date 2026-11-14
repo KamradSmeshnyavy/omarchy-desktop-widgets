@@ -62,7 +62,7 @@ PanelWindow {
   Connections {
     target: dash.host
     function onDashboardOpenChanged() {
-      if (dash.host.dashboardOpen) { geo.refresh(); wave.stop() }
+      if (dash.host.dashboardOpen) { geo.refresh(); wave.stop(); pull.restore() }
       else if (dash.fromBar) waveDelay.restart()
     }
   }
@@ -117,21 +117,29 @@ PanelWindow {
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: !host.dotmatrixDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-  mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : tabGrip.visible ? [tabRegion] : [] }
-  Region { id: tabRegion; item: tabGrip }
+  mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : grips.tabItem.visible ? [tabRegion] : [] }
+  Region { id: tabRegion; item: grips.tabItem }
   Region { id: dragAll; x: 0; y: 0; width: dash.width; height: dash.height }
   // Плеер берут мышью и вытягивают из дашборда (как у Vitreus): отпустил за его краем — плеер остаётся на столе
   // поверх окон в этой точке, внутри — возвращается на место. Пока тянут, окно — до низа экрана (fromBar).
   property bool cardDrag: false
   // Отрыв от бара (как Desk у Vitreus): тянут за верхнюю полосу — перешеек тянется и рвётся, панель остаётся там, где
   // отпустили (detached: не закрывается кликом мимо, Esc — закрыть); отпустили у бара — прилипает обратно.
-  property bool detached: false
-  property bool pulling: false
-  property point freePos: Qt.point(0, 0)
-  property point pullBase: Qt.point(0, 0)
-  property bool snapping: false
+  // Место запоминается (DrawerPull): следующее открытие — там же; у кромки рамки / бара панель прилипает и сливается.
+  DrawerPull {
+    id: pull
+    dg: dg
+    key: "dashboard"
+    screenName: dash.screen ? String(dash.screen.name) : ""
+    bodyWidth: dash.bodyWidth
+    bodyHeight: dash.bodyHeight
+  }
+  readonly property bool detached: pull.detached
+  readonly property bool pulling: pull.pulling
+  readonly property point freePos: pull.freePos
+  readonly property bool snapping: pull.snapping
   readonly property bool loose: fromBar && (detached || pulling)
-  readonly property real pullDist: loose ? Math.hypot(freePos.x - endRect.x, freePos.y - endRect.y) : 0
+  readonly property real pullDist: loose ? pull.dist : 0
   // перешеек: держится, пока панель рядом, тянется и рвётся у 170 px
   readonly property real neckK: !fromBar ? 0 : !loose ? dg.neckK : pulling && pullDist < 170 ? dg.neckK + pullDist * 0.35 : 0
 
@@ -178,62 +186,17 @@ PanelWindow {
       Behavior on x { enabled: dash.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
       Behavior on y { enabled: dash.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
 
-      // верхняя полоса — за неё отрывают (кнопки ниже неё)
-      Item {
-        id: grip
-        visible: dash.fromBar && dash.host.dashboardOpen
-        anchors { left: parent.left; right: parent.right; top: parent.top }
-        height: 18
-        z: 20
-        HoverHandler { cursorShape: gripDrag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
-        Rectangle {
-          anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 6 }
-          width: 44; height: 4; radius: 2
-          color: Qt.rgba(dash.host.foreground.r, dash.host.foreground.g, dash.host.foreground.b, gripDrag.active ? 0.6 : 0.28)
-        }
-        DragHandler {
-          id: gripDrag
-          target: null
-          dragThreshold: 4
-          onActiveChanged: active ? sheet.pullStart() : sheet.pullEnd()
-          onTranslationChanged: if (active) sheet.pullMove(translation.x, translation.y)
-        }
-      }
-      // красный язычок основы Retro (рисует StyleCard) — тоже ручка: за него панель отрывают и носят по столу
-      Item {
-        id: tabGrip
-        visible: dash.fromBar && dash.host.dashboardOpen && dash.style.plastic && dash.style.base === "retro"
-          && (dash.loose || dg.mergeEdges.indexOf("top") === -1)
-        x: 58; y: -10
-        width: 78; height: 26
-        z: 21
-        HoverHandler { cursorShape: tabDrag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
-        DragHandler {
-          id: tabDrag
-          target: null
-          dragThreshold: 3
-          onActiveChanged: active ? sheet.pullStart() : sheet.pullEnd()
-          onTranslationChanged: if (active) sheet.pullMove(translation.x, translation.y)
-        }
+      // ручки отрыва: верхняя полоса и красный язычок Retro (его рисует StyleCard)
+      PullGrip {
+        id: grips
+        pull: pull
+        active: dash.fromBar && dash.host.dashboardOpen
+        stripHeight: 18
+        ink: dash.host.foreground
+        tabShown: dash.style.plastic && dash.style.base === "retro" && (dash.loose || dg.mergeEdges.indexOf("top") === -1)
+          && pull.mergeEdges.indexOf("top") === -1
       }
     }
-    function pullStart() {
-      dash.pullBase = Qt.point(hit.x, hit.y)
-      dash.freePos = dash.pullBase
-      dash.pulling = true
-    }
-    function pullEnd() {
-      var home = Math.hypot(dash.freePos.x - dash.endRect.x, dash.freePos.y - dash.endRect.y) < 80
-      dash.pulling = false
-      if (home) { dash.snapping = true; dash.detached = false; snapOff.restart() }
-      else dash.detached = true
-    }
-    function pullMove(tx, ty) {
-      var sw = dash.screen ? dash.screen.width : dash.width, sh = dash.screen ? dash.screen.height : 900
-      dash.freePos = Qt.point(Math.max(0, Math.min(sw - dash.bodyWidth, dash.pullBase.x + tx)),
-                              Math.max(0, Math.min(sh - dash.bodyHeight, dash.pullBase.y + ty)))
-    }
-    Timer { id: snapOff; interval: 360; onTriggered: dash.snapping = false }
 
     // attached: контур с вогнутыми углами сверху.
     Shape {
@@ -276,19 +239,21 @@ PanelWindow {
       decor: true
       glassOrigin: dash.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
       // перешеек к пилюле бара: панель стекает из бара одним куском стекла (Vitreus)
-      glassBleed: dash.fromBar && dash.neckK > 0 ? Math.max(Math.max(dash.neckBase.x - hit.x - hit.width, hit.x - dash.neckBase.x - dash.neckBase.width),
+      glassBleed: pull.stuck ? 2 * dg.fillet + 60 : dash.fromBar && dash.neckK > 0 ? Math.max(Math.max(dash.neckBase.x - hit.x - hit.width, hit.x - dash.neckBase.x - dash.neckBase.width),
                                                              Math.max(dash.neckBase.y - hit.y - hit.height, hit.y - dash.neckBase.y - dash.neckBase.height), 0) + 40 + dg.fillet + 6 : 0
       // опора — тонкая полоска у нижней кромки пилюли: перешеек выходит из края бара, не закрывая его содержимое
-      glassJoin: dash.fromBar && dash.neckK > 0 ? Qt.rect(dash.neckBase.x - hit.x, dash.neckBase.y - hit.y, dash.neckBase.width, dash.neckBase.height) : Qt.rect(0, 0, 0, 0)
+      glassJoin: dash.fromBar && pull.stuck ? Qt.rect(pull.strip.x - hit.x, pull.strip.y - hit.y, pull.strip.width, pull.strip.height)
+        : dash.fromBar && dash.neckK > 0 ? Qt.rect(dash.neckBase.x - hit.x, dash.neckBase.y - hit.y, dash.neckBase.width, dash.neckBase.height) : Qt.rect(0, 0, 0, 0)
       glassJoinRadius: 2.5
-      glassJoinK: dash.neckK
+      glassJoinK: pull.stuck ? dg.fillet : dash.neckK
       // у рамки — ещё и крыло в её кромку; стекло внутри бара и рамки не рисуется (там своё)
       readonly property bool docked: dash.fromBar && !dash.loose
       glassJoin2: docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
       glassJoin2K: dg.fillet
       glassCut: dash.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
-      glassCut2: docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
-      mergeEdges: docked && dash.m > 0.6 ? dg.mergeEdges : []
+      glassCut2: dash.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
+        : docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+      mergeEdges: docked && dash.m > 0.6 ? dg.mergeEdges : dash.fromBar && dash.m > 0.6 ? pull.mergeEdges : []
       x: hit.x
       y: hit.y
       width: hit.width
