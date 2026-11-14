@@ -117,7 +117,8 @@ PanelWindow {
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: !host.dotmatrixDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-  mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : [] }
+  mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : tabGrip.visible ? [tabRegion] : [] }
+  Region { id: tabRegion; item: tabGrip }
   Region { id: dragAll; x: 0; y: 0; width: dash.width; height: dash.height }
   // Плеер берут мышью и вытягивают из дашборда (как у Vitreus): отпустил за его краем — плеер остаётся на столе
   // поверх окон в этой точке, внутри — возвращается на место. Пока тянут, окно — до низа экрана (fromBar).
@@ -194,25 +195,43 @@ PanelWindow {
           id: gripDrag
           target: null
           dragThreshold: 4
-          onActiveChanged: {
-            if (active) {
-              dash.pullBase = Qt.point(hit.x, hit.y)
-              dash.freePos = dash.pullBase
-              dash.pulling = true
-              return
-            }
-            var home = Math.hypot(dash.freePos.x - dash.endRect.x, dash.freePos.y - dash.endRect.y) < 80
-            dash.pulling = false
-            if (home) { dash.snapping = true; dash.detached = false; snapOff.restart() }
-            else dash.detached = true
-          }
-          onTranslationChanged: if (active) {
-            var sw = dash.screen ? dash.screen.width : dash.width, sh = dash.screen ? dash.screen.height : 900
-            dash.freePos = Qt.point(Math.max(0, Math.min(sw - dash.bodyWidth, dash.pullBase.x + translation.x)),
-                                    Math.max(0, Math.min(sh - dash.bodyHeight, dash.pullBase.y + translation.y)))
-          }
+          onActiveChanged: active ? sheet.pullStart() : sheet.pullEnd()
+          onTranslationChanged: if (active) sheet.pullMove(translation.x, translation.y)
         }
       }
+      // красный язычок основы Retro (рисует StyleCard) — тоже ручка: за него панель отрывают и носят по столу
+      Item {
+        id: tabGrip
+        visible: dash.fromBar && dash.host.dashboardOpen && dash.style.plastic && dash.style.base === "retro"
+          && (dash.loose || dg.mergeEdges.indexOf("top") === -1)
+        x: 58; y: -10
+        width: 78; height: 26
+        z: 21
+        HoverHandler { cursorShape: tabDrag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
+        DragHandler {
+          id: tabDrag
+          target: null
+          dragThreshold: 3
+          onActiveChanged: active ? sheet.pullStart() : sheet.pullEnd()
+          onTranslationChanged: if (active) sheet.pullMove(translation.x, translation.y)
+        }
+      }
+    }
+    function pullStart() {
+      dash.pullBase = Qt.point(hit.x, hit.y)
+      dash.freePos = dash.pullBase
+      dash.pulling = true
+    }
+    function pullEnd() {
+      var home = Math.hypot(dash.freePos.x - dash.endRect.x, dash.freePos.y - dash.endRect.y) < 80
+      dash.pulling = false
+      if (home) { dash.snapping = true; dash.detached = false; snapOff.restart() }
+      else dash.detached = true
+    }
+    function pullMove(tx, ty) {
+      var sw = dash.screen ? dash.screen.width : dash.width, sh = dash.screen ? dash.screen.height : 900
+      dash.freePos = Qt.point(Math.max(0, Math.min(sw - dash.bodyWidth, dash.pullBase.x + tx)),
+                              Math.max(0, Math.min(sh - dash.bodyHeight, dash.pullBase.y + ty)))
     }
     Timer { id: snapOff; interval: 360; onTriggered: dash.snapping = false }
 
