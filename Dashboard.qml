@@ -70,15 +70,37 @@ PanelWindow {
   Timer { id: waveDelay; interval: Math.round(dash.duration * 0.7); onTriggered: if (!dash.host.dashboardOpen) wave.restart() }
   property real wv: 0
   NumberAnimation { id: wave; target: dash; property: "wv"; from: 0; to: 1; duration: 620; easing.type: Easing.OutCubic }
-  readonly property bool fromBar: liquid && geo.barLayer.width > 0 && geo.edge === "top"
+  // Бар у любого края: панель встаёт рядом с ним (сверху / снизу — по центру, слева / справа — по середине высоты),
+  // перешеек выходит из внутренней кромки пилюли. Окно — весь экран (Ignore), клики — только по панели (mask).
+  readonly property bool fromBar: liquid && geo.barLayer.width > 0
+  readonly property string edge: geo.edge
+  readonly property bool sideBar: edge === "left" || edge === "right"
+  readonly property real scrW: screen ? screen.width : width
+  readonly property real scrH: screen ? screen.height : height
   readonly property real m: Math.max(0, progress)
   readonly property real mw: Math.min(1.03, m * 1.35)
   readonly property real mh: Math.pow(Math.min(1.04, m), 1.35)
-  readonly property rect startRect: Qt.rect((width - Math.min(geo.pill.width, 240)) / 2, geo.pill.y, Math.min(geo.pill.width, 240), geo.pill.height)
-  readonly property rect endRect: Qt.rect((width - bodyWidth) / 2, geo.pill.y + geo.pill.height + 10, bodyWidth, bodyHeight)
-  readonly property rect morph: Qt.rect(startRect.x + (endRect.x - startRect.x) * mw, startRect.y + (endRect.y - startRect.y) * Math.min(1, mh),
-                                        startRect.width + (endRect.width - startRect.width) * mw, startRect.height + (endRect.height - startRect.height) * mh)
-  readonly property real morphRadius: geo.radius + (style.cornerRadius - geo.radius) * Math.min(1, m * 2)
+  // кусок пилюли напротив панели, откуда она начинается
+  readonly property rect startRect: !sideBar
+    ? Qt.rect((scrW - Math.min(geo.pill.width, 240)) / 2, geo.pill.y, Math.min(geo.pill.width, 240), geo.pill.height)
+    : Qt.rect(geo.pill.x, (scrH - Math.min(geo.pill.height, 240)) / 2, geo.pill.width, Math.min(geo.pill.height, 240))
+  readonly property rect endRect: edge === "top" ? Qt.rect((scrW - bodyWidth) / 2, geo.pill.y + geo.pill.height + 10, bodyWidth, bodyHeight)
+    : edge === "bottom" ? Qt.rect((scrW - bodyWidth) / 2, geo.pill.y - 10 - bodyHeight, bodyWidth, bodyHeight)
+    : edge === "left" ? Qt.rect(geo.pill.x + geo.pill.width + 10, (scrH - bodyHeight) / 2, bodyWidth, bodyHeight)
+    : Qt.rect(geo.pill.x - 10 - bodyWidth, (scrH - bodyHeight) / 2, bodyWidth, bodyHeight)
+  // вдоль бара растёт быстрее (mw), от бара — догоняет (mh)
+  readonly property real mAlongX: sideBar ? mh : mw
+  readonly property real mAlongY: sideBar ? mw : mh
+  readonly property rect morph: Qt.rect(startRect.x + (endRect.x - startRect.x) * Math.min(1, mAlongX), startRect.y + (endRect.y - startRect.y) * Math.min(1, mAlongY),
+                                        startRect.width + (endRect.width - startRect.width) * mAlongX, startRect.height + (endRect.height - startRect.height) * mAlongY)
+  // опора перешейка: тонкая полоска у внутренней кромки пилюли
+  readonly property rect neckBase: edge === "top" ? Qt.rect(scrW / 2 - 70, geo.pill.y + geo.pill.height - 5, 140, 5)
+    : edge === "bottom" ? Qt.rect(scrW / 2 - 70, geo.pill.y, 140, 5)
+    : edge === "left" ? Qt.rect(geo.pill.x + geo.pill.width - 5, scrH / 2 - 70, 5, 140)
+    : Qt.rect(geo.pill.x, scrH / 2 - 70, 5, 140)
+  // скругление панели — не пилюля, даже если бар полностью круглый (glyph-pill: radius 99)
+  readonly property real panelRadius: Math.min(style.cornerRadius, 28)
+  readonly property real morphRadius: geo.radius + (panelRadius - geo.radius) * Math.min(1, m * 2)
   readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress)
     : liquid ? Math.round(bodyHeight * Math.max(0, Math.min(1.04, progress * progress))) : bodyHeight
   readonly property real w: liquid ? Math.round(bodyWidth * Math.max(0.18, Math.min(1.02, 0.18 + 0.82 * Math.sqrt(Math.max(0, progress))))) : bodyWidth
@@ -90,23 +112,35 @@ PanelWindow {
   anchors.top: true
   anchors.left: fromBar
   anchors.right: fromBar
+  anchors.bottom: fromBar
   exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: bodyWidth + 2 * Math.max(flare, shadowPad)
-  implicitHeight: fromBar ? (cardDrag && screen ? screen.height : geo.pill.y + geo.pill.height + 10 + bodyHeight * 1.06 + shadowPad) : bodyHeight + margin + shadowPad
+  implicitHeight: bodyHeight + margin + shadowPad
   color: "transparent"
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.keyboardFocus: !host.dotmatrixDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-  mask: Region { item: dash.cardDrag ? null : hit; regions: dash.cardDrag ? [dragAll] : [] }
+  mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : [] }
   Region { id: dragAll; x: 0; y: 0; width: dash.width; height: dash.height }
   // Плеер берут мышью и вытягивают из дашборда (как у Vitreus): отпустил за его краем — плеер остаётся на столе
   // поверх окон в этой точке, внутри — возвращается на место. Пока тянут, окно — до низа экрана (fromBar).
   property bool cardDrag: false
+  // Отрыв от бара (как Desk у Vitreus): тянут за верхнюю полосу — перешеек тянется и рвётся, панель остаётся там, где
+  // отпустили (detached: не закрывается кликом мимо, Esc — закрыть); отпустили у бара — прилипает обратно.
+  property bool detached: false
+  property bool pulling: false
+  property point freePos: Qt.point(0, 0)
+  property point pullBase: Qt.point(0, 0)
+  property bool snapping: false
+  readonly property bool loose: fromBar && (detached || pulling)
+  readonly property real pullDist: loose ? Math.hypot(freePos.x - endRect.x, freePos.y - endRect.y) : 0
+  // перешеек: держится, пока панель рядом, тянется и рвётся у 170 px
+  readonly property real neckK: !fromBar ? 0 : !loose ? 26 : pulling && pullDist < 170 ? 26 + pullDist * 0.35 : 0
 
   HyprlandFocusGrab {
-    active: !dash.host.dotmatrixDash && dash.host.dashboardOpen
+    active: !dash.host.dotmatrixDash && dash.host.dashboardOpen && !dash.detached
     windows: [dash]
     onCleared: dash.host.dashboardOpen = false
   }
@@ -116,10 +150,12 @@ PanelWindow {
     Rectangle {
       required property int index
       readonly property real k: Math.max(0, Math.min(1, dash.wv * 1.25 - index * 0.25))
-      x: dash.startRect.x - 18 * k * (index + 1)
-      y: dash.startRect.y - 4 * k * (index + 1)
-      width: dash.startRect.width + 36 * k * (index + 1)
-      height: dash.startRect.height + 8 * k * (index + 1)
+      readonly property real ax: dash.sideBar ? 4 : 18
+      readonly property real ay: dash.sideBar ? 18 : 4
+      x: dash.startRect.x - ax * k * (index + 1)
+      y: dash.startRect.y - ay * k * (index + 1)
+      width: dash.startRect.width + 2 * ax * k * (index + 1)
+      height: dash.startRect.height + 2 * ay * k * (index + 1)
       radius: height / 2
       color: "transparent"
       border.width: 1.5
@@ -139,11 +175,51 @@ PanelWindow {
 
     Item {
       id: hit
-      x: dash.fromBar ? dash.morph.x : (dash.width - dash.w) / 2
-      y: dash.fromBar ? dash.morph.y : dash.margin
-      width: dash.fromBar ? dash.morph.width : dash.w
-      height: dash.fromBar ? dash.morph.height : dash.h
+      x: dash.loose ? dash.freePos.x : dash.fromBar ? dash.morph.x : (dash.width - dash.w) / 2
+      y: dash.loose ? dash.freePos.y : dash.fromBar ? dash.morph.y : dash.margin
+      width: dash.loose ? dash.bodyWidth : dash.fromBar ? dash.morph.width : dash.w
+      height: dash.loose ? dash.bodyHeight : dash.fromBar ? dash.morph.height : dash.h
+      Behavior on x { enabled: dash.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+      Behavior on y { enabled: dash.snapping; NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
+
+      // верхняя полоса — за неё отрывают (кнопки ниже неё)
+      Item {
+        id: grip
+        visible: dash.fromBar && dash.host.dashboardOpen
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: 18
+        z: 20
+        HoverHandler { cursorShape: gripDrag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
+        Rectangle {
+          anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 6 }
+          width: 44; height: 4; radius: 2
+          color: Qt.rgba(dash.host.foreground.r, dash.host.foreground.g, dash.host.foreground.b, gripDrag.active ? 0.6 : 0.28)
+        }
+        DragHandler {
+          id: gripDrag
+          target: null
+          dragThreshold: 4
+          onActiveChanged: {
+            if (active) {
+              dash.pullBase = Qt.point(hit.x, hit.y)
+              dash.freePos = dash.pullBase
+              dash.pulling = true
+              return
+            }
+            var home = Math.hypot(dash.freePos.x - dash.endRect.x, dash.freePos.y - dash.endRect.y) < 80
+            dash.pulling = false
+            if (home) { dash.snapping = true; dash.detached = false; snapOff.restart() }
+            else dash.detached = true
+          }
+          onTranslationChanged: if (active) {
+            var sw = dash.screen ? dash.screen.width : dash.width, sh = dash.screen ? dash.screen.height : 900
+            dash.freePos = Qt.point(Math.max(0, Math.min(sw - dash.bodyWidth, dash.pullBase.x + translation.x)),
+                                    Math.max(0, Math.min(sh - dash.bodyHeight, dash.pullBase.y + translation.y)))
+          }
+        }
+      }
     }
+    Timer { id: snapOff; interval: 360; onTriggered: dash.snapping = false }
 
     // attached: контур с вогнутыми углами сверху.
     Shape {
@@ -184,6 +260,13 @@ PanelWindow {
       seed: 3
       glassLayer: "omarchy-dashboard"
       glassOrigin: dash.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
+      // перешеек к пилюле бара: панель стекает из бара одним куском стекла (Vitreus)
+      glassBleed: dash.fromBar && dash.neckK > 0 ? Math.max(Math.max(dash.neckBase.x - hit.x - hit.width, hit.x - dash.neckBase.x - dash.neckBase.width),
+                                                             Math.max(dash.neckBase.y - hit.y - hit.height, hit.y - dash.neckBase.y - dash.neckBase.height), 0) + 40 : 0
+      // опора — тонкая полоска у нижней кромки пилюли: перешеек выходит из края бара, не закрывая его содержимое
+      glassJoin: dash.fromBar && dash.neckK > 0 ? Qt.rect(dash.neckBase.x - hit.x, dash.neckBase.y - hit.y, dash.neckBase.width, dash.neckBase.height) : Qt.rect(0, 0, 0, 0)
+      glassJoinRadius: 2.5
+      glassJoinK: dash.neckK
       x: hit.x
       y: hit.y
       width: hit.width
@@ -212,8 +295,8 @@ PanelWindow {
 
     Item {
       id: content
-      x: dash.fromBar ? dash.endRect.x : (dash.width - dash.bodyWidth) / 2
-      y: dash.fromBar ? dash.endRect.y + 14 * (1 - Math.min(1, dash.m)) : hit.y
+      x: dash.loose ? hit.x : dash.fromBar ? dash.endRect.x : (dash.width - dash.bodyWidth) / 2
+      y: dash.loose ? hit.y : dash.fromBar ? dash.endRect.y + (dash.edge === "top" ? 14 : dash.edge === "bottom" ? -14 : 0) * (1 - Math.min(1, dash.m)) : hit.y
       width: dash.bodyWidth
       height: dash.fromBar ? dash.bodyHeight : dash.h
       clip: !dash.fromBar
