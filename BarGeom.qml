@@ -35,6 +35,30 @@ Item {
     return Qt.rect(x, barLayer.y + margin, thick, barLayer.height - 2 * margin)
   }
 
+  // Точная геометрия от самого бара (kamradsmeshnyavy.bar пишет omarchy-bar-geom.json): рамка и кнопки модулей.
+  property var exported: ({})
+  readonly property bool framed: exported.framed === true
+  readonly property real frameWidth: Number(exported.frameWidth) || 0
+  readonly property real frameRadius: Number(exported.frameRadius) || 0
+  // прямоугольник кнопки модуля на экране (логические px) — первый найденный из names; нет — пустой
+  function moduleRect(names) {
+    var mon = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
+    var all = exported.modules || {}
+    var mods = all[mon] || all[Object.keys(all)[0]] || {}
+    var list = Array.isArray(names) ? names : [names]
+    for (var i = 0; i < list.length; i++) {
+      var r = mods[list[i]]
+      if (r && barLayer.width > 0) return Qt.rect(barLayer.x + r[0], barLayer.y + r[1], r[2], r[3])
+    }
+    return Qt.rect(0, 0, 0, 0)
+  }
+  FileView {
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-bar-geom.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: { try { geo.exported = JSON.parse(text()) || {} } catch (e) { geo.exported = {} } }
+  }
   FileView {
     path: Quickshell.env("HOME") + "/.config/omarchy/bar-skin.json"
     watchChanges: true
