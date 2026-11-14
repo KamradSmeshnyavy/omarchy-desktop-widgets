@@ -1,0 +1,8 @@
+singleton PTheme PTheme.qml
+Lb Lb.qml
+Num Num.qml
+Toggle Toggle.qml
+Pick Pick.qml
+Dial Dial.qml
+Stage Stage.qml
+Prefs Prefs.qml

@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import QtQuick
 import qs.Commons as Commons
 import "glyph" as Glyph
+import "prefs" as RicePrefs
 import "dotmatrix" as DotMatrix
 
 // Виджеты рабочего стола: часы, now playing, визуализатор cava, кольца системы,
@@ -502,7 +503,7 @@ Item {
   // Clip — буфер обмена glyph-rice; GlyphPower — меню выключения glyph (powerStyle: "glyph")
   Glyph.Clip { id: glyphClip; screen: root.focusedScreen }
   Glyph.GlyphPower { host: root }
-  Glyph.Prefs { host: root }
+  RicePrefs.Prefs { host: root }
 
   EdgeHotzones {
     host: root

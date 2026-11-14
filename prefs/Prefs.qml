@@ -3,9 +3,9 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 
-// Prefs — быстрые настройки Glyph по образцу prefs/Prefs.qml glyph-rice (GPL-3.0): Super+Alt+I (omarchy-shell widgets
-// togglePrefs). Слева столбец слов Doto — выбранный раздел крупно, с красной точкой; справа раздел «предметом»: макет
-// бенто дома, экран с Deck, бар, вид обоев, окна, простой и какие части Glyph включены. Числа — кольца точек (тянуть по
+// Prefs — быстрые настройки активного райса по образцу prefs/Prefs.qml glyph-rice (GPL-3.0): Super+Alt+I (omarchy-shell
+// widgets togglePrefs). Вид — по райсу (PTheme: шрифты, скругления, акцент). Слева столбец слов — выбранный раздел крупно,
+// с точкой акцента; справа раздел «предметом»: макет бенто дома, экран с Deck, бар, вид обоев, окна, простой и части райса. Числа — кольца точек (тянуть по
 // кругу, колесо, ←→), тумблеры — пилюли. ↑↓ / j k — разделы, Tab — по ручкам, Esc — закрыть.
 // Своих настроек нет: всё пишется туда же, куда Customizer (его бэкендом — run.py tweak / apply), вид обоев —
 // wallpaper-look.json, простой — idle в shell.json. Customizer остаётся для всего остального.
@@ -66,6 +66,17 @@ PanelWindow {
     lookFile.setText(JSON.stringify(o, null, 2) + "\n")
   }
   property var shell: ({})
+  // темы райса: styles/<id стиля>.json → theme { dark, light }
+  property var riceThemes: ({ dark: "", light: "" })
+  FileView {
+    path: Quickshell.env("HOME") + "/.config/omarchy/plugins/kamradsmeshnyavy.customizer/styles/" + PTheme.rice + ".json"
+    printErrors: false
+    onLoaded: {
+      try { var th = (JSON.parse(text()) || {}).theme || {}; root.riceThemes = { dark: String(th.dark || ""), light: String(th.light || "") } }
+      catch (e) { root.riceThemes = { dark: "", light: "" } }
+    }
+    onLoadFailed: root.riceThemes = { dark: "", light: "" }
+  }
   FileView {
     id: shellFile
     path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
@@ -126,7 +137,7 @@ PanelWindow {
 
   Rectangle {
     anchors.fill: parent
-    color: GTheme.fade(GTheme.bg, 0.96)
+    color: PTheme.fade(PTheme.bg, 0.96)
     MouseArea { anchors.fill: parent; onClicked: root.close() }
   }
 
@@ -155,12 +166,12 @@ PanelWindow {
           required property int index
           readonly property bool on: root.sel === index
           spacing: 22
-          Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 20; height: 20; radius: 10; color: GTheme.accent; opacity: it.on ? 1 : 0 }
+          Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 20; height: 20; radius: PTheme.r(10); color: PTheme.accent; opacity: it.on ? 1 : 0 }
           Num {
             text: it.modelData
             font.pixelSize: it.on ? 96 : 44
-            color: it.on ? GTheme.fg : GTheme.mute
-            Behavior on font.pixelSize { NumberAnimation { duration: GTheme.t; easing.type: Easing.BezierSpline; easing.bezierCurve: GTheme.glide } }
+            color: it.on ? PTheme.fg : PTheme.mute
+            Behavior on font.pixelSize { NumberAnimation { duration: PTheme.t; easing.type: Easing.BezierSpline; easing.bezierCurve: PTheme.glide } }
           }
           TapHandler { onTapped: { root.sel = it.index; stage.forceActiveFocus() } }
           HoverHandler { cursorShape: Qt.PointingHandCursor }
@@ -214,17 +225,17 @@ PanelWindow {
           }
           Repeater {
             model: 9
-            Rectangle { required property int index; x: (index % 3) * 132; y: Math.floor(index / 3) * 132; width: 120; height: 120; radius: 30; color: "transparent"; border { width: 1; color: GTheme.s2 } }
+            Rectangle { required property int index; x: (index % 3) * 132; y: Math.floor(index / 3) * 132; width: 120; height: 120; radius: PTheme.r(30); color: "transparent"; border { width: 1; color: PTheme.s2 } }
           }
           Repeater {
             model: parent.cells
             Rectangle {
               required property var modelData
               x: modelData.x; y: modelData.y; width: modelData.w; height: 120
-              radius: modelData.w === 120 && ["weather", "cpu", "ram", "battery", "cava"].indexOf(modelData.id) >= 0 ? 60 : 30
-              color: GTheme.s2
-              border { width: 1; color: GTheme.s3 }
-              Lb { anchors.centerIn: parent; text: parent.modelData.id; color: GTheme.fg }
+              radius: PTheme.r(modelData.w === 120 && ["weather", "cpu", "ram", "battery", "cava"].indexOf(modelData.id) >= 0 ? 60 : 30)
+              color: PTheme.s2
+              border { width: 1; color: PTheme.s3 }
+              Lb { anchors.centerIn: parent; text: parent.modelData.id; color: PTheme.fg }
               TapHandler { onTapped: root.setW("homeWidgets", root.flipIn(root.w("homeWidgets"), parent.modelData.id)) }
             }
           }
@@ -248,24 +259,24 @@ PanelWindow {
         }
         Pick { label: "layout"; opts: ["panel", "compact", "full"]; cur: opts.indexOf(String(root.w("deckLayout"))); onPicked: function(i) { root.setW("deckLayout", opts[i]) } }
         Rectangle {
-          width: 640; height: 360; radius: 24
+          width: 640; height: 360; radius: PTheme.r(24)
           color: "transparent"
-          border { width: 1; color: GTheme.s3 }
+          border { width: 1; color: PTheme.s3 }
           readonly property string lay: String(root.w("deckLayout"))
           Rectangle {
             readonly property var ids: root.listOf(root.w("deckSections"))
             anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: parent.lay === "full" ? 20 : 12 }
             width: parent.lay === "compact" ? 360 : 560
             height: parent.lay === "full" ? 320 : parent.lay === "compact" ? 70 : 140
-            radius: 20
-            color: GTheme.s1
-            border { width: 1; color: GTheme.s2 }
+            radius: PTheme.r(20)
+            color: PTheme.s1
+            border { width: 1; color: PTheme.s2 }
             Row {
               anchors.centerIn: parent
               spacing: 10
               Repeater {
                 model: parent.parent.ids
-                Rectangle { required property string modelData; width: 76; height: 40; radius: 20; color: GTheme.s2; Lb { anchors.centerIn: parent; text: parent.modelData; px: 9; color: GTheme.fg } }
+                Rectangle { required property string modelData; width: 76; height: 40; radius: PTheme.r(20); color: PTheme.s2; Lb { anchors.centerIn: parent; text: parent.modelData; px: 9; color: PTheme.fg } }
               }
             }
           }
@@ -334,10 +345,12 @@ PanelWindow {
           Dial { size: 140; label: "dot · px"; from: 4; to: 32; live: true; value: Number(root.look.pitch) || 10; onMoved: function(v) { root.setLook("pitch", v) } }
           Dial { size: 140; label: "light · %"; from: 10; to: 100; step: 5; live: true; value: Number(root.look.bright) || 100; onMoved: function(v) { root.setLook("bright", v) } }
         }
+        // тёмная и светлая тема этого райса — из styles/<id>.json Customizer
         Pick {
-          label: "theme"; opts: ["dark", "light"]
-          cur: root.themeName === "nothing-glyph-light" ? 1 : root.themeName === "nothing-glyph-dark" ? 0 : -1
-          onPicked: function(i) { root.cz(["apply", "themes", i ? "nothing-glyph-light" : "nothing-glyph-dark"], root.refresh) }
+          visible: root.riceThemes.dark !== ""
+          label: "theme"; opts: root.riceThemes.light !== "" && root.riceThemes.light !== root.riceThemes.dark ? ["dark", "light"] : ["dark"]
+          cur: root.themeName === root.riceThemes.light ? 1 : root.themeName === root.riceThemes.dark ? 0 : -1
+          onPicked: function(i) { root.cz(["apply", "themes", i ? root.riceThemes.light : root.riceThemes.dark], root.refresh) }
         }
         Chip { text: "wallpapers…"; on: false; onClicked: { root.close(); Quickshell.execDetached(["setsid", "-f", "omarchy-theme-bg-switcher"]) } }
       }
@@ -387,7 +400,7 @@ PanelWindow {
       Column {
         visible: root.sel === 6
         spacing: 22
-        Lb { text: "which parts are glyph" }
+        Lb { text: "parts of the rice · " + PTheme.rice }
         Pick { label: "super+m"; opts: ["drawer", "quick"]; cur: opts.indexOf(String(root.w("settingsPanel"))); onPicked: function(i) { root.setW("settingsPanel", opts[i]) } }
         Pick { label: "power"; opts: ["edge", "glyph"]; cur: opts.indexOf(String(root.w("powerStyle"))); onPicked: function(i) { root.setW("powerStyle", opts[i]) } }
         Pick { label: "clipboard"; opts: ["stock", "glyph"]; cur: opts.indexOf(String(root.w("clipboardPanel"))); onPicked: function(i) { root.setW("clipboardPanel", opts[i]) } }
@@ -423,10 +436,10 @@ PanelWindow {
         readonly property int at: tray.used.indexOf(modelData)
         width: lab.implicitWidth + 40
         height: 44
-        radius: 22
-        color: at >= 0 ? GTheme.fg : GTheme.s2
-        Behavior on color { ColorAnimation { duration: GTheme.t } }
-        Lb { id: lab; anchors.centerIn: parent; text: (parent.at >= 0 ? (parent.at + 1) + " · " : "") + parent.modelData; px: 11; color: parent.at >= 0 ? GTheme.ink : GTheme.grey }
+        radius: PTheme.r(22)
+        color: at >= 0 ? PTheme.fg : PTheme.s2
+        Behavior on color { ColorAnimation { duration: PTheme.t } }
+        Lb { id: lab; anchors.centerIn: parent; text: (parent.at >= 0 ? (parent.at + 1) + " · " : "") + parent.modelData; px: 11; color: parent.at >= 0 ? PTheme.ink : PTheme.grey }
         TapHandler { onTapped: tray.toggled(parent.modelData) }
         HoverHandler { cursorShape: Qt.PointingHandCursor }
       }
@@ -440,9 +453,9 @@ PanelWindow {
     signal clicked
     width: clab.implicitWidth + 48
     height: 52
-    radius: 26
-    color: on ? GTheme.fg : GTheme.s2
-    Lb { id: clab; anchors.centerIn: parent; text: chip.text; color: chip.on ? GTheme.ink : GTheme.fg }
+    radius: PTheme.r(26)
+    color: on ? PTheme.fg : PTheme.s2
+    Lb { id: clab; anchors.centerIn: parent; text: chip.text; color: chip.on ? PTheme.ink : PTheme.fg }
     TapHandler { onTapped: chip.clicked() }
     HoverHandler { cursorShape: Qt.PointingHandCursor }
   }
