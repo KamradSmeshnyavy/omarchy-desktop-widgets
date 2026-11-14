@@ -25,6 +25,7 @@ Item {
     clockStyle: "big",          // big stacked terminal minimal vitreus
     clockVitreusLayout: "rule", // vitreus: rule (часы над минутами) pipe digital
     clockVitreusSize: 1.4,
+    sysinfoStyle: "rings",      // rings vitreus (карточка-монитор: кольца и график сети)
     clockAnchor: "top-left",
     clock24: true,
     clockSeconds: false,
@@ -329,6 +330,12 @@ Item {
   property real mem: 0
   property real temp: 0
   property real memUsedGb: 0          // занято памяти, ГБ (домашний экран glyph)
+  property real memTotalGb: 0
+  property real gpu: -1               // загрузка видеокарты, % (−1 — ядро не отдаёт gpu_busy_percent)
+  property string gpuName: ""
+  property string hostName: ""
+  property real uptime: 0             // с
+  readonly property bool vitSys: flag("sysinfo") && String(value("sysinfoStyle")) === "vitreus"
   property real disk: 0               // занято на /, доля
   property int battery: -1
   property string batteryStatus: ""
@@ -343,6 +350,8 @@ Item {
   property var netPrev: null
   property var rxHistory: []
   property var txHistory: []
+  property var rxLong: []             // 120 точек для монитора Vitreus
+  property var txLong: []
 
   // ── Дашборд и панель настроек ──────────────────────────────────────────
   property bool dashboardOpen: false
@@ -524,12 +533,14 @@ Item {
     command: ["bash", "-c",
       "read -r _ u n s i w q sq st _ < /proc/stat; echo \"cpu $((u+n+s+i+w+q+sq+st)) $((i+w))\";" +
       "awk '/^MemTotal|^MemAvailable/{printf \"%s \", $2} END{print \"\"}' /proc/meminfo | sed 's/^/mem /';" +
+      (root.vitSys ? "echo \"up $(cut -d' ' -f1 /proc/uptime)\"; echo \"host $(</proc/sys/kernel/hostname)\";" +
+        "for g in /sys/class/drm/card*/device/gpu_busy_percent; do [ -r \"$g\" ] && { d=${g%/gpu_busy_percent}; echo \"gpu $(<$g) $(basename $(readlink -f $d/driver) 2>/dev/null)\"; break; }; done;" : "") +
       (root.homeAny || root.deckOn !== "" ? "df -P / 2>/dev/null | awk 'NR==2{sub(\"%\",\"\",$5); print \"disk\", $5}';" : "") +
       "t=; for z in /sys/class/thermal/thermal_zone*; do case $(<$z/type) in x86_pkg_temp|TCPU|cpu*|k10temp) t=$(<$z/temp); break;; esac; done;" +
       "echo \"temp ${t:-$(</sys/class/thermal/thermal_zone0/temp)}\";" +
       "for b in /sys/class/power_supply/BAT*; do [ -e \"$b/capacity\" ] && { echo \"bat $(<$b/capacity) $(<$b/status)\"; break; }; done;" +
       // Скорость сети нужна дашборду DOT-MATRIX и виджету «Сеть».
-      (!root.dotmatrixDash && !root.flag("network") && !root.homeAny && root.deckOn === "" ? "" :
+      (!root.dotmatrixDash && !root.flag("network") && !root.vitSys && !root.homeAny && root.deckOn === "" ? "" :
       "dev=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"dev\"){print $(i+1); exit}}');" +
       "[ -n \"$dev\" ] && [ -r \"/sys/class/net/$dev/statistics/rx_bytes\" ] && echo \"net $dev $(</sys/class/net/$dev/statistics/rx_bytes) $(</sys/class/net/$dev/statistics/tx_bytes)\""
       )]
@@ -550,6 +561,14 @@ Item {
           } else if (f[0] === "mem" && f.length >= 3) {
             root.mem = Number(f[1]) > 0 ? 1 - Number(f[2]) / Number(f[1]) : 0
             root.memUsedGb = Math.max(0, Number(f[1]) - Number(f[2])) / 1048576
+            root.memTotalGb = Number(f[1]) / 1048576
+          } else if (f[0] === "up" && f.length >= 2) {
+            root.uptime = Number(f[1])
+          } else if (f[0] === "host" && f.length >= 2) {
+            root.hostName = f[1]
+          } else if (f[0] === "gpu" && f.length >= 2) {
+            root.gpu = Number(f[1])
+            root.gpuName = String(f[2] || "").toUpperCase()
           } else if (f[0] === "disk" && f.length >= 2) {
             root.disk = Number(f[1]) / 100
             root.memHistory = root.memHistory.concat([root.mem]).slice(-root.historyLength)
@@ -572,6 +591,10 @@ Item {
             root.netPrev = { iface: iface, rx: rx, tx: tx, ts: nowMs }
             root.rxHistory = root.rxHistory.concat([root.rxRate]).slice(-44)
             root.txHistory = root.txHistory.concat([root.txRate]).slice(-44)
+            if (root.vitSys) {
+              root.rxLong = root.rxLong.concat([root.rxRate]).slice(-120)
+              root.txLong = root.txLong.concat([root.txRate]).slice(-120)
+            }
           }
         }
       }

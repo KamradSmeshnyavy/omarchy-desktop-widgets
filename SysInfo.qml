@@ -3,10 +3,21 @@ import QtQuick.Shapes
 import "dotmatrix" as DotMatrix
 
 // Кольца системы: CPU, RAM, температура, батарея (если есть). Данные — Widgets.qml (/proc, /sys).
+// sysinfoStyle "vitreus" — карточка-монитор Vitreus (VitSys.qml) вместо ряда колец.
+Item {
+  id: root
+  required property var host
+  readonly property bool vit: String(host.value("sysinfoStyle")) === "vitreus"
+  implicitWidth: vit ? vitCard.implicitWidth : sys.implicitWidth
+  implicitHeight: vit ? vitCard.implicitHeight : sys.implicitHeight
+
+  VitSys { id: vitCard; host: root.host; visible: root.vit }
+
 Row {
   id: sys
+  visible: !root.vit
 
-  required property var host
+  readonly property var host: root.host
 
   spacing: 18
 
@@ -92,4 +103,5 @@ Row {
       }
     }
   }
+}
 }
