@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 
@@ -98,6 +99,41 @@ PanelWindow {
     var v = Number(host.value(name + "Scale"))
     return isFinite(v) && v > 0 ? v : 1
   }
+  // ── Слияние с баром и рамкой (как у Vitreus) ──
+  // Края окна слоя — внутренние кромки бара и рамки (окно не заходит под них). У каких из них карточка сливается:
+  // у рамки — у всех четырёх, у сплошного бара во всю длину края — у него; у плавающей пилюли — ни у каких.
+  // Карточка с якорем у такого края встаёт вплотную (без edgeMargin), отпущенная рядом — прилипает.
+  BarGeom { id: bgeo }
+  readonly property bool mergeOn: host.value("edgeMerge") !== false && carded && host.deskStyle.card && bgeo.exported.position !== undefined
+  readonly property var mergeable: !mergeOn ? [] : bgeo.framed ? ["top", "bottom", "left", "right"]
+    : !bgeo.floatingPill && bgeo.exported.hidden !== true ? [String(bgeo.exported.position)] : []
+  function mOf(side) { return mergeable.indexOf(side) !== -1 ? 0 : host.num("edgeMargin") }
+
+  // Места стыков — рамке (ScreenBorder в бар-плагине): слой виджетов под ней, свой контур на стыке она стирает сама.
+  // $XDG_RUNTIME_DIR/omarchy-merge-widgets[-float]-<экран>.json: [{ edge, a0, a1, f }] в px рабочей области.
+  property string spotsText: ""
+  function exportSpots() {
+    var out = [], kids = desk.contentItem.children
+    for (var i = 0; i < kids.length; i++) {
+      var c = kids[i]
+      if (!c || !c.visible || c.mergeEdges === undefined || !c.mergeEdges.length) continue
+      for (var j = 0; j < c.mergeEdges.length; j++) {
+        var e = c.mergeEdges[j], v = e === "top" || e === "bottom"
+        out.push({ edge: e, a0: Math.round(v ? c.x : c.y), a1: Math.round(v ? c.x + c.width : c.y + c.height), f: 14 })
+      }
+    }
+    var t = JSON.stringify(out)
+    if (t === spotsText) return
+    spotsText = t
+    spotsFile.setText(t + "\n")
+  }
+  FileView {
+    id: spotsFile
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-merge-widgets" + (desk.floating ? "-float-" : "-") + desk.screenName + ".json"
+    printErrors: false
+  }
+  Timer { interval: 700; running: true; repeat: true; triggeredOnStart: true; onTriggered: desk.exportSpots() }
+
   property point dragPt: Qt.point(0, 0)
   readonly property int grid: 8
   // Привязка: к сетке 8 px и к отступу edgeMargin от краёв, не за пределы экрана.
@@ -110,6 +146,12 @@ PanelWindow {
     if (Math.abs(x + w - (width - m)) < grid * 2) x = width - m - w
     if (Math.abs(y - m) < grid * 2) y = m
     if (Math.abs(y + h - (height - m)) < grid * 2) y = height - m - h
+    // у сливающихся краёв карточка (виджет с полями p) прилипает вплотную, если отпущена ближе 32 px
+    var p = padOf(item)
+    if (mergeable.indexOf("left") !== -1 && x - p < 32) x = p
+    if (mergeable.indexOf("right") !== -1 && width - (x + w + p) < 32) x = width - w - p
+    if (mergeable.indexOf("top") !== -1 && y - p < 32) y = p
+    if (mergeable.indexOf("bottom") !== -1 && height - (y + h + p) < 32) y = height - h - p
     return Qt.point(Math.max(0, Math.min(width - w, x)), Math.max(0, Math.min(height - h, y)))
   }
 
@@ -168,14 +210,14 @@ PanelWindow {
     }
   }
 
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; noCard: desk.host.value("clockStyle") === "vitreus"; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; s: desk.scaleOf("media"); seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; s: desk.scaleOf("sysinfo"); seed: 23; pad: desk.padOf(sysW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; s: desk.scaleOf("network"); seed: 27; pad: desk.padOf(netW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: todoW; s: desk.scaleOf("todo"); seed: 24; pad: desk.padOf(todoW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; s: desk.scaleOf("quote"); seed: 25; pad: desk.padOf(quoteW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; s: desk.scaleOf("photo"); seed: 26; pad: desk.padOf(photoW) }
-  WidgetCard { host: desk.host; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; s: desk.scaleOf("contrib"); seed: 28; pad: desk.padOf(contribW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; noCard: desk.host.value("clockStyle") === "vitreus"; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; s: desk.scaleOf("media"); seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; s: desk.scaleOf("sysinfo"); seed: 23; pad: desk.padOf(sysW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; s: desk.scaleOf("network"); seed: 27; pad: desk.padOf(netW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: todoW; s: desk.scaleOf("todo"); seed: 24; pad: desk.padOf(todoW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; s: desk.scaleOf("quote"); seed: 25; pad: desk.padOf(quoteW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; s: desk.scaleOf("photo"); seed: 26; pad: desk.padOf(photoW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; s: desk.scaleOf("contrib"); seed: 28; pad: desk.padOf(contribW) }
 
   NetWidget {
     id: netW
@@ -359,9 +401,9 @@ PanelWindow {
       if (e === item) offset = total + padOf(e)
       total += ext + (i < group.length - 1 ? gap : 0)
     }
-    var x = a.indexOf("left") !== -1 ? m + p : a.indexOf("right") !== -1 ? width - w - m - p : (width - w) / 2
-    var y = a.indexOf("top") !== -1 ? m + offset
-      : a.indexOf("bottom") !== -1 ? height - m - total + offset
+    var x = a.indexOf("left") !== -1 ? mOf("left") + p : a.indexOf("right") !== -1 ? width - w - mOf("right") - p : (width - w) / 2
+    var y = a.indexOf("top") !== -1 ? mOf("top") + offset
+      : a.indexOf("bottom") !== -1 ? height - mOf("bottom") - total + offset
       : (height - total) / 2 + offset
     return Qt.point(Math.round(x), Math.round(y))
   }

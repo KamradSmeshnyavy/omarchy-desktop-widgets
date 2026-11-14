@@ -34,6 +34,33 @@ Item {
   width: (target ? target.width * s + 2 * pad : 0) + extra
   height: target ? target.height * s + 2 * pad : 0
 
+  // Слияние с баром / рамкой: края окна, у которых карточка сливается (DesktopLayer.mergeable), и какими из них она
+  // касается — те и сливаются (пластик — без контура, с вогнутыми углами; стекло — перешеек вдоль края, внутри рамки не
+  // рисуется). Список читает DesktopLayer — места стыков уходят рамке.
+  property var mergeable: []
+  readonly property real fil: 14
+  readonly property var mergeEdges: {
+    var out = []
+    if (!visible || !parent || !mergeable.length) return out
+    var pw = parent.width, ph = parent.height
+    if (mergeable.indexOf("top") !== -1 && y <= 0.5) out.push("top")
+    if (mergeable.indexOf("bottom") !== -1 && y + height >= ph - 0.5) out.push("bottom")
+    if (mergeable.indexOf("left") !== -1 && x <= 0.5) out.push("left")
+    if (mergeable.indexOf("right") !== -1 && x + width >= pw - 0.5) out.push("right")
+    return out
+  }
+  // для стекла: полоска у края (перешеек) и всё за краем минус 3 px (вырез) — до двух краёв (угол)
+  function strip(e) {
+    var e2 = fil + 6, t = 5
+    return e === "top" ? Qt.rect(-e2, -t, width + 2 * e2, t) : e === "bottom" ? Qt.rect(-e2, height, width + 2 * e2, t)
+      : e === "left" ? Qt.rect(-t, -e2, t, height + 2 * e2) : Qt.rect(width, -e2, t, height + 2 * e2)
+  }
+  function beyond(e) {
+    return e === "top" ? Qt.rect(-4000, -4000, 8000, 4000 - 3) : e === "bottom" ? Qt.rect(-4000, height + 3, 8000, 4000)
+      : e === "left" ? Qt.rect(-4000, -4000, 4000 - 3, 8000) : Qt.rect(width + 3, -4000, 4000, 8000)
+  }
+  readonly property rect none: Qt.rect(0, 0, 0, 0)
+
   // DOT-MATRIX — как карточки рабочего стола NIHIL: чёрная (фон палитры) плитка с тонким контуром,
   // читается на любых обоях.
   Rectangle {
@@ -54,6 +81,16 @@ Item {
     // жидкое стекло: окно слоя виджетов на весь экран — место на экране спросить у Hyprland по имени слоя
     glassLayer: card.glassNs
     glassBelow: card.glassBelowWin
+    mergeEdges: card.mergeEdges
+    mergeFillet: card.fil
+    glassBleed: card.mergeEdges.length ? card.fil + 14 : 0
+    glassJoin: card.mergeEdges.length > 0 ? card.strip(card.mergeEdges[0]) : card.none
+    glassJoinK: card.mergeEdges.length > 0 ? card.fil : 0
+    glassJoinRadius: 0
+    glassJoin2: card.mergeEdges.length > 1 ? card.strip(card.mergeEdges[1]) : card.none
+    glassJoin2K: card.fil
+    glassCut: card.mergeEdges.length > 0 ? card.beyond(card.mergeEdges[0]) : card.none
+    glassCut2: card.mergeEdges.length > 1 ? card.beyond(card.mergeEdges[1]) : card.none
   }
   Rectangle {
     visible: !card.dotmatrixCard && !card.style.card

@@ -92,5 +92,8 @@ Item {
     }
   }
   function refresh() { if (!probe.running) probe.running = true }
+  // бар мог ещё не подняться (оболочку только что перезапустили) — спрашивать, пока не найдётся; потом — изредка
+  // (бар переставили на другой край)
+  Timer { interval: geo.barLayer.width > 0 ? 15000 : 1000; running: true; repeat: true; onTriggered: geo.refresh() }
   Component.onCompleted: refresh()
 }

@@ -55,6 +55,7 @@ Item {
     githubUser: "",
     contribWeeks: 26,
     edgeMargin: 24,             // от внутреннего края бара / рамки до карточки
+    edgeMerge: true,            // карточка у кромки бара / рамки встаёт вплотную и сливается с ней (как у Vitreus)
     tint: "accent",             // роль (accent foreground muted) или ключ colors.toml / #hex
     locale: "",                 // язык даты: "" — как в Customizer (customizer.json), иначе системный
     screens: "all",             // all primary
