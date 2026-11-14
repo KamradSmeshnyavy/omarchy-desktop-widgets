@@ -259,6 +259,7 @@ PanelWindow {
       style: dash.style
       seed: 3
       glassLayer: "omarchy-dashboard"
+      decor: true
       glassOrigin: dash.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
       // перешеек к пилюле бара: панель стекает из бара одним куском стекла (Vitreus)
       glassBleed: dash.fromBar && dash.neckK > 0 ? Math.max(Math.max(dash.neckBase.x - hit.x - hit.width, hit.x - dash.neckBase.x - dash.neckBase.width),
