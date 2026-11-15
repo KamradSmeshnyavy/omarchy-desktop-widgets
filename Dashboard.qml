@@ -32,9 +32,12 @@ PanelWindow {
   readonly property string dstyle: String(host.value("dashStyle"))
   readonly property bool glassTiles: dstyle === "vitreus"
   readonly property bool pencils: dstyle === "pencils"
-  readonly property bool vit: glassTiles || pencils
+  // rumda — плотная карточка Rumda (DashRumda.qml)
+  readonly property bool rumda: dstyle === "rumda"
+  readonly property bool vit: glassTiles || pencils || rumda
   readonly property int contentWidth: {
     if (glassTiles) return 1205
+    if (rumda) return 660
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
@@ -44,7 +47,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -351,6 +354,13 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashRumda {
+        visible: dash.rumda
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+      }
       DashGlass {
         visible: dash.glassTiles
         x: dash.pad
