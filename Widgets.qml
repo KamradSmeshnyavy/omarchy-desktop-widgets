@@ -134,7 +134,7 @@ Item {
     // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
     "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
     // surface: меню выключения Cassini (снимок Сатурна), остальное — по стилю
-    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "cassini", clipboardPanel: "stock" }
+    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -549,6 +549,8 @@ Item {
   Glyph.GlyphPower { host: root }
   // Cassini — меню выключения surface-dots (powerStyle: "cassini")
   PowerCassini { host: root }
+  // Hub surface в Super+M (settingsPanel: "surface")
+  SurfaceHub { host: root }
   RicePrefs.Prefs { host: root }
 
   EdgeHotzones {

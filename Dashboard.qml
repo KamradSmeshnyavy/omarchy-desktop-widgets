@@ -40,7 +40,7 @@ PanelWindow {
   readonly property int contentWidth: {
     if (glassTiles) return 1205
     if (rumda) return 660
-    if (surface) return 320
+    if (surface) return 520
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
@@ -119,10 +119,12 @@ PanelWindow {
 
   visible: !host.dotmatrixDash && (progress > 0.001 || wave.running)
   screen: host.focusedScreen
-  anchors.top: true
+  // у нижнего бара Hub surface поднимается снизу
+  readonly property bool surfBottom: surface && !fromBar && geo.edge === "bottom"
+  anchors.top: !surfBottom
   anchors.left: fromBar
   anchors.right: fromBar || surface
-  anchors.bottom: fromBar
+  anchors.bottom: fromBar || surfBottom
   // Hub surface — окно у правого края, под кнопкой часов (как у surface-dots), а не по центру
   margins.right: !fromBar && surface && dg.hasButton
     ? Math.max(0, Math.round(scrW - (dg.button.x + dg.button.width / 2) - implicitWidth / 2)) : 0
