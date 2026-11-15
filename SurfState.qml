@@ -40,7 +40,8 @@ QtObject {
       "l nmcli -t -f WIFI g; " +
       "l sh -c \"nmcli -t -f NAME,TYPE connection show --active | grep -v ':loopback' | grep -v ':tun' | head -1 | cut -d: -f1\"; " +
       "l sh -c \"bluetoothctl show | grep -q 'Powered: yes' && echo on || echo off\"; " +
-      "l powerprofilesctl get; " +
+      // power-profiles-daemon может быть выключен (masked) — тогда powerprofilesctl падает с SIGABRT; не зовём его
+      "if systemctl is-active -q power-profiles-daemon 2>/dev/null; then l powerprofilesctl get; else echo; fi; " +
       "l brightnessctl -m; " +
       "l omarchy-toggle-nightlight --status; " +
       "l sh -c 'omarchy-toggle-idle status | jq -c .enabled'; " +
@@ -100,7 +101,7 @@ QtObject {
   // ── действия ──
   function toggleWifi() { wifi = !wifi; run(["nmcli", "radio", "wifi", wifi ? "on" : "off"]) }
   function toggleBt() { bt = !bt; run(["bluetoothctl", "power", bt ? "on" : "off"]) }
-  function cycleProfile() { run(["sh", "-c", "case $(powerprofilesctl get) in balanced) powerprofilesctl set performance;; performance) powerprofilesctl set power-saver;; *) powerprofilesctl set balanced;; esac"]) }
+  function cycleProfile() { run(["sh", "-c", "systemctl is-active -q power-profiles-daemon || exit 0; case $(powerprofilesctl get) in balanced) powerprofilesctl set performance;; performance) powerprofilesctl set power-saver;; *) powerprofilesctl set balanced;; esac"]) }
   function toggleDnd() { dnd = !dnd; Quickshell.execDetached(["omarchy-shell", "notifications", "toggleDnd"]) }
   function toggleNight() { night = !night; run(["omarchy-toggle-nightlight"]) }
   function toggleCaffeine() { caffeine = !caffeine; run(["omarchy-toggle-idle"]) }

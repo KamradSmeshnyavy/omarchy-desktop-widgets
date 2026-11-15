@@ -100,8 +100,9 @@ PanelWindow {
       "l sh -c 'omarchy-capture-screenrecording --status >/dev/null 2>&1 && echo true'; " +
       "l \"$1\" status; " +
       "l brightnessctl -m; " +
-      "l powerprofilesctl get; " +
-      "l sh -c \"powerprofilesctl list | sed -n 's/^[* ] *\\\\([a-z-]*\\\\):$/\\\\1/p' | tr '\\\\n' ' '\"",
+      // power-profiles-daemon выключен (masked) — powerprofilesctl падает с SIGABRT; тогда профилей нет
+      "if systemctl is-active -q power-profiles-daemon 2>/dev/null; then l powerprofilesctl get; " +
+      "l sh -c \"powerprofilesctl list | sed -n 's/^[* ] *\\\\([a-z-]*\\\\):$/\\\\1/p' | tr '\\\\n' ' '\"; else echo; echo; fi",
       "_", root.readingScript]
     stdout: StdioCollector {
       onStreamFinished: {

@@ -36,11 +36,16 @@ PanelWindow {
   readonly property bool rumda: dstyle === "rumda"
   // surface — колонка Hub из surface-dots (DashSurface.qml)
   readonly property bool surface: dstyle === "surface"
-  readonly property bool vit: glassTiles || pencils || rumda || surface
+  // bruteon — сетка карточек необрутализма (DashBrute.qml)
+  readonly property bool brute: dstyle === "bruteon"
+  // «из воды» с волнами и затемнением — только у Vitreus и Rumda; surface и bruteon просто всплывают
+  readonly property bool plainRise: surface || brute
+  readonly property bool vit: glassTiles || pencils || rumda || surface || brute
   readonly property int contentWidth: {
     if (glassTiles) return 1205
     if (rumda) return 660
     if (surface) return 520
+    if (brute) return 820
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
@@ -50,7 +55,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: brute ? 490 + 16 + 24 : surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -181,13 +186,13 @@ PanelWindow {
     function onDashboardOpenChanged() { if (dash.host.dashboardOpen && dash.vit) riseAnim.restart(); else { riseAnim.stop(); dash.rise = 0 } }
   }
   Rectangle {
-    visible: dash.vit && !dash.surface && dash.fromBar
+    visible: dash.vit && !dash.plainRise && dash.fromBar
     anchors.fill: parent
     color: "black"
     opacity: 0.18 * Math.min(1, Math.max(0, dash.progress))
   }
   property real wavePhase: 0
-  NumberAnimation on wavePhase { from: 0; to: 1; duration: 1400; loops: Animation.Infinite; running: dash.vit && !dash.surface && dash.visible && dash.rise < 1 }
+  NumberAnimation on wavePhase { from: 0; to: 1; duration: 1400; loops: Animation.Infinite; running: dash.vit && !dash.plainRise && dash.visible && dash.rise < 1 }
 
   Repeater {
     model: dash.fromBar && wave.running ? 2 : 0
@@ -322,7 +327,7 @@ PanelWindow {
 
     // волна вдоль кромки у бара, пока плитки всплывают («из воды»): два гребня, бегут вдоль кромки и стихают
     Repeater {
-      model: dash.vit && !dash.surface && dash.fromBar && dash.rise < 1 ? 2 : 0
+      model: dash.vit && !dash.plainRise && dash.fromBar && dash.rise < 1 ? 2 : 0
       Shape {
         id: crest
         required property int index
@@ -363,6 +368,13 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashBrute {
+        visible: dash.brute
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+      }
       DashSurface {
         id: surfHub
         visible: dash.surface

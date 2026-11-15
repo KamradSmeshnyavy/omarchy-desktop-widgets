@@ -36,7 +36,7 @@ Item {
   readonly property bool live: rise > 0.01
   property bool notesOpen: false
 
-  SurfState { id: st; live: s.live }
+  SurfState { id: st; live: s.live && s.visible }
 
   implicitWidth: 520
   implicitHeight: col.implicitHeight
