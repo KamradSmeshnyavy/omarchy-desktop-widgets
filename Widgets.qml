@@ -593,6 +593,7 @@ Item {
             root.mem = Number(f[1]) > 0 ? 1 - Number(f[2]) / Number(f[1]) : 0
             root.memUsedGb = Math.max(0, Number(f[1]) - Number(f[2])) / 1048576
             root.memTotalGb = Number(f[1]) / 1048576
+            root.memHistory = root.memHistory.concat([root.mem]).slice(-root.historyLength)
           } else if (f[0] === "up" && f.length >= 2) {
             root.uptime = Number(f[1])
           } else if (f[0] === "host" && f.length >= 2) {
@@ -602,7 +603,6 @@ Item {
             root.gpuName = String(f[2] || "").toUpperCase()
           } else if (f[0] === "disk" && f.length >= 2) {
             root.disk = Number(f[1]) / 100
-            root.memHistory = root.memHistory.concat([root.mem]).slice(-root.historyLength)
           } else if (f[0] === "temp" && f.length >= 2) {
             root.temp = Number(f[1]) / 1000
           } else if (f[0] === "bat" && f.length >= 2) {
