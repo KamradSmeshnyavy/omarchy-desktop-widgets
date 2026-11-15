@@ -3,7 +3,7 @@ import QtQuick.Shapes
 
 // Монитор yami (sysinfoStyle "yami", по мотивам Trendorin/yami, MIT; код свой): три карточки одна под другой —
 // cpu, memory, temperature. В шапке значок и подпись, справа значение (у памяти — ещё «занято / всего ГБ»), ниже —
-// график за последние минуты: линия в пиксель и под ней тусклая заливка. Карточки — плоские панели с рамкой в пиксель
+// график за последние минуты — столбики акцентом. Карточки — плоские панели с рамкой в пиксель
 // и жёсткой тенью (как материал pixel), рисуются здесь же, поэтому WidgetCard у этого стиля не нужен.
 Item {
   id: ys
@@ -46,28 +46,27 @@ Item {
           border.width: 1
           border.color: Qt.rgba(ys.fg.r, ys.fg.g, ys.fg.b, 0.16)
         }
-        Text { x: 10; y: 8; text: p.modelData.icon; color: ys.fg; opacity: 0.5; font.family: ys.host.iconFamily; font.pixelSize: 13 }
+        Text { x: 10; y: 8; text: p.modelData.icon; color: ys.host.accent; font.family: ys.host.iconFamily; font.pixelSize: 13 }
         Text { x: 28; y: 8; text: p.modelData.label; color: ys.fg; opacity: 0.55; font.family: ys.px; font.pixelSize: 14 }
         Text { anchors.right: parent.right; anchors.rightMargin: 10; y: 8; text: p.modelData.value; color: ys.fg; opacity: 0.7; font.family: ys.px; font.pixelSize: 14 }
-        // график: пиксельная линия и тусклая заливка до дна
-        Shape {
+        // график: столбики акцентом по одному на отсчёт, от дна вверх
+        Item {
           id: gr
           x: 8; y: 40; width: p.width - 16; height: p.height - 50
-          readonly property var pts: {
-            var s = p.modelData.series || [], n = Math.max(2, s.length), out = []
-            for (var i = 0; i < s.length; i++)
-              out.push(Qt.point(Math.round(gr.width * i / (n - 1)), Math.round(gr.height - 1 - (gr.height - 2) * Math.max(0, Math.min(1, s[i])))))
-            return out
-          }
-          readonly property var area: pts.length ? [Qt.point(0, gr.height)].concat(pts).concat([Qt.point(pts[pts.length - 1].x, gr.height)]) : []
-          ShapePath {
-            strokeWidth: -1
-            fillColor: Qt.rgba(ys.fg.r, ys.fg.g, ys.fg.b, 0.07)
-            PathPolyline { path: gr.area }
-          }
-          ShapePath {
-            strokeColor: Qt.rgba(ys.fg.r, ys.fg.g, ys.fg.b, 0.5); strokeWidth: 1; fillColor: "transparent"
-            PathPolyline { path: gr.pts }
+          readonly property var vals: p.modelData.series || []
+          readonly property int n: Math.max(1, Math.floor(width / 4))
+          Repeater {
+            model: Math.min(gr.vals.length, gr.n)
+            Rectangle {
+              required property int index
+              readonly property real v: gr.vals[gr.vals.length - Math.min(gr.vals.length, gr.n) + index] || 0
+              x: gr.width - (Math.min(gr.vals.length, gr.n) - index) * 4
+              width: 3
+              height: Math.max(1, Math.round((gr.height - 2) * Math.max(0, Math.min(1, v))))
+              y: gr.height - height
+              color: ys.host.accent
+              opacity: 0.85
+            }
           }
         }
         // риски по дну

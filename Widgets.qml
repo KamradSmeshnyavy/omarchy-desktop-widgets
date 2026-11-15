@@ -50,6 +50,9 @@ Item {
     photoAnchor: "left",
     photoDir: "",
     photoInterval: 10,
+    mediaStyle: "default",      // default yami (широкая карточка с визуализатором, видна и без плеера)
+    calendar: false,            // календарь месяца (CalWidget; колесо — соседний месяц)
+    calendarAnchor: "top-left",
     contrib: false,             // график вкладов GitHub (ContribWidget, нужен githubUser)
     contribAnchor: "bottom-right",
     githubUser: "",
@@ -165,7 +168,7 @@ Item {
   function homeHides(screen) { return flag("home") && homeShown[screen] === true && value("homeHideWidgets") !== false }
   Timer { interval: 10 * 60 * 1000; repeat: true; running: root.homeAny; onTriggered: weatherFetcher.refreshIfStale() }
   onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
-  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib"]
+  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib", "calendar"]
   readonly property bool anyFloat: widgetNames.some(function(n) {
     return flag(n) && String(value(n + "Anchor")) === "free" && flag(n + "Float")
   })
@@ -320,7 +323,8 @@ Item {
   property var levels: []
   // cava нужна визуализатору, дашборду и плитке cava домашнего экрана (пока он виден).
   readonly property bool homeCava: homeAny && String(value("homeLayout")) === "glyph" && /(^|[\s,])cava([\s,]|$)/.test(String(value("homeWidgets")))
-  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava) && (playing || flag("visualizerIdle"))
+  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava || (flag("media") && String(value("mediaStyle")) === "yami"))
+    && (playing || flag("visualizerIdle"))
   readonly property string cavaConfig: [
     "[general]", "bars = " + bars, "framerate = 30", "sleep_timer = 2",
     "[input]", "method = pipewire", "source = auto",

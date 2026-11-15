@@ -36,9 +36,9 @@ PanelWindow {
   mask: Region {
     // пока виджет держат (DirectGrab тянет или растягивает) — весь экран: курсор уходит за край виджета
     regions: desk.editing ? [editRegion] : desk.holding ? [allRegion]
-      : desk.floating ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, menuRegion]
-      : desk.host.value("directMove") !== false ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib]
-      : [rMedia, rTodo, rQuote, rPhoto, rContrib]
+      : desk.floating ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal, menuRegion]
+      : desk.host.value("directMove") !== false ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal]
+      : [rMedia, rTodo, rQuote, rPhoto, rContrib, rCal]
   }
   Region { id: editRegion; item: editArea }
   Region { id: allRegion; x: 0; y: 0; width: desk.width; height: desk.height }
@@ -50,6 +50,7 @@ PanelWindow {
   Region { id: gQuote; item: g_quote.visible ? g_quote : null }
   Region { id: gPhoto; item: g_photo.visible ? g_photo : null }
   Region { id: gContrib; item: g_contrib.visible ? g_contrib : null }
+  Region { id: gCal; item: g_calendar.visible ? g_calendar : null }
   Region { id: menuRegion; item: menu.visible ? menu : null }
   Region { id: rClock; item: clockW.visible ? clockW : null }
   Region { id: rMedia; item: media.visible ? media : null }
@@ -59,6 +60,7 @@ PanelWindow {
   Region { id: rQuote; item: quoteW.visible ? quoteW : null }
   Region { id: rPhoto; item: photoW.visible ? photoW : null }
   Region { id: rContrib; item: contribW.visible ? contribW : null }
+  Region { id: rCal; item: calW.visible ? calW : null }
 
   // ── Что показывать на этом слое ──
   function isFree(name) { return String(host.value(name + "Anchor")) === "free" }
@@ -84,7 +86,8 @@ PanelWindow {
   function label(name) {
     return ({
       contrib: "GitHub", clock: host.tr("Clock", "Часы"), media: host.tr("Player", "Плеер"), sysinfo: host.tr("System", "Система"),
-      network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), photo: host.tr("Photo", "Фото")
+      network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), photo: host.tr("Photo", "Фото"),
+      calendar: host.tr("Calendar", "Календарь")
     })[name] || name
   }
 
@@ -210,7 +213,7 @@ PanelWindow {
     }
   }
 
-  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; noCard: desk.host.value("clockStyle") === "vitreus"; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: clockW; noCard: ["vitreus", "yami"].indexOf(String(desk.host.value("clockStyle"))) !== -1; s: desk.scaleOf("clock"); seed: 21; pad: desk.padOf(clockW) }
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: media; s: desk.scaleOf("media"); seed: 22; pad: desk.padOf(media); ownDotmatrixCard: true }
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: sysW; noCard: desk.host.value("sysinfoStyle") === "yami"; s: desk.scaleOf("sysinfo"); seed: 23; pad: desk.padOf(sysW) }
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: netW; s: desk.scaleOf("network"); seed: 27; pad: desk.padOf(netW) }
@@ -218,6 +221,7 @@ PanelWindow {
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: quoteW; s: desk.scaleOf("quote"); seed: 25; pad: desk.padOf(quoteW) }
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: photoW; s: desk.scaleOf("photo"); seed: 26; pad: desk.padOf(photoW) }
   WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: contribW; s: desk.scaleOf("contrib"); seed: 28; pad: desk.padOf(contribW) }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: calW; s: desk.scaleOf("calendar"); seed: 29; pad: desk.padOf(calW) }
 
   NetWidget {
     id: netW
@@ -251,6 +255,14 @@ PanelWindow {
     scale: desk.scaleOf("photo")
     y: desk.place(photoW, "photoAnchor").y
   }
+  CalWidget {
+    id: calW
+    host: desk.host
+    visible: desk.host.flag("calendar") && desk.shows("calendar")
+    x: desk.place(calW, "calendarAnchor").x
+    scale: desk.scaleOf("calendar")
+    y: desk.place(calW, "calendarAnchor").y
+  }
   ContribWidget {
     id: contribW
     host: desk.host
@@ -273,7 +285,8 @@ PanelWindow {
     // DOT-MATRIX — как в NIHIL: карточка всегда на месте, без плеера кнопки приглушены.
     // Открепленная карточка тоже всегда на месте — пропадающее «окно» сбивает с толку.
     visible: desk.host.flag("media") && desk.shows("media")
-      && (desk.host.dotmatrixWidgets || desk.isFree("media") || (desk.host.player !== null && desk.host.player.trackTitle !== ""))
+      && (desk.host.dotmatrixWidgets || desk.isFree("media") || String(desk.host.value("mediaStyle")) === "yami"
+          || (desk.host.player !== null && desk.host.player.trackTitle !== ""))
     x: desk.place(media, "mediaAnchor").x
     scale: desk.scaleOf("media")
     y: desk.place(media, "mediaAnchor").y
@@ -296,6 +309,7 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DragHandle { host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
+  DragHandle { host: desk.host; desk: desk; target: calW; name: "calendar"; pad: desk.padOf(calW) }
 
   // Перенос без режима правки: взять и тянуть, углы — размер, булавка — на место (DirectGrab).
   DirectGrab { id: g_clock; host: desk.host; desk: desk; target: clockW; name: "clock"; pad: desk.padOf(clockW) }
@@ -306,6 +320,7 @@ PanelWindow {
   DirectGrab { id: g_quote; host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
   DirectGrab { id: g_photo; host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DirectGrab { id: g_contrib; host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
+  DirectGrab { id: g_calendar; host: desk.host; desk: desk; target: calW; name: "calendar"; pad: desk.padOf(calW) }
 
   // Плавающий слой: при наведении на открепленный виджет — кнопки «переместить» (режим правки) и
   // «вернуть на место». HoverHandler пассивный: кнопки самого виджета (плеер) продолжают работать.
@@ -372,7 +387,8 @@ PanelWindow {
   // Порядок в общей колонке у одного якоря — как в NIHIL: часы, сеть, плеер, дальше остальное.
   readonly property var entries: [
     [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
-    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"]
+    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"],
+    [calW, "calendarAnchor"]
   ]
   // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.
   // Виджеты с одним якорем не налезают друг на друга, а встают колонкой (снизу — колонкой вверх).

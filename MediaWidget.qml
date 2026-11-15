@@ -9,9 +9,12 @@ Rectangle {
   required property var host
   readonly property var player: host.player
   readonly property bool dotmatrix: host.dotmatrixWidgets
+  // mediaStyle "yami": широкая карточка «♫ silence — nothing playing» / «♫ трек — исполнитель», полосы визуализатора
+  // и линия прогресса акцентом (по мотивам yami, MIT; код свой); видна и без плеера
+  readonly property bool yami: !dotmatrix && String(host.value("mediaStyle")) === "yami"
 
-  width: dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
-  height: 120
+  width: yami ? 500 : dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
+  height: yami ? 150 : 120
   radius: 18
   // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
   color: host.styledWidgets ? "transparent" : (dotmatrix ? DotMatrix.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
@@ -164,6 +167,56 @@ Rectangle {
           }
         }
       }
+    }
+  }
+
+  // ── yami ────────────────────────────────────────────────────────────
+  Rectangle {
+    visible: card.yami
+    anchors.fill: parent
+    z: 50
+    color: Qt.rgba(card.host.background.r * 0.85, card.host.background.g * 0.85, card.host.background.b * 0.85, 1)
+    border.width: 1
+    border.color: Qt.rgba(card.host.foreground.r, card.host.foreground.g, card.host.foreground.b, 0.16)
+    readonly property string px: Qt.fontFamilies().indexOf("Tiny5") !== -1 ? "Tiny5" : card.host.fontFamily
+    readonly property bool has: !!card.player && String(card.player.trackTitle || "") !== ""
+    Text { x: 12; y: 10; text: "󰎈"; color: card.host.accent; font.family: card.host.iconFamily; font.pixelSize: 14 }
+    Text {
+      x: 32; y: 10; width: parent.width - 44
+      elide: Text.ElideRight
+      text: parent.has ? card.player.trackTitle + (card.player.trackArtist ? " — " + card.player.trackArtist : "") : "silence — nothing playing"
+      color: card.host.foreground; opacity: parent.has ? 0.8 : 0.45
+      font.family: parent.px; font.pixelSize: 14
+    }
+    // визуализатор: столбики акцентом над линией прогресса
+    Row {
+      x: 12; y: parent.height - 18 - 70
+      height: 70
+      spacing: 2
+      readonly property var lv: card.host.levels || []
+      Repeater {
+        model: 60
+        Rectangle {
+          required property int index
+          readonly property var lv: parent.lv
+          readonly property real v: lv.length ? (lv[Math.floor(index / 60 * lv.length)] || 0) : 0
+          anchors.bottom: parent.bottom
+          width: (500 - 24 - 59 * 2) / 60
+          height: Math.max(1, 70 * Math.min(1, v))
+          color: card.host.accent
+          opacity: 0.8
+        }
+      }
+    }
+    Rectangle {
+      x: 12; y: parent.height - 12; width: parent.width - 24; height: 2
+      color: Qt.rgba(card.host.accent.r, card.host.accent.g, card.host.accent.b, 0.25)
+      Rectangle { width: parent.width * card.progress; height: parent.height; color: card.host.accent }
+    }
+    MouseArea {
+      anchors.fill: parent
+      cursorShape: parent.has ? Qt.PointingHandCursor : Qt.ArrowCursor
+      onClicked: if (card.player) card.player.togglePlaying()
     }
   }
 }

@@ -42,19 +42,44 @@ Item {
       : clock.style === "yami" ? yamiClock : big
   }
 
-  // yami: крупное время пиксельным Tiny5 с жёсткой тенью, под ним дата мелко и тускло
+  // yami: крупное время пиксельным Tiny5 с жёсткой тенью — цифры светлые, двоеточие акцентом; под ним дата и шкала
+  // дня из 16 штрихов (пройденная часть — акцентом)
   Component {
     id: yamiClock
     Column {
+      id: yc
       readonly property string px: Qt.fontFamilies().indexOf("Tiny5") !== -1 ? "Tiny5" : clock.host.fontFamily
+      readonly property real day: (clock.now.getHours() * 60 + clock.now.getMinutes()) / 1440
       spacing: 6
       Item {
-        width: t.implicitWidth + 4; height: t.implicitHeight + 4
-        Text { x: 4; y: 4; text: t.text; font: t.font; color: Qt.rgba(0, 0, 0, 0.6) }
-        Text { id: t; text: clock.time; color: Qt.rgba(clock.host.foreground.r, clock.host.foreground.g, clock.host.foreground.b, 0.62)
-          font.family: parent.parent.px; font.pixelSize: 88 }
+        width: digits.implicitWidth + 4; height: digits.implicitHeight + 4
+        Row {
+          x: 4; y: 4
+          Repeater {
+            model: [clock.hours, ":", clock.minutes]
+            Text { required property var modelData; text: modelData; color: Qt.rgba(0, 0, 0, 0.65); font.family: yc.px; font.pixelSize: 88 }
+          }
+        }
+        Row {
+          id: digits
+          Text { text: clock.hours; color: clock.host.foreground; font.family: yc.px; font.pixelSize: 88 }
+          Text { text: ":"; color: clock.host.accent; font.family: yc.px; font.pixelSize: 88 }
+          Text { text: clock.minutes; color: clock.host.foreground; font.family: yc.px; font.pixelSize: 88 }
+        }
       }
-      Text { x: 2; text: clock.dateText; color: clock.host.foreground; opacity: 0.4; font.family: parent.px; font.pixelSize: 15 }
+      Text { x: 2; text: clock.dateText; color: clock.host.foreground; opacity: 0.55; font.family: yc.px; font.pixelSize: 15 }
+      Row {
+        x: 2
+        spacing: 4
+        Repeater {
+          model: 16
+          Rectangle {
+            required property int index
+            width: 20; height: 3
+            color: index < Math.round(yc.day * 16) ? clock.host.accent : Qt.rgba(clock.host.accent.r, clock.host.accent.g, clock.host.accent.b, 0.22)
+          }
+        }
+      }
     }
   }
   // vitreus: стеклянные цифры-трубки (VitClock), раскладка clockVitreusLayout: rule | pipe | digital
