@@ -22,10 +22,10 @@ Item {
 
   readonly property var defaults: ({
     clock: true,
-    clockStyle: "big",          // big stacked terminal minimal vitreus
+    clockStyle: "big",          // big stacked terminal minimal vitreus yami
     clockVitreusLayout: "rule", // vitreus: rule (часы над минутами) pipe digital
     clockVitreusSize: 1.4,
-    sysinfoStyle: "rings",      // rings vitreus (карточка-монитор: кольца и график сети)
+    sysinfoStyle: "rings",      // rings vitreus (карточка-монитор: кольца и график сети) yami (три карточки с графиками)
     clockAnchor: "top-left",
     clock24: true,
     clockSeconds: false,
