@@ -34,10 +34,13 @@ PanelWindow {
   readonly property bool pencils: dstyle === "pencils"
   // rumda — плотная карточка Rumda (DashRumda.qml)
   readonly property bool rumda: dstyle === "rumda"
-  readonly property bool vit: glassTiles || pencils || rumda
+  // surface — колонка Hub из surface-dots (DashSurface.qml)
+  readonly property bool surface: dstyle === "surface"
+  readonly property bool vit: glassTiles || pencils || rumda || surface
   readonly property int contentWidth: {
     if (glassTiles) return 1205
     if (rumda) return 660
+    if (surface) return 320
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
@@ -47,7 +50,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -96,10 +99,11 @@ PanelWindow {
     bodyWidth: dash.bodyWidth
     bodyHeight: dash.bodyHeight
     progress: dash.progress
-    anchorIds: ["vit-clock", "omarchy.clock", "glyph-clock", "dot-clock"]
+    anchorIds: ["vit-clock", "surf-clock", "omarchy.clock", "glyph-clock", "dot-clock"]
     scrW: dash.scrW
     scrH: dash.scrH
   }
+  readonly property real sideX: (width - w) / 2
   readonly property rect startRect: dg.startRect
   readonly property rect endRect: dg.endRect
   readonly property rect morph: dg.morph
@@ -117,8 +121,11 @@ PanelWindow {
   screen: host.focusedScreen
   anchors.top: true
   anchors.left: fromBar
-  anchors.right: fromBar
+  anchors.right: fromBar || surface
   anchors.bottom: fromBar
+  // Hub surface — окно у правого края, под кнопкой часов (как у surface-dots), а не по центру
+  margins.right: !fromBar && surface && dg.hasButton
+    ? Math.max(0, Math.round(scrW - (dg.button.x + dg.button.width / 2) - implicitWidth / 2)) : 0
   exclusionMode: fromBar ? ExclusionMode.Ignore : ExclusionMode.Normal
   exclusiveZone: 0
   implicitWidth: bodyWidth + 2 * Math.max(flare, shadowPad)
@@ -172,13 +179,13 @@ PanelWindow {
     function onDashboardOpenChanged() { if (dash.host.dashboardOpen && dash.vit) riseAnim.restart(); else { riseAnim.stop(); dash.rise = 0 } }
   }
   Rectangle {
-    visible: dash.vit && dash.fromBar
+    visible: dash.vit && !dash.surface && dash.fromBar
     anchors.fill: parent
     color: "black"
     opacity: 0.18 * Math.min(1, Math.max(0, dash.progress))
   }
   property real wavePhase: 0
-  NumberAnimation on wavePhase { from: 0; to: 1; duration: 1400; loops: Animation.Infinite; running: dash.vit && dash.visible && dash.rise < 1 }
+  NumberAnimation on wavePhase { from: 0; to: 1; duration: 1400; loops: Animation.Infinite; running: dash.vit && !dash.surface && dash.visible && dash.rise < 1 }
 
   Repeater {
     model: dash.fromBar && wave.running ? 2 : 0
@@ -210,7 +217,7 @@ PanelWindow {
 
     Item {
       id: hit
-      x: dash.loose ? dash.freePos.x : dash.fromBar ? dash.morph.x : (dash.width - dash.w) / 2
+      x: dash.loose ? dash.freePos.x : dash.fromBar ? dash.morph.x : dash.sideX
       y: dash.loose ? dash.freePos.y : dash.fromBar ? dash.morph.y : dash.margin
       width: dash.loose ? dash.bodyWidth : dash.fromBar ? dash.morph.width : dash.w
       height: dash.loose ? dash.bodyHeight : dash.fromBar ? dash.morph.height : dash.h
@@ -313,7 +320,7 @@ PanelWindow {
 
     // волна вдоль кромки у бара, пока плитки всплывают («из воды»): два гребня, бегут вдоль кромки и стихают
     Repeater {
-      model: dash.vit && dash.fromBar && dash.rise < 1 ? 2 : 0
+      model: dash.vit && !dash.surface && dash.fromBar && dash.rise < 1 ? 2 : 0
       Shape {
         id: crest
         required property int index
@@ -345,7 +352,7 @@ PanelWindow {
     }
     Item {
       id: content
-      x: dash.loose ? hit.x : dash.fromBar ? dash.endRect.x : (dash.width - dash.bodyWidth) / 2
+      x: dash.loose ? hit.x : dash.fromBar ? dash.endRect.x : dash.sideX + (dash.w - dash.bodyWidth) / 2
       y: dash.loose ? hit.y : dash.fromBar ? dash.endRect.y + (dash.edge === "top" ? 14 : dash.edge === "bottom" ? -14 : 0) * (1 - Math.min(1, dash.m)) : hit.y
       width: dash.bodyWidth
       height: dash.fromBar ? dash.bodyHeight : dash.h
@@ -354,6 +361,14 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashSurface {
+        id: surfHub
+        visible: dash.surface
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+      }
       DashRumda {
         visible: dash.rumda
         x: dash.pad

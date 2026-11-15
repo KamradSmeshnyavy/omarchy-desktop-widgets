@@ -132,7 +132,9 @@ Item {
     "glyph":     { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
     "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
     // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
-    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" }
+    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    // surface: меню выключения Cassini (снимок Сатурна), остальное — по стилю
+    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "cassini", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -545,6 +547,8 @@ Item {
   // Clip — буфер обмена glyph-rice; GlyphPower — меню выключения glyph (powerStyle: "glyph")
   Glyph.Clip { id: glyphClip; screen: root.focusedScreen }
   Glyph.GlyphPower { host: root }
+  // Cassini — меню выключения surface-dots (powerStyle: "cassini")
+  PowerCassini { host: root }
   RicePrefs.Prefs { host: root }
 
   EdgeHotzones {

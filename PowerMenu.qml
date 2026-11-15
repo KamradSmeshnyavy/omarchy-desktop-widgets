@@ -47,7 +47,7 @@ PanelWindow {
   property string armed: ""   // id пункта, ждущего подтверждения
   Timer { id: disarm; interval: 3000; onTriggered: power.armed = "" }
 
-  property real progress: host.powerOpen && host.value("powerStyle") !== "glyph" ? 1 : 0
+  property real progress: host.powerOpen && ["glyph", "cassini"].indexOf(String(host.value("powerStyle"))) === -1 ? 1 : 0
   Behavior on progress { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
   readonly property real w: Math.round(thickness * progress)
 
@@ -129,7 +129,7 @@ PanelWindow {
   Region { id: tabRegion; item: grips.tabItem }
   Region { id: dragAll; x: 0; y: 0; width: power.width; height: power.height }
 
-  readonly property bool own: host.powerOpen && host.value("powerStyle") !== "glyph"
+  readonly property bool own: host.powerOpen && ["glyph", "cassini"].indexOf(String(host.value("powerStyle"))) === -1
   HyprlandFocusGrab {
     active: power.own
     windows: [power]
