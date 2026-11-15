@@ -41,7 +41,15 @@ Item {
   property string distro: ""
   property string kernel: ""
   property string netName: ""
-  property bool hasFace: false
+  // аватар: dashAvatar из widgets.json (Customizer → Дашборд), иначе ~/.face
+  readonly property string avatar: {
+    var a = String(host.value("dashAvatar") || "")
+    if (!a) a = "~/.face"
+    if (a.indexOf("~") === 0) a = Quickshell.env("HOME") + a.slice(1)
+    return a.replace(/^file:\/\//, "")
+  }
+  property bool hasFace: false        // файл аватара есть (иначе — буква имени, без попытки грузить)
+  onAvatarChanged: if (!sysRead.running) sysRead.running = true
   readonly property bool live: rise > 0.99
 
   Process {
@@ -67,8 +75,8 @@ Item {
   }
   Process {
     id: sysRead
-    command: ["bash", "-c", ". /etc/os-release 2>/dev/null; echo \"$NAME\"; uname -r; test -e \"$HOME/.face\" && echo face || echo -;" +
-      "nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep -v ':loopback' | head -1 | cut -d: -f1"]
+    command: ["bash", "-c", ". /etc/os-release 2>/dev/null; echo \"$NAME\"; uname -r; test -f \"$1\" && echo face || echo -;" +
+      "nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep -v ':loopback' | head -1 | cut -d: -f1", "sys", g.avatar]
     stdout: StdioCollector {
       onStreamFinished: {
         var l = text.split("\n")
@@ -323,15 +331,17 @@ Item {
       border.width: 4; border.color: g.acc
       Image {
         id: face
-        visible: g.hasFace
+        visible: status === Image.Ready
         anchors.fill: parent; anchors.margins: 7
-        source: g.hasFace ? "file://" + Quickshell.env("HOME") + "/.face" : ""
+        source: g.hasFace ? "file://" + g.avatar : ""
+        sourceSize: Qt.size(200, 200)
+        cache: false
         fillMode: Image.PreserveAspectCrop
         layer.enabled: true
         layer.effect: MultiEffect { maskEnabled: true; maskSource: faceMask; maskThresholdMin: 0.5 }
       }
       Rectangle { id: faceMask; anchors.fill: face; radius: width / 2; visible: false; layer.enabled: true }
-      Lbl { visible: !g.hasFace; anchors.centerIn: parent; text: g.userName.charAt(0).toUpperCase(); font.pixelSize: 40; font.weight: Font.Bold; color: g.acc }
+      Lbl { visible: face.status !== Image.Ready; anchors.centerIn: parent; text: g.userName.charAt(0).toUpperCase(); font.pixelSize: 40; font.weight: Font.Bold; color: g.acc }
     }
     Lbl { x: 134; y: 14; width: parent.width - 134 - 90; elide: Text.ElideRight; text: g.userName; font.pixelSize: 20; font.weight: Font.DemiBold }
     Row {

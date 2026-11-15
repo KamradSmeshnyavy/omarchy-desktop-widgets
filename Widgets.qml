@@ -66,6 +66,7 @@ Item {
     edgeHover: false,           // открытие дашборда / настроек / лаунчера по наведению на края экрана
     // Дашборд (Dashboard.qml / DotMatrixDashboard.qml) и меню выключения: стиль — BarStyle.qml.
     dashStyle: "default",       // default dotmatrix vitreus pencils
+    dashAvatar: "",             // vitreus: картинка карточки пользователя; пусто — ~/.face
     dashFollowBar: true,
     dashAttach: "auto",         // auto attached floating
     dashBackground: "background",
