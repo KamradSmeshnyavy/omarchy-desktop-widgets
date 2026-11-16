@@ -370,6 +370,9 @@ PanelWindow {
       opacity: dash.animation === "grow" || dash.liquid ? Math.max(0, (Math.min(1, dash.progress) - (dash.liquid ? 0.55 : 0.35)) / (dash.liquid ? 0.45 : 0.65)) : 1
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
+      // клавиатура: стрелки / hjkl / Tab — по кнопкам, Enter — нажать (KeyNav)
+      Keys.onPressed: function(e) { if (keyNav.handle(e)) e.accepted = true }
+      KeyNav { id: keyNav; anchors.fill: parent; z: 999; scope: parent; active: dash.host.dashboardOpen; ring: dash.nier ? "#6e2a2a" : dash.host.accent }
 
       DashNier {
         visible: dash.nier

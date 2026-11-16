@@ -213,9 +213,13 @@ PanelWindow {
         else if (e.key === Qt.Key_T) hub.panel = hub.panel === "bt" ? "" : "bt"
         else if (e.key === Qt.Key_A) hub.panel = hub.panel === "audio" ? "" : "audio"
         else if (e.key === Qt.Key_S) { hub.host.settingsOpen = false; Quickshell.execDetached(["omarchy-shell", "shell", "toggle", "kamradsmeshnyavy.customizer"]) }
+        else if (hubNav.handle(e)) {}
         else return
         e.accepted = true
       }
+
+      // клавиатура: стрелки / Tab — по кнопкам, Enter — нажать (буквы у Hub свои, поэтому без hjkl)
+      KeyNav { id: hubNav; anchors.fill: parent; z: 999; scope: parent; active: hub.open; vim: false; ring: hub.acc }
 
       Column {
         id: col

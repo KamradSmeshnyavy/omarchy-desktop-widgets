@@ -225,7 +225,9 @@ PanelWindow {
       border { width: 1; color: GTheme.s2 }
       focus: root.open
       Keys.onEscapePressed: root.close()
+      Keys.onPressed: function(e) { if (quickNav.handle(e)) e.accepted = true }
       MouseArea { anchors.fill: parent } // клик по панели не закрывает
+      KeyNav { id: quickNav; anchors.fill: parent; z: 999; scope: parent; active: root.open; ring: GTheme.accent }
 
       Column {
         id: col

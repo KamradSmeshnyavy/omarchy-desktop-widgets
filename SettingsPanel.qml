@@ -479,6 +479,8 @@ PanelWindow {
     opacity: panel.contentReveal
     focus: panel.active
     Keys.onEscapePressed: panel.host.settingsOpen = false
+    Keys.onPressed: function(e) { if (setNav.handle(e)) e.accepted = true }
+    KeyNav { id: setNav; anchors.fill: parent; z: 999; scope: parent; active: panel.active; ring: panel.host.accent }
 
     Flickable {
       anchors.fill: parent
