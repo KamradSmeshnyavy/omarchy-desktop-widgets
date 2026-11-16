@@ -48,6 +48,7 @@ Item {
     quoteAnchor: "bottom-right",
     weather: false,             // погода карточкой (WeatherWidget; город — weatherCity)
     weatherAnchor: "right",
+    playerStyle: "auto",        // вид панели плеера (Super+Alt+M): auto — по райсу
     photo: false,               // фото-рамка (PhotoWidget): папка photoDir или текущие обои
     photoAnchor: "left",
     photoDir: "",
@@ -332,7 +333,7 @@ Item {
   property var levels: []
   // cava нужна визуализатору, дашборду и плитке cava домашнего экрана (пока он виден).
   readonly property bool homeCava: homeAny && String(value("homeLayout")) === "glyph" && /(^|[\s,])cava([\s,]|$)/.test(String(value("homeWidgets")))
-  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava || (flag("media") && ["yami", "bruteon"].indexOf(String(value("mediaStyle"))) !== -1))
+  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || playerOpen || homeCava || (flag("media") && ["yami", "bruteon"].indexOf(String(value("mediaStyle"))) !== -1))
     && (playing || flag("visualizerIdle"))
   readonly property string cavaConfig: [
     "[general]", "bars = " + bars, "framerate = 30", "sleep_timer = 2",

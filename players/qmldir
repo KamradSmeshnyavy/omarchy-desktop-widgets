@@ -1,3 +1,11 @@
 CornerDeco CornerDeco.qml
 Scanlines Scanlines.qml
 PlayerUnit3 PlayerUnit3.qml
+PlayerBase PlayerBase.qml
+PlayerBruteon PlayerBruteon.qml
+PlayerCozytile PlayerCozytile.qml
+PlayerRumda PlayerRumda.qml
+PlayerSurface PlayerSurface.qml
+PlayerYami PlayerYami.qml
+PlayerDots PlayerDots.qml
+PlayerVitreus PlayerVitreus.qml

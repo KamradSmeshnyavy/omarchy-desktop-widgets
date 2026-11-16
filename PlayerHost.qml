@@ -13,11 +13,17 @@ PanelWindow {
   id: win
   required property var host
 
+  // вид: playerStyle из widgets.json, auto — по райсу (style.json «rice» / «id»), без райса — surface (цвета темы)
+  readonly property var files: ({
+    unit3: "players/PlayerUnit3.qml", bruteon: "players/PlayerBruteon.qml", cozytile: "players/PlayerCozytile.qml",
+    rumda: "players/PlayerRumda.qml", surface: "players/PlayerSurface.qml", yami: "players/PlayerYami.qml",
+    dotmatrix: "players/PlayerDots.qml", glyph: "players/PlayerDots.qml", vitreus: "players/PlayerVitreus.qml"
+  })
   readonly property string style: {
     var v = String(host.value("playerStyle") || "auto")
-    return ["unit3"].indexOf(v) !== -1 ? v : "unit3"
+    if (files[v]) return v
+    return files[host.rice] ? host.rice : "surface"
   }
-  readonly property var files: ({ unit3: "players/PlayerUnit3.qml" })
 
   readonly property var player: {
     var l = Mpris.players.values
@@ -61,6 +67,7 @@ PanelWindow {
   Binding { when: !!view.item; target: view.item; property: "mpCoverUrl"; value: win.player ? String(win.player.trackArtUrl || "") : "" }
   Binding { when: !!view.item; target: view.item; property: "mpPlaying"; value: !!win.player && win.player.isPlaying }
   Binding { when: !!view.item; target: view.item; property: "mpPosition"; value: win.player ? win.player.position : 0 }
+  Binding { when: !!view.item && view.item.levels !== undefined; target: view.item; property: "levels"; value: win.host.levels }
   Binding { when: !!view.item; target: view.item; property: "mpLength"; value: win.player && win.player.length > 0 ? win.player.length : 1 }
   Connections {
     target: view.item
