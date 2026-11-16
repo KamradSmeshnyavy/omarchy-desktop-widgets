@@ -38,14 +38,17 @@ PanelWindow {
   readonly property bool surface: dstyle === "surface"
   // bruteon — сетка карточек необрутализма (DashBrute.qml)
   readonly property bool brute: dstyle === "bruteon"
+  // unit3 — меню паузы NieR (DashNier.qml)
+  readonly property bool nier: dstyle === "unit3"
   // «из воды» с волнами и затемнением — только у Vitreus и Rumda; surface и bruteon просто всплывают
-  readonly property bool plainRise: surface || brute
-  readonly property bool vit: glassTiles || pencils || rumda || surface || brute
+  readonly property bool plainRise: surface || brute || nier
+  readonly property bool vit: glassTiles || pencils || rumda || surface || brute || nier
   readonly property int contentWidth: {
     if (glassTiles) return 1205
     if (rumda) return 660
     if (surface) return 520
     if (brute) return 820
+    if (nier) return 860
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
     var w = [], n = 0
     if (showMedia) w.push(360)
@@ -55,7 +58,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: brute ? 490 + 16 + 24 : surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: nier ? 500 + 16 + 24 : brute ? 490 + 16 + 24 : surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -368,6 +371,13 @@ PanelWindow {
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
 
+      DashNier {
+        visible: dash.nier
+        x: dash.pad
+        y: 16
+        host: dash.host
+        rise: dash.rise
+      }
       DashBrute {
         visible: dash.brute
         x: dash.pad
