@@ -16,3 +16,9 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   https://github.com/Nebelung-cloud/glyph-rice)
   Copyright (c) Nebelung-cloud
   Licensed under the GNU General Public License v3.0.
+
+- NieR control center (`NierControl.qml`, `unit3/nier-arrow.png`, `unit3/qshare.py`):
+  Adapted from Unit-3 (`config/quickshell/widgets/ControlCenter.qml`, `assets/nier-arrow.png`,
+  `scripts/qshare.py`, https://github.com/samyns/Unit-3)
+  Copyright (c) 2026 samyns
+  Licensed under the MIT License.

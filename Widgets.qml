@@ -137,7 +137,9 @@ Item {
     "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
     // surface: меню выключения Cassini (снимок Сатурна), остальное — по стилю
     "cozytile":  { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "cozytile", clipboardPanel: "stock" },
-    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" }
+    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" },
+    // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
+    "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -563,6 +565,8 @@ Item {
   TasksBrute { host: root }
   // Hub surface в Super+M (settingsPanel: "surface")
   SurfaceHub { host: root }
+  // центр управления NieR из Unit-3 в Super+M (settingsPanel: "unit3")
+  NierControl { host: root }
   RicePrefs.Prefs { host: root }
 
   EdgeHotzones {
