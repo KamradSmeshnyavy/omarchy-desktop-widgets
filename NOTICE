@@ -22,3 +22,9 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   `scripts/qshare.py`, https://github.com/samyns/Unit-3)
   Copyright (c) 2026 samyns
   Licensed under the MIT License.
+
+- NieR player and volume bar (`players/PlayerUnit3.qml`, `players/CornerDeco.qml`, `players/Scanlines.qml`,
+  `NierVolume.qml`): Adapted from Unit-3 (`widgets/Player.qml`, `components/CornerDeco.qml`,
+  `components/Scanlines.qml`, `widgets/VolumeBar.qml`, https://github.com/samyns/Unit-3)
+  Copyright (c) 2026 samyns
+  Licensed under the MIT License.

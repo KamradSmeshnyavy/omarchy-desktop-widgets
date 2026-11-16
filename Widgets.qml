@@ -400,6 +400,8 @@ Item {
   property bool powerOpen: false
   // панель Tasks Bruteon (TasksBrute.qml): задачи и помодоро
   property bool tasksOpen: false
+  // панель плеера райса (PlayerHost.qml, Super+Alt+M)
+  property bool playerOpen: false
   onPowerOpenChanged: if (powerOpen) { dashboardOpen = false; settingsOpen = false; overviewOpen = false; dashStyle.refresh() }
   // Обзор рабочих столов (Overview.qml).
   property bool overviewOpen: false
@@ -430,6 +432,7 @@ Item {
     function closePower(): void { root.powerOpen = false }
     function toggleOverview(): void { root.overviewOpen = !root.overviewOpen }
     function toggleTasks(): void { root.tasksOpen = !root.tasksOpen }
+    function togglePlayer(): void { root.playerOpen = !root.playerOpen }
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
@@ -567,6 +570,10 @@ Item {
   SurfaceHub { host: root }
   // центр управления NieR из Unit-3 в Super+M (settingsPanel: "unit3")
   NierControl { host: root }
+  // плеер райса по Super+Alt+M (playerStyle)
+  PlayerHost { host: root }
+  // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)
+  NierVolume { host: root }
   RicePrefs.Prefs { host: root }
 
   EdgeHotzones {
