@@ -392,6 +392,8 @@ Item {
   property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
   // Меню выключения (PowerMenu.qml). Открытие одного закрывает другое.
   property bool powerOpen: false
+  // панель Tasks Bruteon (TasksBrute.qml): задачи и помодоро
+  property bool tasksOpen: false
   onPowerOpenChanged: if (powerOpen) { dashboardOpen = false; settingsOpen = false; overviewOpen = false; dashStyle.refresh() }
   // Обзор рабочих столов (Overview.qml).
   property bool overviewOpen: false
@@ -421,6 +423,7 @@ Item {
     function openPower(): void { root.powerOpen = true }
     function closePower(): void { root.powerOpen = false }
     function toggleOverview(): void { root.overviewOpen = !root.overviewOpen }
+    function toggleTasks(): void { root.tasksOpen = !root.tasksOpen }
     function openOverview(): void { root.overviewOpen = true }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
@@ -552,6 +555,8 @@ Item {
   PowerCassini { host: root }
   // меню выключения Cozytile (powerStyle: "cozytile")
   PowerCozy { host: root }
+  // задачи и помодоро Bruteon (кнопка Tasks на баре, toggleTasks)
+  TasksBrute { host: root }
   // Hub surface в Super+M (settingsPanel: "surface")
   SurfaceHub { host: root }
   RicePrefs.Prefs { host: root }
