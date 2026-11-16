@@ -28,6 +28,7 @@ Item {
   function collect(item, out, seen) {
     if (!item || item === nav || !item.visible || item.opacity <= 0.01) return
     if (item.kbdNav === false) return
+    if (item.enabled === false) return     // выключенная ветка (например, плитки под открытой карточкой)
     var took = false
     if (item.kbdNav === true && typeof item.kbdPress === "function" && item.width > 0) { out.push(item); took = true }
     else if (auto && item.width > 2 && item.height > 2 && !big(item)) {

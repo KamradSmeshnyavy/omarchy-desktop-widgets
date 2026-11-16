@@ -133,12 +133,16 @@ Item {
   readonly property var partDefaults: ({
     "default":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
     "glyph":     { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
-    "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "instrument", powerStyle: "edge", clipboardPanel: "stock" },
     // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
-    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "glassring", powerStyle: "edge", clipboardPanel: "stock" },
     // surface: меню выключения Cassini (снимок Сатурна), остальное — по стилю
-    "cozytile":  { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "cozytile", clipboardPanel: "stock" },
+    "cozytile":  { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "cozytile", powerStyle: "cozytile", clipboardPanel: "stock" },
     "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" },
+    // свои меню Super+M (MenuShell + menus/Menu*.qml), остальное — как у default
+    "bruteon":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "bruteon", powerStyle: "edge", clipboardPanel: "stock" },
+    "yami":      { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "yami", powerStyle: "edge", clipboardPanel: "stock" },
+    "rumda":     { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "rumda", powerStyle: "edge", clipboardPanel: "stock" },
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
     "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" }
   })
@@ -571,6 +575,13 @@ Item {
   SurfaceHub { host: root }
   // центр управления NieR из Unit-3 в Super+M (settingsPanel: "unit3")
   NierControl { host: root }
+  // меню Super+M райсов со своей механикой (menus/Menu*.qml в оболочке MenuShell)
+  MenuShell { host: root; kind: "bruteon"; source: Qt.resolvedUrl("menus/MenuBrute.qml") }
+  MenuShell { host: root; kind: "yami"; source: Qt.resolvedUrl("menus/MenuYami.qml") }
+  MenuShell { host: root; kind: "cozytile"; source: Qt.resolvedUrl("menus/MenuCozy.qml") }
+  MenuShell { host: root; kind: "rumda"; source: Qt.resolvedUrl("menus/MenuRumda.qml"); dim: 0.3 }
+  MenuShell { host: root; kind: "glassring"; source: Qt.resolvedUrl("menus/MenuGlass.qml"); dim: 0.25 }
+  MenuShell { host: root; kind: "instrument"; source: Qt.resolvedUrl("menus/MenuDots.qml"); ring: DotMatrix.Palette.signal }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
   // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)
