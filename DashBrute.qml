@@ -19,11 +19,16 @@ Item {
 
   required property var host
   property real rise: 1
-  readonly property color ink: "#161110"
-  readonly property color paper: "#efe0d6"
-  readonly property color card: "#f5ebe6"
-  readonly property color tileC: "#fbf3ee"
-  readonly property color muted: "#885643"
+  // цвета — из темы: чернила (контур, тень, текст) — её текст, бумага — её фон; на тёмной теме карточки чуть светлее фона,
+  // на светлой — светлее к белому; текст на пастельных плитках — всегда тёмный
+  readonly property color ink: host.foreground
+  readonly property color paper: host.background
+  readonly property bool dark: 0.299 * paper.r + 0.587 * paper.g + 0.114 * paper.b < 0.5
+  function mix(a, c, k) { return Qt.rgba(a.r + (c.r - a.r) * k, a.g + (c.g - a.g) * k, a.b + (c.b - a.b) * k, 1) }
+  readonly property color card: dark ? mix(paper, ink, 0.07) : mix(paper, Qt.color("#ffffff"), 0.35)
+  readonly property color tileC: dark ? mix(paper, ink, 0.12) : mix(paper, Qt.color("#ffffff"), 0.6)
+  readonly property color muted: mix(ink, paper, 0.42)
+  readonly property color pastelInk: "#161110"
   readonly property var pastel: ({ peach: "#ffb77a", salmon: "#ffb3a1", red: "#ff8a80", green: "#c5e1a5", pink: "#ffcbd5",
                                    lavender: "#c2c3e9", blue: "#90caf9", grey: "#d4e0e0", yellow: "#ffd98a", purple: "#d8b4f0" })
   readonly property var cava: ["#ffb3a1", "#ffbfbb", "#ffcbd5", "#f2c16a", "#e6b800", "#d5cc52", "#c5e1a5", "#87aeaa", "#4a7bb0", "#b478c8"]
@@ -107,7 +112,7 @@ Item {
     x: 20; y: 16; width: 168; height: 190
     Tile {
       x: 46; y: 16; width: 72; height: 72
-      fill: "#e8dfcf"
+      fill: b.dark ? b.mix(b.paper, b.ink, 0.18) : "#e8dfcf"
       Image { id: face; anchors.fill: parent; anchors.margins: 3; source: "file://" + b.avatar; fillMode: Image.PreserveAspectCrop; visible: false; layer.enabled: true }
       Rectangle { id: faceMask; anchors.fill: face; radius: 5; visible: false; layer.enabled: true }
       MultiEffect { anchors.fill: face; source: face; visible: face.status === Image.Ready; maskEnabled: true; maskSource: faceMask; maskThresholdMin: 0.5 }
@@ -121,7 +126,7 @@ Item {
       color: b.pastel.green; border.width: 1.5; border.color: b.ink
       Row { anchors.centerIn: parent; spacing: 5
         Rectangle { width: 6; height: 6; radius: 3; color: "#3c7a3c"; anchors.verticalCenter: parent.verticalCenter }
-        Lbl { id: onl; text: "Online"; font.pixelSize: 9; anchors.verticalCenter: parent.verticalCenter } }
+        Lbl { id: onl; text: "Online"; font.pixelSize: 9; color: b.pastelInk; anchors.verticalCenter: parent.verticalCenter } }
     }
   }
   Card {
@@ -222,7 +227,7 @@ Item {
             if (modelData[2] === "vol") { if (b.sink && b.sink.audio) { b.sink.audio.muted = false; b.sink.audio.volume = x } }
             else { b.bright = Math.max(0.02, x); Quickshell.execDetached(["brightnessctl", "-q", "set", Math.round(b.bright * 100) + "%"]) }
           }
-          Tile { width: 24; height: 24; fill: sc.modelData[1]; Ico { anchors.centerIn: parent; text: sc.modelData[0]; font.pixelSize: 11 } }
+          Tile { width: 24; height: 24; fill: sc.modelData[1]; Ico { anchors.centerIn: parent; text: sc.modelData[0]; font.pixelSize: 11; color: b.pastelInk } }
           Item {
             width: 24; height: 126
             Rectangle { anchors.fill: parent; radius: 8; color: b.tileC; border.width: 2; border.color: b.ink }
@@ -236,7 +241,7 @@ Item {
               onPositionChanged: function(m) { if (pressed) sc.set(1 - m.y / height) } }
             WheelHandler { onWheel: function(e) { sc.set(sc.v + (e.angleDelta.y > 0 ? 0.05 : -0.05)) } }
           }
-          Tile { width: 26; height: 16; r: 4; sh: 2; fill: sc.modelData[1]; Lbl { anchors.centerIn: parent; text: Math.round(sc.v * 100) + "%"; font.pixelSize: 7; font.bold: true } }
+          Tile { width: 26; height: 16; r: 4; sh: 2; fill: sc.modelData[1]; Lbl { anchors.centerIn: parent; text: Math.round(sc.v * 100) + "%"; font.pixelSize: 7; font.bold: true; color: b.pastelInk } }
         }
       }
     }
@@ -260,7 +265,7 @@ Item {
           required property var modelData
           width: 101; height: 46
           Rectangle { x: 7; anchors.verticalCenter: parent.verticalCenter; width: 22; height: 22; radius: 5; color: modelData[1]; border.width: 1.5; border.color: b.ink
-            Ico { anchors.centerIn: parent; text: modelData[0]; font.pixelSize: 10 } }
+            Ico { anchors.centerIn: parent; text: modelData[0]; font.pixelSize: 10; color: b.pastelInk } }
           Column { x: 35; anchors.verticalCenter: parent.verticalCenter; spacing: 1
             Lbl { text: modelData[2]; font.pixelSize: 7; color: b.muted }
             Lbl { text: modelData[3]; font.pixelSize: 9; width: 60; elide: Text.ElideRight } }
@@ -276,7 +281,7 @@ Item {
     readonly property var p: b.host.player
     Tile {
       x: 12; y: 12; width: 84; height: 84; r: 9
-      fill: "#e8dfcf"
+      fill: b.dark ? b.mix(b.paper, b.ink, 0.18) : "#e8dfcf"
       Image { id: cover; anchors.fill: parent; anchors.margins: 3; source: pl.p && pl.p.trackArtUrl ? String(pl.p.trackArtUrl) : ""; fillMode: Image.PreserveAspectCrop; visible: false; layer.enabled: true }
       Rectangle { id: coverMask; anchors.fill: cover; radius: 6; visible: false; layer.enabled: true }
       MultiEffect { anchors.fill: cover; source: cover; visible: cover.status === Image.Ready; maskEnabled: true; maskSource: coverMask; maskThresholdMin: 0.5 }
@@ -286,7 +291,7 @@ Item {
       x: 110; y: 14
       width: parent.width - 124
       spacing: 3
-      Lbl { width: parent.width; elide: Text.ElideRight; text: pl.p ? pl.p.trackTitle || "—" : "Nothing playing"; font.pixelSize: 13 }
+      Lbl { width: parent.width; elide: Text.ElideRight; text: pl.p && pl.p.trackTitle ? pl.p.trackTitle : b.host.tr("Nothing playing", "Ничего не играет"); font.pixelSize: 13 }
       Lbl { width: parent.width; elide: Text.ElideRight; text: pl.p ? pl.p.trackArtist || "" : ""; font.pixelSize: 9; color: b.muted }
     }
     // пастельная волна точек (cava)
@@ -322,7 +327,7 @@ Item {
       spacing: 10
       Tile { width: 24; height: 24; hot: true; onClicked: if (pl.p) pl.p.previous(); Ico { anchors.centerIn: parent; text: ""; font.pixelSize: 9 } }
       Tile { width: 30; height: 28; hot: true; fill: b.pastel.salmon; onClicked: if (pl.p) pl.p.togglePlaying()
-        Ico { anchors.centerIn: parent; text: pl.p && pl.p.isPlaying ? "" : ""; font.pixelSize: 11 } }
+        Ico { anchors.centerIn: parent; text: pl.p && pl.p.isPlaying ? "" : ""; font.pixelSize: 11; color: b.pastelInk } }
       Tile { width: 24; height: 24; hot: true; onClicked: if (pl.p) pl.p.next(); Ico { anchors.centerIn: parent; text: ""; font.pixelSize: 9 } }
     }
   }
@@ -340,7 +345,7 @@ Item {
           width: 135; height: 22; sh: 2
           Row { x: 4; anchors.verticalCenter: parent.verticalCenter; spacing: 5
             Rectangle { width: 14; height: 14; radius: 3; color: modelData[1]; border.width: 1.2; border.color: b.ink; anchors.verticalCenter: parent.verticalCenter
-              Ico { anchors.centerIn: parent; text: modelData[0]; font.pixelSize: 7 } }
+              Ico { anchors.centerIn: parent; text: modelData[0]; font.pixelSize: 7; color: b.pastelInk } }
             Lbl { width: 22; text: modelData[2]; font.pixelSize: 8; anchors.verticalCenter: parent.verticalCenter }
             Rectangle { width: 52; height: 7; radius: 3.5; color: b.tileC; border.width: 1.2; border.color: b.ink; anchors.verticalCenter: parent.verticalCenter
               Rectangle { x: 1; y: 1; height: parent.height - 2; radius: 2.5; width: Math.max(0, (parent.width - 2) * Math.min(1, modelData[3])); color: modelData[1] } }
@@ -367,8 +372,8 @@ Item {
           fill: modelData[1]
           onClicked: { b.host.dashboardOpen = false; Quickshell.execDetached(["xdg-open", modelData[3]]) }
           Column { anchors.centerIn: parent; spacing: 4
-            Ico { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[0]; font.pixelSize: 14 }
-            Lbl { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[2]; font.pixelSize: 8; font.bold: true } }
+            Ico { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[0]; font.pixelSize: 14; color: b.pastelInk }
+            Lbl { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[2]; font.pixelSize: 8; font.bold: true; color: b.pastelInk } }
         }
       }
     }

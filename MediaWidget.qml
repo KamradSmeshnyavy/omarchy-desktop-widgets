@@ -12,9 +12,12 @@ Rectangle {
   // mediaStyle "yami": широкая карточка «♫ silence — nothing playing» / «♫ трек — исполнитель», полосы визуализатора
   // и линия прогресса акцентом (по мотивам yami, MIT; код свой); видна и без плеера
   readonly property bool yami: !dotmatrix && String(host.value("mediaStyle")) === "yami"
+  // mediaStyle "bruteon": обложка в плитке с контуром и тенью, название, исполнитель, волна точек визуализатора, время
+  // и плитки назад / пауза (лососевая) / вперёд (по мотивам Bruteon, Darkkal44 — облик со скриншота, код свой)
+  readonly property bool brute: !dotmatrix && String(host.value("mediaStyle")) === "bruteon"
 
-  width: yami ? 500 : dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
-  height: yami ? 150 : 120
+  width: yami ? 500 : brute ? 380 : dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
+  height: yami ? 150 : brute ? 140 : 120
   radius: 18
   // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
   color: host.styledWidgets ? "transparent" : (dotmatrix ? DotMatrix.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
@@ -25,6 +28,7 @@ Rectangle {
     ? Math.max(0, Math.min(1, player.position / player.length)) : 0
 
   Item {
+    visible: !card.brute
     id: cover
     x: 12
     y: 12
@@ -80,6 +84,7 @@ Rectangle {
   }
 
   Column {
+    visible: !card.brute
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; top: parent.top; topMargin: 14 }
     spacing: 2
 
@@ -117,7 +122,7 @@ Rectangle {
   // Прогресс
   Rectangle {
     id: track
-    visible: !card.dotmatrix
+    visible: !card.dotmatrix && !card.brute
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     height: 4
     radius: 2
@@ -132,6 +137,7 @@ Rectangle {
   }
 
   Row {
+    visible: !card.brute
     id: buttons
     anchors { left: cover.right; leftMargin: 8; bottom: parent.bottom; bottomMargin: 8 }
     spacing: 4
@@ -165,6 +171,80 @@ Rectangle {
             else if (modelData.act === "next") card.player.next()
             else card.player.togglePlaying()
           }
+        }
+      }
+    }
+  }
+
+  // ── bruteon ─────────────────────────────────────────────────────────
+  Item {
+    id: bru
+    visible: card.brute
+    anchors.fill: parent
+    z: 50
+    readonly property color ink: card.host.foreground
+    readonly property string mono: Qt.fontFamilies().indexOf("JetBrainsMono Nerd Font") !== -1 ? "JetBrainsMono Nerd Font" : card.host.fontFamily
+    function mmss(x) { x = Math.max(0, Math.floor(x || 0)); return Math.floor(x / 60) + ":" + ("0" + (x % 60)).slice(-2) }
+    // фон под обложкой и текстом — цвет карточки (перекрывает обычный вид)
+    Rectangle { anchors.fill: parent; radius: 12; color: card.host.styledWidgets ? "transparent" : card.host.background }
+    Item {
+      x: 14; y: 14; width: 108; height: 108
+      Rectangle { x: 3; y: 3; width: 108; height: 108; radius: 12; color: bru.ink }
+      Rectangle {
+        id: bruCover
+        width: 108; height: 108; radius: 12
+        color: Qt.tint(card.host.background, Qt.rgba(bru.ink.r, bru.ink.g, bru.ink.b, 0.12)); border.width: 2.5; border.color: bru.ink
+        Image { id: bruArt; anchors.fill: parent; anchors.margins: 3; source: card.player ? String(card.player.trackArtUrl || "") : ""; fillMode: Image.PreserveAspectCrop; visible: false; layer.enabled: true }
+        Rectangle { id: bruMask; anchors.fill: bruArt; radius: 9; visible: false; layer.enabled: true }
+        MultiEffect { anchors.fill: bruArt; source: bruArt; visible: bruArt.status === Image.Ready; maskEnabled: true; maskSource: bruMask; maskThresholdMin: 0.5 }
+        Text { anchors.centerIn: parent; visible: bruArt.status !== Image.Ready; text: "\u{F075A}"; color: bru.ink; opacity: 0.5; font.family: card.host.iconFamily; font.pixelSize: 34 }
+      }
+    }
+    Column {
+      x: 138; y: 16
+      width: parent.width - 152
+      spacing: 3
+      Text { width: parent.width; elide: Text.ElideRight; text: card.player && card.player.trackTitle ? card.player.trackTitle : card.host.tr("Nothing playing", "Ничего не играет"); color: bru.ink; font.family: bru.mono; font.pixelSize: 13 }
+      Text { width: parent.width; elide: Text.ElideRight; text: card.player ? (card.player.trackArtist || "") : ""; color: Qt.rgba(bru.ink.r, bru.ink.g, bru.ink.b, 0.6); font.family: bru.mono; font.pixelSize: 10 }
+    }
+    // волна точек: высота — уровень визуализатора, сыгранная часть — чернилами, остальное — бледнее
+    Row {
+      x: 138; y: 62
+      spacing: 3
+      Repeater {
+        model: 24
+        Rectangle {
+          required property int index
+          readonly property var lv: card.host.levels || []
+          readonly property real v: lv.length ? Number(lv[Math.floor(index * lv.length / 24)] || 0) : 0
+          width: 6; height: 5 + 10 * Math.min(1, v); radius: 3
+          anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+          color: bru.ink
+          opacity: index / 24 <= card.progress ? 1 : 0.3
+        }
+      }
+    }
+    Text { x: 138; y: 100; text: card.player ? bru.mmss(card.player.position) : "0:00"; color: bru.ink; font.family: bru.mono; font.pixelSize: 10; font.bold: true }
+    Text { anchors.right: parent.right; anchors.rightMargin: 16; y: 100; text: card.player ? bru.mmss(card.player.length) : "0:00"; color: bru.ink; font.family: bru.mono; font.pixelSize: 10; font.bold: true }
+    Row {
+      x: 138 + (parent.width - 152) / 2 - width / 2; y: 92
+      spacing: 10
+      Repeater {
+        model: [["", "previous", "#fbf3ee", 26], [card.player && card.player.isPlaying ? "" : "", "togglePlaying", "#ffb3a1", 32], ["", "next", "#fbf3ee", 26]]
+        Item {
+          id: bb
+          required property var modelData
+          width: modelData[3]; height: modelData[3]
+          anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+          readonly property real lift: bbTap.pressed ? 0 : bbHov.hovered ? 3 : 2
+          Rectangle { x: 2; y: 2; width: bb.width; height: bb.height; radius: 8; color: bru.ink }
+          Rectangle {
+            x: 2 - bb.lift; y: 2 - bb.lift; width: bb.width; height: bb.height; radius: 8
+            color: bb.modelData[2]; border.width: 2; border.color: bru.ink
+            Text { anchors.centerIn: parent; text: bb.modelData[0]; color: "#161110"; font.family: bru.mono; font.pixelSize: 10 }
+          }
+          HoverHandler { id: bbHov; cursorShape: Qt.PointingHandCursor }
+          TapHandler { id: bbTap; onTapped: if (card.player) card.player[bb.modelData[1]]() }
         }
       }
     }

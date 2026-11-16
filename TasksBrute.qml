@@ -20,10 +20,15 @@ PanelWindow {
   property real k: open ? 1 : 0
   Behavior on k { NumberAnimation { duration: 180; easing.type: Easing.OutBack; easing.overshoot: 1.3 } }
 
-  readonly property color ink: "#161110"
-  readonly property color card: host.background
-  readonly property color tileC: "#fbf3ee"
-  readonly property color muted: "#885643"
+  // цвета — из темы (как в DashBrute): чернила — её текст, бумага — фон; текст на пастели — тёмный
+  readonly property color ink: host.foreground
+  readonly property color paper: host.background
+  readonly property bool dark: 0.299 * paper.r + 0.587 * paper.g + 0.114 * paper.b < 0.5
+  function mix(a, c, k) { return Qt.rgba(a.r + (c.r - a.r) * k, a.g + (c.g - a.g) * k, a.b + (c.b - a.b) * k, 1) }
+  readonly property color card: dark ? mix(paper, ink, 0.07) : paper
+  readonly property color tileC: dark ? mix(paper, ink, 0.12) : mix(paper, Qt.color("#ffffff"), 0.6)
+  readonly property color muted: mix(ink, paper, 0.42)
+  readonly property color pastelInk: "#161110"
   readonly property color green: "#c5e1a5"
   readonly property color pink: "#ffcbd5"
   readonly property color salmon: "#ffb3a1"
@@ -155,7 +160,7 @@ PanelWindow {
           Tile { width: 22; height: 22; r: 6; sh: 1.5; onClicked: { tp.mode = "pomodoro"; tp.phase = "focus"; tp.running = true }
             Lbl { anchors.centerIn: parent; text: ""; font.pixelSize: 10 } }
           Tile { width: 22; height: 22; r: 6; sh: 1.5; fill: tp.pink; onClicked: { tp.add(entry.text); entry.text = "" }
-            Lbl { anchors.centerIn: parent; text: "+"; font.pixelSize: 13; font.bold: true } }
+            Lbl { anchors.centerIn: parent; text: "+"; font.pixelSize: 13; font.bold: true; color: tp.pastelInk } }
         }
       }
       ListView {
@@ -175,7 +180,7 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             color: modelData.done ? tp.green : tp.tileC
             border.width: 2; border.color: tp.ink
-            Lbl { anchors.centerIn: parent; visible: modelData.done; text: ""; font.pixelSize: 10 }
+            Lbl { anchors.centerIn: parent; visible: modelData.done; text: ""; font.pixelSize: 10; color: tp.pastelInk }
           }
           Lbl {
             x: 32; anchors.verticalCenter: parent.verticalCenter
@@ -203,7 +208,7 @@ PanelWindow {
             readonly property bool on: tp.mode === modelData[0]
             width: ml.implicitWidth + 22; height: 24; radius: 12
             color: on ? tp.green : tp.tileC; border.width: 2; border.color: tp.ink
-            Lbl { id: ml; anchors.centerIn: parent; text: parent.modelData[1]; font.pixelSize: 10; font.bold: true }
+            Lbl { id: ml; anchors.centerIn: parent; text: parent.modelData[1]; font.pixelSize: 10; font.bold: true; color: parent.on ? tp.pastelInk : tp.ink }
             TapHandler { onTapped: { tp.mode = parent.modelData[0]; tp.running = false } }
             HoverHandler { cursorShape: Qt.PointingHandCursor }
           }
@@ -220,7 +225,7 @@ PanelWindow {
             readonly property bool on: tp.phase === modelData[0]
             width: 54; height: 20; radius: 10
             color: on ? tp.pink : tp.tileC; border.width: 1.8; border.color: tp.ink
-            Lbl { anchors.centerIn: parent; text: parent.modelData[1]; font.pixelSize: 9; font.bold: true }
+            Lbl { anchors.centerIn: parent; text: parent.modelData[1]; font.pixelSize: 9; font.bold: true; color: parent.on ? tp.pastelInk : tp.ink }
             TapHandler { onTapped: { tp.running = false; tp.phase = parent.modelData[0]; tp.remain = tp.phaseLen } }
             HoverHandler { cursorShape: Qt.PointingHandCursor }
           }
@@ -250,12 +255,12 @@ PanelWindow {
         spacing: 10
         Tile { width: 26; height: 26; r: 13; sh: 2; fill: tp.lavender
           onClicked: { tp.running = false; if (tp.mode === "stopwatch") tp.watch = 0; else tp.remain = tp.phaseLen }
-          Lbl { anchors.centerIn: parent; text: ""; font.pixelSize: 10 } }
+          Lbl { anchors.centerIn: parent; text: ""; font.pixelSize: 10; color: tp.pastelInk } }
         Tile { width: 26; height: 26; r: 13; sh: 2; fill: tp.salmon; onClicked: tp.running = !tp.running
-          Lbl { anchors.centerIn: parent; text: tp.running ? "" : ""; font.pixelSize: 10 } }
+          Lbl { anchors.centerIn: parent; text: tp.running ? "" : ""; font.pixelSize: 10; color: tp.pastelInk } }
         Tile { width: 26; height: 26; r: 13; sh: 2; fill: tp.pink
           onClicked: { tp.focusMin = tp.focusMin === 25 ? 50 : 25; if (!tp.running && tp.phase === "focus") tp.remain = tp.phaseLen }
-          Lbl { anchors.centerIn: parent; text: ""; font.pixelSize: 10 } }
+          Lbl { anchors.centerIn: parent; text: ""; font.pixelSize: 10; color: tp.pastelInk } }
       }
       Lbl {
         visible: tp.mode === "pomodoro"

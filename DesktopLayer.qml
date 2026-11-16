@@ -36,9 +36,9 @@ PanelWindow {
   mask: Region {
     // пока виджет держат (DirectGrab тянет или растягивает) — весь экран: курсор уходит за край виджета
     regions: desk.editing ? [editRegion] : desk.holding ? [allRegion]
-      : desk.floating ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal, menuRegion]
-      : desk.host.value("directMove") !== false ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal]
-      : [rMedia, rTodo, rQuote, rPhoto, rContrib, rCal]
+      : desk.floating ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal, gWx, menuRegion]
+      : desk.host.value("directMove") !== false ? [gClock, gMedia, gSys, gNet, gTodo, gQuote, gPhoto, gContrib, gCal, gWx]
+      : [rMedia, rTodo, rQuote, rPhoto, rContrib, rCal, rWx]
   }
   Region { id: editRegion; item: editArea }
   Region { id: allRegion; x: 0; y: 0; width: desk.width; height: desk.height }
@@ -51,6 +51,7 @@ PanelWindow {
   Region { id: gPhoto; item: g_photo.visible ? g_photo : null }
   Region { id: gContrib; item: g_contrib.visible ? g_contrib : null }
   Region { id: gCal; item: g_calendar.visible ? g_calendar : null }
+  Region { id: gWx; item: g_weather.visible ? g_weather : null }
   Region { id: menuRegion; item: menu.visible ? menu : null }
   Region { id: rClock; item: clockW.visible ? clockW : null }
   Region { id: rMedia; item: media.visible ? media : null }
@@ -58,6 +59,7 @@ PanelWindow {
   Region { id: rNet; item: netW.visible ? netW : null }
   Region { id: rTodo; item: todoW.visible ? todoW : null }
   Region { id: rQuote; item: quoteW.visible ? quoteW : null }
+  Region { id: rWx; item: wxW.visible ? wxW : null }
   Region { id: rPhoto; item: photoW.visible ? photoW : null }
   Region { id: rContrib; item: contribW.visible ? contribW : null }
   Region { id: rCal; item: calW.visible ? calW : null }
@@ -86,7 +88,7 @@ PanelWindow {
   function label(name) {
     return ({
       contrib: "GitHub", clock: host.tr("Clock", "Часы"), media: host.tr("Player", "Плеер"), sysinfo: host.tr("System", "Система"),
-      network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), photo: host.tr("Photo", "Фото"),
+      network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), weather: host.tr("Weather", "Погода"), photo: host.tr("Photo", "Фото"),
       calendar: host.tr("Calendar", "Календарь")
     })[name] || name
   }
@@ -239,6 +241,15 @@ PanelWindow {
     scale: desk.scaleOf("todo")
     y: desk.place(todoW, "todoAnchor").y
   }
+  WidgetCard { host: desk.host; mergeable: desk.mergeable; glassNs: desk.floating ? "omarchy-widgets-float" : "omarchy-widgets"; glassBelowWin: !desk.floating; target: wxW; s: desk.scaleOf("weather"); seed: 31; pad: desk.padOf(wxW) }
+  WeatherWidget {
+    id: wxW
+    host: desk.host
+    visible: desk.host.flag("weather") && desk.shows("weather")
+    x: desk.place(wxW, "weatherAnchor").x
+    scale: desk.scaleOf("weather")
+    y: desk.place(wxW, "weatherAnchor").y
+  }
   QuoteWidget {
     id: quoteW
     host: desk.host
@@ -285,7 +296,7 @@ PanelWindow {
     // DOT-MATRIX — как в NIHIL: карточка всегда на месте, без плеера кнопки приглушены.
     // Открепленная карточка тоже всегда на месте — пропадающее «окно» сбивает с толку.
     visible: desk.host.flag("media") && desk.shows("media")
-      && (desk.host.dotmatrixWidgets || desk.isFree("media") || String(desk.host.value("mediaStyle")) === "yami"
+      && (desk.host.dotmatrixWidgets || desk.isFree("media") || ["yami", "bruteon"].indexOf(String(desk.host.value("mediaStyle"))) !== -1
           || (desk.host.player !== null && desk.host.player.trackTitle !== ""))
     x: desk.place(media, "mediaAnchor").x
     scale: desk.scaleOf("media")
@@ -307,6 +318,7 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: netW; name: "network"; pad: desk.padOf(netW) }
   DragHandle { host: desk.host; desk: desk; target: todoW; name: "todo"; pad: desk.padOf(todoW) }
   DragHandle { host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
+  DragHandle { host: desk.host; desk: desk; target: wxW; name: "weather"; pad: desk.padOf(wxW) }
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DragHandle { host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
   DragHandle { host: desk.host; desk: desk; target: calW; name: "calendar"; pad: desk.padOf(calW) }
@@ -318,6 +330,7 @@ PanelWindow {
   DirectGrab { id: g_network; host: desk.host; desk: desk; target: netW; name: "network"; pad: desk.padOf(netW) }
   DirectGrab { id: g_todo; host: desk.host; desk: desk; target: todoW; name: "todo"; pad: desk.padOf(todoW) }
   DirectGrab { id: g_quote; host: desk.host; desk: desk; target: quoteW; name: "quote"; pad: desk.padOf(quoteW) }
+  DirectGrab { id: g_weather; host: desk.host; desk: desk; target: wxW; name: "weather"; pad: desk.padOf(wxW) }
   DirectGrab { id: g_photo; host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DirectGrab { id: g_contrib; host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
   DirectGrab { id: g_calendar; host: desk.host; desk: desk; target: calW; name: "calendar"; pad: desk.padOf(calW) }
@@ -387,7 +400,7 @@ PanelWindow {
   // Порядок в общей колонке у одного якоря — как в NIHIL: часы, сеть, плеер, дальше остальное.
   readonly property var entries: [
     [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
-    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"],
+    [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [wxW, "weatherAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"],
     [calW, "calendarAnchor"]
   ]
   // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.

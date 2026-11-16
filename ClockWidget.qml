@@ -1,9 +1,10 @@
 import QtQuick
+import Quickshell
 import "dotmatrix" as DotMatrix
 
 // Часы. Стили (clockStyle): big — крупное время и дата под ним; stacked — часы над
 // минутами; terminal — «вывод команды date» с мигающим курсором; minimal — одна строка; vitreus — стеклянные цифры;
-// yami — крупное пиксельное время (Tiny5) с жёсткой тенью.
+// yami — крупное пиксельное время (Tiny5) с жёсткой тенью; bruteon — карточка Bruteon: аналоговый циферблат и приветствие.
 Item {
   id: clock
 
@@ -39,7 +40,83 @@ Item {
       : clock.style === "terminal" ? terminal
       : clock.style === "minimal" ? minimal
       : clock.style === "vitreus" ? vitreusClock
-      : clock.style === "yami" ? yamiClock : big
+      : clock.style === "yami" ? yamiClock
+      : clock.style === "bruteon" ? bruteClock : big
+  }
+
+  // bruteon (по мотивам карточки часов Bruteon, Darkkal44 — облик со скриншота, код свой): слева аналоговый циферблат с
+  // контуром, метками часов и стрелками (секундная — красная), черта; справа «☾ Good evening, имя», крупное время с
+  // лавандовой плашкой AM / PM и дата
+  Component {
+    id: bruteClock
+    Row {
+      id: bc
+      readonly property color ink: clock.host.foreground
+      readonly property string mono: Qt.fontFamilies().indexOf("JetBrainsMono Nerd Font") !== -1 ? "JetBrainsMono Nerd Font" : clock.host.fontFamily
+      readonly property int h: clock.now.getHours()
+      spacing: 22
+      Item {
+        width: 96; height: 96
+        anchors.verticalCenter: parent.verticalCenter
+        Rectangle { x: 3; y: 3; width: 96; height: 96; radius: 48; color: bc.ink }
+        Rectangle {
+          id: face
+          width: 96; height: 96; radius: 48
+          color: Qt.rgba(1, 1, 1, 0.94); border.width: 2.5; border.color: bc.ink
+          Repeater {
+            model: 12
+            Rectangle {
+              required property int index
+              readonly property bool major: index % 3 === 0
+              width: major ? 3 : 2; height: major ? 10 : 6; radius: 1
+              color: "#161110"
+              x: face.width / 2 - width / 2 + Math.sin(index * Math.PI / 6) * (face.width / 2 - 10 - height / 2)
+              y: face.height / 2 - height / 2 - Math.cos(index * Math.PI / 6) * (face.height / 2 - 10 - height / 2)
+              rotation: index * 30
+            }
+          }
+          Repeater {
+            model: [[(clock.now.getHours() % 12 + clock.now.getMinutes() / 60) * 30, 24, 3.5, "#161110"],
+                    [(clock.now.getMinutes() + clock.now.getSeconds() / 60) * 6, 34, 2.5, "#161110"],
+                    [clock.now.getSeconds() * 6, 36, 1.2, "#c0473b"]]
+            Rectangle {
+              required property var modelData
+              width: modelData[2]; height: modelData[1]; radius: width / 2
+              color: modelData[3]
+              x: face.width / 2 - width / 2; y: face.height / 2 - height
+              transformOrigin: Item.Bottom
+              rotation: modelData[0]
+            }
+          }
+          Rectangle { anchors.centerIn: parent; width: 7; height: 7; radius: 3.5; color: "#161110" }
+        }
+      }
+      Rectangle { width: 1.5; height: 84; anchors.verticalCenter: parent.verticalCenter; color: Qt.rgba(bc.ink.r, bc.ink.g, bc.ink.b, 0.25) }
+      Column {
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 4
+        Row {
+          spacing: 6
+          Text { anchors.verticalCenter: parent.verticalCenter; text: bc.h < 6 || bc.h >= 19 ? "\u{F0594}" : bc.h < 12 ? "\u{F059C}" : "\u{F0599}"; color: "#e07a5f"; font.family: clock.host.iconFamily; font.pixelSize: 13 }
+          Text {
+            text: (bc.h < 5 ? "Good night" : bc.h < 12 ? "Good morning" : bc.h < 18 ? "Good afternoon" : "Good evening") + ", " + (Quickshell.env("USER") || "")
+            color: bc.ink; font.family: bc.mono; font.pixelSize: 12; font.bold: true
+          }
+        }
+        Row {
+          spacing: 10
+          Text { text: Qt.formatTime(clock.now, clock.h24 ? "HH:mm" : "h:mm AP").split(" ")[0]; color: bc.ink; font.family: bc.mono; font.pixelSize: 40; font.bold: true }
+          Rectangle {
+            visible: !clock.h24
+            anchors.verticalCenter: parent.verticalCenter
+            width: ap.implicitWidth + 10; height: 20; radius: 5
+            color: "#dcc4ec"; border.width: 2; border.color: bc.ink
+            Text { id: ap; anchors.centerIn: parent; text: Qt.formatTime(clock.now, "AP"); color: "#161110"; font.family: bc.mono; font.pixelSize: 10; font.bold: true }
+          }
+        }
+        Text { text: Qt.formatDate(clock.now, "dddd, MMMM d"); color: bc.ink; font.family: bc.mono; font.pixelSize: 11; font.bold: true }
+      }
+    }
   }
 
   // yami: крупное время пиксельным Tiny5 с жёсткой тенью — цифры светлые, двоеточие акцентом; под ним дата и шкала

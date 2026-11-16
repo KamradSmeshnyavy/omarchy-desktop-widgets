@@ -46,6 +46,8 @@ Item {
     todoMax: 8,
     quote: false,               // цитата дня (QuoteWidget, свои — ~/.config/omarchy/widgets-quotes.txt)
     quoteAnchor: "bottom-right",
+    weather: false,             // погода карточкой (WeatherWidget; город — weatherCity)
+    weatherAnchor: "right",
     photo: false,               // фото-рамка (PhotoWidget): папка photoDir или текущие обои
     photoAnchor: "left",
     photoDir: "",
@@ -170,8 +172,10 @@ Item {
   }
   function homeHides(screen) { return flag("home") && homeShown[screen] === true && value("homeHideWidgets") !== false }
   Timer { interval: 10 * 60 * 1000; repeat: true; running: root.homeAny; onTriggered: weatherFetcher.refreshIfStale() }
+  // карточка погоды на столе: при включении и раз в 20 мин (refreshIfStale сам не ходит чаще)
+  Timer { interval: 20 * 60 * 1000; repeat: true; running: root.flag("weather"); triggeredOnStart: true; onTriggered: weatherFetcher.refreshIfStale() }
   onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
-  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib", "calendar"]
+  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib", "calendar", "weather"]
   readonly property bool anyFloat: widgetNames.some(function(n) {
     return flag(n) && String(value(n + "Anchor")) === "free" && flag(n + "Float")
   })
@@ -326,7 +330,7 @@ Item {
   property var levels: []
   // cava нужна визуализатору, дашборду и плитке cava домашнего экрана (пока он виден).
   readonly property bool homeCava: homeAny && String(value("homeLayout")) === "glyph" && /(^|[\s,])cava([\s,]|$)/.test(String(value("homeWidgets")))
-  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava || (flag("media") && String(value("mediaStyle")) === "yami"))
+  readonly property bool cavaWanted: (flag("visualizer") || dashboardOpen || homeCava || (flag("media") && ["yami", "bruteon"].indexOf(String(value("mediaStyle"))) !== -1))
     && (playing || flag("visualizerIdle"))
   readonly property string cavaConfig: [
     "[general]", "bars = " + bars, "framerate = 30", "sleep_timer = 2",
