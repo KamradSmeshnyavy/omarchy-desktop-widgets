@@ -144,7 +144,9 @@ Item {
     "yami":      { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "yami", powerStyle: "edge", clipboardPanel: "stock" },
     "rumda":     { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "rumda", powerStyle: "edge", clipboardPanel: "stock" },
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
-    "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" }
+    "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
+    // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
+    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -582,6 +584,7 @@ Item {
   MenuShell { host: root; kind: "rumda"; source: Qt.resolvedUrl("menus/MenuRumda.qml"); dim: 0.3 }
   MenuShell { host: root; kind: "glassring"; source: Qt.resolvedUrl("menus/MenuGlass.qml"); dim: 0.25 }
   MenuShell { host: root; kind: "instrument"; source: Qt.resolvedUrl("menus/MenuDots.qml"); ring: DotMatrix.Palette.signal }
+  MenuShell { host: root; kind: "space"; source: Qt.resolvedUrl("menus/MenuSpace.qml"); dim: 0.35 }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
   // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)

@@ -19,7 +19,7 @@ PanelWindow {
 
   required property var host
 
-  readonly property bool active: host.settingsOpen && ["quick", "surface", "unit3", "bruteon", "yami", "cozytile", "rumda", "glassring", "instrument"].indexOf(String(host.value("settingsPanel"))) === -1
+  readonly property bool active: host.settingsOpen && ["quick", "surface", "unit3", "bruteon", "yami", "cozytile", "rumda", "glassring", "instrument", "space"].indexOf(String(host.value("settingsPanel"))) === -1
   // Grows out of the right edge of a framed bar (ScreenBorder); with any other bar it is a
   // floating card with a closed contour. Fill = bar colour (BarStyle), ink = DOT-MATRIX palette.
   readonly property bool attached: host.panelStyle.attached && host.panelStyle.shape === "frame"
