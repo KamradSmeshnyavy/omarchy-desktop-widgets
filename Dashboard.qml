@@ -44,15 +44,17 @@ PanelWindow {
   readonly property bool yamiDash: dstyle === "yami"
   readonly property bool cozyDash: dstyle === "cozytile"
   readonly property bool glyphDash: dstyle === "glyph"
+  // space — визор HUD Space (DashSpace.qml)
+  readonly property bool spaceDash: dstyle === "space"
   // «из воды» с волнами и затемнением — только у Vitreus и Rumda; surface и bruteon просто всплывают
-  readonly property bool plainRise: surface || brute || nier || yamiDash || cozyDash || glyphDash
-  readonly property bool vit: glassTiles || pencils || rumda || surface || brute || nier || yamiDash || cozyDash || glyphDash
+  readonly property bool plainRise: surface || brute || nier || yamiDash || cozyDash || glyphDash || spaceDash
+  readonly property bool vit: glassTiles || pencils || rumda || surface || brute || nier || yamiDash || cozyDash || glyphDash || spaceDash
   readonly property int contentWidth: {
     if (glassTiles) return 1205
     if (rumda) return 660
     if (surface) return 520
     if (brute) return 820
-    if (nier) return 860
+    if (nier || spaceDash) return 860
     if (yamiDash) return 780
     if (cozyDash || glyphDash) return 720
     if (pencils) return 64 + 12 + 4 * 200 + 3 * 12
@@ -64,7 +66,7 @@ PanelWindow {
     return Math.max(250, n + Math.max(0, w.length - 1) * gap)
   }
   readonly property int bodyWidth: contentWidth + 2 * pad
-  readonly property int bodyHeight: nier ? 500 + 16 + 24 : yamiDash ? 430 + 16 + 24 : cozyDash ? 440 + 16 + 24 : glyphDash ? 420 + 16 + 24 : brute ? 490 + 16 + 24 : surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
+  readonly property int bodyHeight: spaceDash ? 540 + 16 + 24 : nier ? 500 + 16 + 24 : yamiDash ? 430 + 16 + 24 : cozyDash ? 440 + 16 + 24 : glyphDash ? 420 + 16 + 24 : brute ? 490 + 16 + 24 : surface ? surfHub.implicitHeight + 16 + 24 : rumda ? 410 + 16 + 36 : glassTiles ? 540 + 16 + 36 : pencils ? 2 * 168 + 12 + 16 + 36 : 300
   readonly property int flare: attached ? style.flare : 0
   readonly property int margin: attached ? 0 : 10       // отступ плавающей карточки от бара
   readonly property int shadowPad: attached ? 0 : 24
@@ -383,6 +385,7 @@ PanelWindow {
       DashYami { visible: dash.yamiDash; x: dash.pad; y: 16; host: dash.host; rise: dash.rise }
       DashCozy { visible: dash.cozyDash; x: dash.pad; y: 16; host: dash.host; rise: dash.rise }
       DashGlyph { visible: dash.glyphDash; x: dash.pad; y: 16; host: dash.host; rise: dash.rise }
+      DashSpace { visible: dash.spaceDash; x: dash.pad; y: 16; host: dash.host; rise: dash.rise }
       DashNier {
         visible: dash.nier
         x: dash.pad
