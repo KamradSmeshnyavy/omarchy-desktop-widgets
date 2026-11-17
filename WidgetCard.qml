@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import "dotmatrix" as DotMatrix
+import "glyph" as Glyph
 
 // Подложка виджета рабочего стола в материале стиля Customizer (widgetStyle = style): ставится
 // под виджет `target` с полями `pad`. Материал — как у дашборда: StyleCard (бумага, рельеф,
@@ -61,6 +62,87 @@ Item {
   }
   readonly property rect none: Qt.rect(0, 0, 0, 0)
 
+  // Карточка райса: у райсов без своего материала (style.json "rice" — Unit-3, Cozytile, Rumda, surface, Glyph) виджет
+  // лежит на карточке, как в их дашбордах; у Bruteon (brutal), yami (pixel), Vitreus (стекло) и DOT-MATRIX облик уже
+  // даёт материал стиля. Слитая с баром / рамкой карточка остаётся StyleCard — он умеет стыки.
+  readonly property string rice: host.rice
+  readonly property bool riceCard: host.styledWidgets && !noCard && mergeEdges.length === 0
+    && ["unit3", "cozytile", "rumda", "surface", "glyph"].indexOf(rice) !== -1
+  readonly property color fg: host.foreground
+  readonly property color bg: host.background
+  readonly property bool dark: 0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b < 0.5
+  function mix(a, b, k) { return Qt.rgba(a.r + (b.r - a.r) * k, a.g + (b.g - a.g) * k, a.b + (b.b - a.b) * k, 1) }
+  function fa(k) { return Qt.rgba(fg.r, fg.g, fg.b, k) }
+
+  Item {
+    id: riceFace
+    visible: card.riceCard
+    anchors.fill: parent
+    layer.enabled: card.riceCard && card.style.shadowOn && card.rice !== "unit3"
+    layer.effect: MultiEffect {
+      shadowEnabled: true; shadowColor: "#000000"
+      shadowOpacity: card.style.shadowOpacity; shadowBlur: card.style.shadowBlur
+      shadowVerticalOffset: 3 * card.style.lift
+    }
+
+    // Unit-3 — лист NieR: фон на 92 %, черта 1 px (текст 15 %), прямые углы, сетка 20 px и уголки-скобки
+    Rectangle {
+      visible: card.rice === "unit3"
+      anchors.fill: parent
+      color: Qt.rgba(card.bg.r, card.bg.g, card.bg.b, 0.92)
+      border.width: 1
+      border.color: card.fa(0.15)
+      clip: true
+      Repeater { model: card.rice === "unit3" ? Math.ceil(card.width / 20) : 0; Rectangle { x: index * 20; width: 1; height: card.height; color: card.fa(0.04) } }
+      Repeater { model: card.rice === "unit3" ? Math.ceil(card.height / 20) : 0; Rectangle { y: index * 20; width: card.width; height: 1; color: card.fa(0.04) } }
+      Repeater {
+        model: card.rice === "unit3" ? 4 : 0
+        Item {
+          required property int index
+          readonly property bool atRight: index % 2 === 1
+          readonly property bool atBottom: index > 1
+          x: atRight ? card.width - 12 - 3 : 3
+          y: atBottom ? card.height - 12 - 3 : 3
+          width: 12; height: 12
+          Rectangle { y: parent.atBottom ? 10.5 : 0; width: 12; height: 1.5; color: card.fa(0.6) }
+          Rectangle { x: parent.atRight ? 10.5 : 0; width: 1.5; height: 12; color: card.fa(0.6) }
+        }
+      }
+    }
+    // Cozytile — тёмная карточка его дашборда (фон 80 % + текст 6 %), скругление 10
+    Rectangle {
+      visible: card.rice === "cozytile"
+      anchors.fill: parent
+      radius: Math.min(10, height / 2)
+      color: Qt.rgba(card.bg.r * 0.8 + card.fg.r * 0.06, card.bg.g * 0.8 + card.fg.g * 0.06, card.bg.b * 0.8 + card.fg.b * 0.06, 1)
+    }
+    // Rumda — блок цвета модуля (фон + текст 13 %) с рамкой 2 px, скругление 6
+    Rectangle {
+      visible: card.rice === "rumda"
+      anchors.fill: parent
+      radius: 6
+      color: card.mix(card.bg, card.fg, 0.13)
+      border.width: 2
+      border.color: card.mix(card.bg, card.fg, 0.08)
+    }
+    // surface — карточка Hub: на шаг светлее (тёмная тема) / темнее (светлая) фона, скругление 10
+    Rectangle {
+      visible: card.rice === "surface"
+      anchors.fill: parent
+      radius: Math.min(10, height / 2)
+      color: card.dark ? card.mix(card.bg, card.fg, 0.06) : card.mix(card.bg, Qt.color("#000000"), 0.055)
+    }
+    // Glyph — карточка glyph-rice: s1 с контуром s2, скругление 28
+    Rectangle {
+      visible: card.rice === "glyph"
+      anchors.fill: parent
+      radius: Math.min(28, height / 2)
+      color: Glyph.GTheme.s1
+      border.width: 1
+      border.color: Glyph.GTheme.s2
+    }
+  }
+
   // DOT-MATRIX — как карточки рабочего стола NIHIL: чёрная (фон палитры) плитка с тонким контуром,
   // читается на любых обоях.
   Rectangle {
@@ -73,7 +155,7 @@ Item {
   }
 
   StyleCard {
-    visible: !card.dotmatrixCard && card.style.card
+    visible: !card.dotmatrixCard && !card.riceCard && card.style.card
     anchors.fill: parent
     style: card.style
     seed: card.seed
@@ -93,7 +175,7 @@ Item {
     glassCut2: card.mergeEdges.length > 1 ? card.beyond(card.mergeEdges[1]) : card.none
   }
   Rectangle {
-    visible: !card.dotmatrixCard && !card.style.card
+    visible: !card.dotmatrixCard && !card.riceCard && !card.style.card
     anchors.fill: parent
     radius: Math.min(card.style.cornerRadius, height / 2)
     color: card.style.color
