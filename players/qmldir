@@ -9,3 +9,4 @@ PlayerSurface PlayerSurface.qml
 PlayerYami PlayerYami.qml
 PlayerDots PlayerDots.qml
 PlayerVitreus PlayerVitreus.qml
+PlayerSpace PlayerSpace.qml

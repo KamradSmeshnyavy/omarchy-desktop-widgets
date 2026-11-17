@@ -17,7 +17,8 @@ PanelWindow {
   readonly property var files: ({
     unit3: "players/PlayerUnit3.qml", bruteon: "players/PlayerBruteon.qml", cozytile: "players/PlayerCozytile.qml",
     rumda: "players/PlayerRumda.qml", surface: "players/PlayerSurface.qml", yami: "players/PlayerYami.qml",
-    dotmatrix: "players/PlayerDots.qml", glyph: "players/PlayerDots.qml", vitreus: "players/PlayerVitreus.qml"
+    dotmatrix: "players/PlayerDots.qml", glyph: "players/PlayerDots.qml", vitreus: "players/PlayerVitreus.qml",
+    space: "players/PlayerSpace.qml"
   })
   readonly property string style: {
     var v = String(host.value("playerStyle") || "auto")
