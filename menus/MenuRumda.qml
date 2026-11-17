@@ -7,6 +7,7 @@ import Quickshell
 // остальное — переключатели и кнопки), ползунки — толстые закруглённые столбики. Стрелки / Tab / Enter (KeyNav), Esc.
 MenuBase {
   id: m
+  body: sbody
   readonly property color acc: host ? host.accent : "#c89060"
   readonly property color sand: Qt.tint(acc, Qt.rgba(1, 1, 1, 0.45))
   readonly property color brown: Qt.darker(acc, 1.6)
@@ -68,6 +69,7 @@ MenuBase {
       MouseArea { anchors.fill: parent }
       Text { x: 24; y: 20; text: ({ wifi: "wi-fi", bt: "bluetooth", audio: "sound", sys: "rumda", power: "power" })[m.cur]; color: m.brown; font.family: m.px; font.pixelSize: 14 }
       SectionBody {
+        id: sbody
         visible: ["wifi", "bt", "audio"].indexOf(m.cur) !== -1
         x: 20; y: 52; width: card.width - 40; height: card.height - 72
         md: m.md; page: m.cur

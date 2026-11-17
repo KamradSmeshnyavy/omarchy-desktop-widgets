@@ -281,6 +281,7 @@ Scope {
     property var    wifiNetworks: []   // [{ssid, signal, security, active}]
     property string wifiPromptSSID: ""   // SSID en cours de saisie de mot de passe (vide = pas de prompt)
     property string wifiError: ""        // message d'erreur après échec connexion
+    property var wifiSaved: ({})         // ssid → uuid сохранённых сетей: им пароль не нужен
 
     Timer {
         interval: 3000; running: root.open && root.slot === "top"; repeat: true; triggeredOnStart: true
@@ -757,6 +758,21 @@ Scope {
                     root.wifiError = "Connection failed"
                 }
                 refreshTimer.restart()
+                savedWifiProc.running = true
+            }
+        }
+    }
+
+    // сохранённые профили Wi-Fi (ssid → uuid) — сеть, к которой уже подключались, поднимается без пароля
+    Process {
+        id: savedWifiProc
+        command: ["sh", "-c", "nmcli -t -f UUID,TYPE con show 2>/dev/null | while IFS=: read -r u t; do [ \"$t\" = 802-11-wireless ] || continue; " +
+            "printf '%s\\t%s\\n' \"$u\" \"$(nmcli -g 802-11-wireless.ssid con show \"$u\" 2>/dev/null)\"; done"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var m = ({}), l = this.text.split("\n")
+                for (var i = 0; i < l.length; i++) { var t = l[i].indexOf("\t"); if (t > 0) m[l[i].slice(t + 1).replace(/\\:/g, ":")] = l[i].slice(0, t) }
+                root.wifiSaved = m
             }
         }
     }
@@ -767,7 +783,7 @@ Scope {
     // Refresh state quand on change de slot
     onSlotChanged: {
         cancelWifiPrompt()
-        if (slot === "top")    { pollWifi.running = true; pollBt.running = true }
+        if (slot === "top")    { pollWifi.running = true; pollBt.running = true; savedWifiProc.running = true }
         if (slot === "bottom") { pollAudio.running = true }
         if (slot === "right")  {
             pollNotifsHistory.running = true
@@ -776,7 +792,7 @@ Scope {
     }
     onSubChanged: cancelWifiPrompt()
     onLevelChanged: { if (level !== 3) cancelWifiPrompt() }
-    onOpenChanged:  { if (!open) cancelWifiPrompt() }
+    onOpenChanged:  { if (!open) cancelWifiPrompt(); else savedWifiProc.running = true }
 
     // Cancel le prompt Wi-Fi proprement (fermeture du TextInput, reset focus au keyHandler)
     function cancelWifiPrompt() {
@@ -809,6 +825,10 @@ Scope {
                 if (net && net.active) {
                     cmd = "nmcli con down id '" + ssid + "' 2>/dev/null || nmcli dev disconnect $(nmcli -t -f DEVICE,TYPE dev | grep wifi | head -1 | cut -d: -f1)"
                 }
+                // сохранённая сеть — своим профилем, без пароля
+                else if (root.wifiSaved[ssid]) {
+                    cmd = "nmcli con up uuid " + root.wifiSaved[ssid]
+                }
                 // Si réseau ouvert, connexion directe
                 else if (net && (net.security === "" || net.security === "--")) {
                     cmd = "nmcli dev wifi connect '" + ssid.replace(/'/g, "'\\''") + "'"
@@ -821,9 +841,8 @@ Scope {
                 }
             } else if (actionKey === "submit-password") {
                 // Soumission du mot de passe via le prompt
-                cmd = "nmcli dev wifi connect '" + wifiPromptSSID.replace(/'/g, "'\\''") +
-                      "' password '" + wifiPasswordInput.replace(/'/g, "'\\''") + "' 2>&1"
-                wifiSubmitProc.command = ["sh","-c", cmd]
+                // неудачная попытка не оставляет профиль с неверным паролем
+                wifiSubmitProc.command = ["sh", "-c", "nmcli dev wifi connect \"$1\" password \"$2\" 2>&1 || { nmcli con delete id \"$1\" >/dev/null 2>&1; echo failed; }", "sh", wifiPromptSSID, wifiPasswordInput]
                 wifiSubmitProc.running = true
                 return
             } else if (actionKey === "cancel-prompt") {

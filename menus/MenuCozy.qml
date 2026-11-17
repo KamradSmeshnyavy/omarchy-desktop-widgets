@@ -8,6 +8,7 @@ import Quickshell.Io
 // перелистывается вбок. Колесо и [ / ] листают вкладки; стрелки / Tab / Enter — по кнопкам (KeyNav), Esc — закрыть.
 MenuBase {
   id: m
+  body: sbody
   readonly property color fg: host ? host.foreground : "white"
   readonly property color bg: host ? host.background : "black"
   property color sel: host ? host.accent : "magenta"
@@ -107,6 +108,7 @@ MenuBase {
           Text { text: "[ ]  or wheel — tabs"; color: m.a(m.fg, 0.4); font.family: m.mono; font.pixelSize: 10 }
         }
         SectionBody {
+          id: sbody
           visible: m.cur !== "system"
           x: 18; y: 18; width: parent.width - 36; height: parent.height - 36
           md: m.md; page: m.cur

@@ -47,6 +47,9 @@ PanelWindow {
   onOpenChanged: { if (open) { panel = ""; geo.refresh(); body.forceActiveFocus() } }
 
   SurfState { id: st; live: hub.open }
+  // сохранённые сети и подключение с отчётом (общие с меню райсов): известной сети пароль не нужен
+  MenuData { id: hd; live: hub.open && hub.panel === "wifi" }
+  property string askFor: ""           // ssid, для которого открыто поле пароля
 
   // у нижнего бара — над ним, иначе — под ним (окно уважает зоны бара: Normal)
   BarGeom { id: geo }
@@ -183,7 +186,7 @@ PanelWindow {
       }
     }
   }
-  onPanelChanged: if (panel === "wifi" && !scan.running) scan.running = true
+  onPanelChanged: { askFor = ""; if (panel === "wifi" && !scan.running) scan.running = true }
 
   Rectangle {
     id: frame
@@ -328,11 +331,36 @@ PanelWindow {
                 required property var modelData
                 icon: modelData.signal > 66 ? "\u{F0928}" : modelData.signal > 33 ? "\u{F0925}" : "\u{F091F}"
                 title: modelData.ssid
-                sub: modelData.on ? "Connected" : modelData.sec ? "Secured" : "Open"
+                sub: modelData.on ? "Connected" : hd.saved[modelData.ssid] ? "Saved" : modelData.sec && modelData.sec !== "--" ? "Secured" : "Open"
                 side: modelData.signal + "%"
                 on: modelData.on
-                onClicked: if (!modelData.on) st.run(["nmcli", "dev", "wifi", "connect", modelData.ssid])
+                onClicked: {
+                  if (modelData.on) return
+                  if (hd.saved[modelData.ssid] || !modelData.sec || modelData.sec === "--") hd.connectWifi(modelData.ssid, "")
+                  else hub.askFor = hub.askFor === modelData.ssid ? "" : modelData.ssid
+                }
               }
+            }
+            Rectangle {
+              visible: hub.panel === "wifi" && hub.askFor !== ""
+              width: 320 - 24; height: 38; radius: 10
+              color: hub.itemHover; border.width: 1; border.color: hub.alpha(hub.acc, 0.8)
+              property bool kbdNav: visible
+              function kbdPress() { pwIn.forceActiveFocus() }
+              TextInput {
+                id: pwIn
+                x: 12; width: parent.width - 24; anchors.verticalCenter: parent.verticalCenter; clip: true
+                echoMode: TextInput.Password; color: hub.fg; font.family: hub.font; font.pixelSize: 11
+                onVisibleChanged: if (visible) forceActiveFocus()
+                Keys.onReturnPressed: { if (text.length) hd.connectWifi(hub.askFor, text); text = ""; hub.askFor = ""; body.forceActiveFocus() }
+                Keys.onEscapePressed: { text = ""; hub.askFor = ""; body.forceActiveFocus() }
+                Text { visible: !parent.text.length; text: "Password for " + hub.askFor; color: hub.text2; font: parent.font }
+              }
+            }
+            Text {
+              visible: hub.panel === "wifi" && hd.wifiMsg !== ""
+              width: 320 - 24; wrapMode: Text.Wrap; leftPadding: 10
+              text: hd.wifiMsg; color: hub.text2; font.family: hub.font; font.pixelSize: 9
             }
             Repeater {
               model: hub.panel === "bt" ? Bluetooth.devices.values.filter(function(d) { return d.paired || d.connected }) : []

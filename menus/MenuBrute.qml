@@ -8,6 +8,7 @@ import Quickshell
 // (KeyNav), Esc — закрыть карточку, потом меню.
 MenuBase {
   id: m
+  body: sbody
   readonly property color ink: host ? host.foreground : "#161110"
   readonly property color paper: host ? host.background : "#efe0d6"
   readonly property bool dark: 0.299 * paper.r + 0.587 * paper.g + 0.114 * paper.b < 0.5
@@ -16,7 +17,6 @@ MenuBase {
   readonly property color dk: "#161110"
   readonly property string mono: Qt.fontFamilies().indexOf("JetBrainsMono Nerd Font") !== -1 ? "JetBrainsMono Nerd Font" : "monospace"
   readonly property var pastel: ({ peach: "#ffb77a", salmon: "#ffb3a1", green: "#c5e1a5", pink: "#ffcbd5", lavender: "#dcc4ec", blue: "#90caf9", yellow: "#ffd98a", white: "#fbf5f1" })
-  property string pwFor: ""
 
   component Tile: Item {
     id: t
@@ -50,20 +50,6 @@ MenuBase {
     HoverHandler { id: hh; cursorShape: Qt.PointingHandCursor }
     TapHandler { onTapped: dropAnim.restart() }
   }
-  component Row2: Item {
-    id: rw
-    property string text: ""
-    property string tail: ""
-    property bool on: false
-    signal hit()
-    width: 520; height: 40
-    Rectangle { anchors.fill: parent; radius: 8; color: rw.on ? m.pastel.green : rh.hovered ? m.mix(m.card, m.ink, 0.08) : "transparent"; border.width: rw.on || rh.hovered ? 2 : 0; border.color: m.ink }
-    Text { x: 14; anchors.verticalCenter: parent.verticalCenter; width: 380; elide: Text.ElideRight; text: rw.text; color: rw.on ? m.dk : m.ink; font.family: m.mono; font.pixelSize: 12; font.bold: rw.on }
-    Text { anchors.right: parent.right; anchors.rightMargin: 14; anchors.verticalCenter: parent.verticalCenter; text: rw.tail; color: rw.on ? m.dk : m.ink; opacity: 0.7; font.family: m.mono; font.pixelSize: 11 }
-    HoverHandler { id: rh; cursorShape: Qt.PointingHandCursor }
-    TapHandler { onTapped: rw.hit() }
-  }
-
   // доска
   Item {
     id: board
@@ -120,76 +106,12 @@ MenuBase {
           Tile { visible: m.page === "bt"; width: 80; height: 32; r: 8; label: "scan"; onHit: m.md.scanBt() }
           Tile { width: 44; height: 32; r: 8; fill: m.pastel.pink; label: "✕"; onHit: m.page = "" }
         }
-        Flickable {
-          x: 28; y: 62; width: 524; height: 296; clip: true
-          contentHeight: col.implicitHeight
-          Column {
-            id: col
-            spacing: 6
-            // Wi-Fi
-            Repeater {
-              model: m.page === "wifi" && m.md ? m.md.networks : []
-              Row2 {
-                required property var modelData
-                text: (modelData.secure ? "\u{F033E}  " : "    ") + modelData.ssid
-                tail: modelData.active ? "connected" : "▂▄▆█".slice(0, Math.max(1, Math.ceil(modelData.signal / 25)))
-                on: modelData.active
-                onHit: modelData.active ? m.md.disconnectWifi(modelData.ssid) : (modelData.secure ? m.pwFor = modelData.ssid : m.md.connectWifi(modelData.ssid, ""))
-              }
-            }
-            Item {
-              visible: m.page === "wifi" && m.pwFor !== ""
-              width: 520; height: 44
-              Rectangle { anchors.fill: parent; radius: 8; color: m.paper; border.width: 2; border.color: m.ink }
-              TextInput {
-                id: pw
-                x: 14; width: 400; anchors.verticalCenter: parent.verticalCenter
-                echoMode: TextInput.Password; color: m.ink; font.family: m.mono; font.pixelSize: 13
-                focus: visible
-                onVisibleChanged: if (visible) forceActiveFocus()
-                Keys.onReturnPressed: { m.md.connectWifi(m.pwFor, text); text = ""; m.pwFor = "" }
-                Keys.onEscapePressed: { text = ""; m.pwFor = "" }
-                Text { visible: !parent.text.length; text: "password for " + m.pwFor; color: m.ink; opacity: 0.45; font: parent.font }
-              }
-            }
-            // Bluetooth
-            Repeater {
-              model: m.page === "bt" && m.md ? m.md.devices : []
-              Row2 {
-                required property var modelData
-                text: modelData.name
-                tail: modelData.connected ? "connected" : modelData.paired ? "paired" : "new"
-                on: modelData.connected
-                onHit: m.md.toggleDevice(modelData)
-              }
-            }
-            // Звук
-            Item {
-              visible: m.page === "audio"
-              width: 520; height: 60
-              property bool kbdNav: m.page === "audio"
-              property real kbdRadius: 8
-              function kbdPress() { m.st.setVol(m.st.vol > 0 ? 0 : 0.5) }
-              function kbdAdjust(d) { m.st.setVol(Math.max(0, Math.min(1, m.st.vol + d * 0.05))) }
-              Text { y: 4; text: "volume " + Math.round((m.st ? m.st.vol : 0) * 100) + "%"; color: m.ink; font.family: m.mono; font.pixelSize: 12; font.bold: true }
-              Rectangle {
-                y: 28; width: 520; height: 22; radius: 8; color: m.paper; border.width: 2; border.color: m.ink
-                Rectangle { x: 3; y: 3; height: 16; radius: 5; width: Math.max(0, (parent.width - 6) * Math.min(1, m.st ? m.st.vol : 0)); color: m.pastel.green }
-                MouseArea { anchors.fill: parent; onPressed: function(e) { m.st.setVol(Math.max(0, Math.min(1, e.x / width))) } onPositionChanged: function(e) { if (pressed) m.st.setVol(Math.max(0, Math.min(1, e.x / width))) } }
-              }
-            }
-            Row2 { visible: m.page === "audio"; text: "\u{F036C}  microphone"; tail: m.st && m.st.micMuted ? "muted" : "on"; on: !!m.st && !m.st.micMuted; onHit: m.st.toggleMic() }
-            Text { visible: m.page === "audio"; text: "output"; color: m.ink; opacity: 0.6; font.family: m.mono; font.pixelSize: 11 }
-            Repeater {
-              model: m.page === "audio" && m.md ? m.md.sinks : []
-              Row2 {
-                required property var modelData
-                text: m.md.sinkName(modelData)
-                on: m.md.defaultSink === modelData
-                onHit: m.md.setSink(modelData)
-              }
-            }
-          }
+        SectionBody {
+          id: sbody
+          x: 28; y: 62; width: 524; height: 296
+          md: m.md; page: m.page
+          ink: m.ink; dim: Qt.rgba(m.ink.r, m.ink.g, m.ink.b, 0.65); litFill: m.pastel.green; litInk: m.dk; line: m.ink
+          hoverFill: m.mix(m.card, m.ink, 0.08); field: m.paper; radius: 8; rowBorder: 2; font: m.mono; size: 12; rowH: 40
         }
       }
     }

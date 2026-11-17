@@ -8,6 +8,7 @@ import Quickshell
 // q — закрыть; стрелки / Tab / Enter (KeyNav), Esc — назад / закрыть. Каждая строка печатается с задержкой, как вывод.
 MenuBase {
   id: m
+  body: sbody
   readonly property color fg: host ? host.foreground : "white"
   readonly property color bg: host ? host.background : "black"
   readonly property color acc: host ? host.accent : "white"
@@ -79,6 +80,7 @@ MenuBase {
         Row { spacing: 0; Text { text: "> "; color: m.fg; font.family: m.px; font.pixelSize: 13 } Rectangle { width: 9; height: 15; color: m.acc; opacity: m.blink ? 1 : 0 } }
       }
       SectionBody {
+        id: sbody
         visible: m.page !== ""
         x: 16; y: 40; width: 588; height: 384
         md: m.md; page: m.page

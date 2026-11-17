@@ -8,6 +8,7 @@ import "../dotmatrix" as DotMatrix
 // Стрелки / Tab / Enter (KeyNav), Esc — закрыть.
 MenuBase {
   id: m
+  body: sbody
   readonly property var pal: DotMatrix.Palette
   readonly property var modes: ["wifi", "bt", "audio", "sys"]
   readonly property string cur: page === "" ? "sys" : page
@@ -81,6 +82,7 @@ MenuBase {
         text: Qt.formatTime(new Date(), "HH:mm"); color: m.pal.fg; font.family: m.pal.fontDot; font.pixelSize: 96
       }
       SectionBody {
+        id: sbody
         visible: m.cur !== "sys"
         x: 12; y: 12; width: parent.width - 24; height: parent.height - 24
         md: m.md; page: m.cur

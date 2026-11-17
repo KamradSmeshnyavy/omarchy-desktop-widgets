@@ -41,6 +41,7 @@ PanelWindow {
       var it = view.item
       if (it && typeof it.keys === "function" && it.keys(e)) { e.accepted = true; return }
       if (e.key === Qt.Key_Escape) {
+        if (it && it.body && it.body.visible && typeof it.body.back === "function" && it.body.back()) { e.accepted = true; return }
         if (it && typeof it.back === "function" && it.back()) { e.accepted = true; return }
         win.host.settingsOpen = false; e.accepted = true; return
       }

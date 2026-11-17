@@ -8,7 +8,8 @@ import QtQuick
 //   kbdRadius — скругление рамки выбора; kbdOrder — порядок для Tab (иначе — сверху вниз, слева направо).
 // Клавиши: стрелки / hjkl — ближайшая цель в эту сторону, Tab / Shift+Tab — по порядку, Enter / Space — нажать,
 // Home — первая. handle(event) зовёт держатель фокуса из Keys.onPressed; вернёт true, если клавиша съедена.
-// Рамка появляется после первого нажатия и не мешает мыши.
+// Рамка появляется после первого нажатия и не мешает мыши. Цель внутри Flickable / ListView (список с прокруткой)
+// докручивается в видимую часть; если её увели колесом за край — рамка прячется, а не висит поверх панели.
 Item {
   id: nav
   property Item scope: parent
@@ -19,7 +20,7 @@ Item {
   property bool vim: true      // hjkl как стрелки (false — если у панели свои буквы)
   property var current: null   // элемент; у TapHandler — сам обработчик (рамка — по его родителю)
   property bool shown: false
-  onActiveChanged: if (!active) { shown = false; current = null }
+  onActiveChanged: if (!active) { shown = false; current = null; last = null }
 
   function isMouseArea(it) { return typeof it.pressAndHold === "function" && it.acceptedButtons !== undefined && it.pressed !== undefined }
   function isTap(o) { return o && typeof o.tapped === "function" && o.gesturePolicy !== undefined }
@@ -53,6 +54,40 @@ Item {
     return out
   }
   function rectOf(t) { var it = host(t); var p = it.mapToItem(nav, 0, 0); return { x: p.x, y: p.y, w: it.width, h: it.height, cx: p.x + it.width / 2, cy: p.y + it.height / 2 } }
+  // ближайший предок-прокрутка (Flickable, ListView, GridView) внутри scope
+  function flickOf(it) {
+    for (var p = it ? it.parent : null; p && p !== scope; p = p.parent)
+      if (p.contentY !== undefined && p.contentHeight !== undefined && p.contentItem !== undefined && typeof p.flick === "function") return p
+    return null
+  }
+  // докрутить все прокрутки над целью, чтобы она была видна целиком (с запасом pad)
+  function reveal(t) {
+    if (!t) return
+    var it = host(t), pad = 8
+    for (var f = flickOf(it); f; f = flickOf(f)) {
+      var p = it.mapToItem(f.contentItem, 0, 0)
+      var top = f.originY, maxY = f.originY + Math.max(0, f.contentHeight - f.height)
+      if (f.contentHeight > f.height) {
+        if (p.y - pad < f.contentY) f.contentY = Math.max(top, p.y - pad)
+        else if (p.y + it.height + pad > f.contentY + f.height) f.contentY = Math.min(maxY, p.y + it.height + pad - f.height)
+      }
+      if (f.contentWidth > f.width && f.contentX !== undefined) {
+        var maxX = f.originX + Math.max(0, f.contentWidth - f.width)
+        if (p.x - pad < f.contentX) f.contentX = Math.max(f.originX, p.x - pad)
+        else if (p.x + it.width + pad > f.contentX + f.width) f.contentX = Math.min(maxX, p.x + it.width + pad - f.width)
+      }
+      it = f
+    }
+  }
+  // видна ли цель внутри своих прокруток
+  function inView(t) {
+    var it = host(t)
+    for (var f = flickOf(it); f; f = flickOf(f)) {
+      var p = it.mapToItem(f, 0, 0)
+      if (p.y + it.height < 2 || p.y > f.height - 2 || p.x + it.width < 2 || p.x > f.width - 2) return false
+    }
+    return true
+  }
   function press(t) {
     if (typeof t.kbdPress === "function") t.kbdPress()
     else if (isTap(t)) t.tapped(undefined, Qt.LeftButton)
@@ -68,9 +103,22 @@ Item {
     return t.map(function(x) { return x.it })
   }
   function valid() { return !!current && targets().indexOf(current) !== -1 }
+  // цель пропала (список пересоздал строки) — взять ту, что ближе всего к прежнему месту рамки
+  property var last: null
+  function recover() {
+    if (valid()) return true
+    if (!last) return false
+    var t = targets(), best = null, bd = 1e12
+    for (var i = 0; i < t.length; i++) {
+      var r = rectOf(t[i]), d = Math.abs(r.cx - last.cx) + Math.abs(r.cy - last.cy) * 2
+      if (d < bd) { bd = d; best = t[i] }
+    }
+    if (best && bd < 80) { current = best; return true }
+    return false
+  }
   function first() { var o = ordered(); current = o.length ? o[0] : null }
   function move(dx, dy) {
-    if (!valid()) { first(); return }
+    if (!recover()) { first(); return }
     var c = rectOf(current), best = null, bestScore = 1e12
     var t = targets()
     for (var i = 0; i < t.length; i++) {
@@ -89,6 +137,7 @@ Item {
   function step(d) {
     var o = ordered()
     if (!o.length) return
+    recover()
     var i = o.indexOf(current)
     current = o[(i < 0 ? 0 : i + d + o.length) % o.length]
   }
@@ -101,13 +150,13 @@ Item {
     if (dir[k]) {
       shown = true
       var d = dir[k]
-      if (d[0] !== 0 && valid() && typeof current.kbdAdjust === "function") { current.kbdAdjust(d[0]); return true }
+      if (d[0] !== 0 && recover() && typeof current.kbdAdjust === "function") { current.kbdAdjust(d[0]); return true }
       move(d[0], d[1]); return true
     }
     if (k === Qt.Key_Tab || k === Qt.Key_Backtab) { shown = true; step(k === Qt.Key_Backtab || shift ? -1 : 1); return true }
     if (k === Qt.Key_Home) { shown = true; first(); return true }
     if (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space) {
-      if (!valid()) { shown = true; first(); return true }
+      if (!recover()) { shown = true; first(); return true }
       press(current); return true
     }
     return false
@@ -116,9 +165,10 @@ Item {
   // рамка выбора
   Rectangle {
     id: ringR
-    visible: nav.shown && nav.active && !!nav.current
+    visible: nav.shown && nav.active && !!nav.current && seen
+    property bool seen: true
     property var r: ({ x: 0, y: 0, w: 0, h: 0 })
-    Connections { target: nav; function onCurrentChanged() { if (nav.current) ringR.r = nav.rectOf(nav.current) } }
+    Connections { target: nav; function onCurrentChanged() { if (nav.current) { nav.reveal(nav.current); ringR.seen = true; ringR.r = nav.rectOf(nav.current); nav.last = ringR.r } } }
     x: r.x - 4; y: r.y - 4; width: r.w + 8; height: r.h + 8
     radius: nav.current && nav.host(nav.current).kbdRadius !== undefined ? nav.host(nav.current).kbdRadius + 4 : nav.current && nav.host(nav.current).radius !== undefined ? nav.host(nav.current).radius + 4 : 6
     color: "transparent"
@@ -137,5 +187,10 @@ Item {
     Behavior on height { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
   }
   // позиция цели может меняться (анимации) — перечитываем
-  Timer { interval: 120; repeat: true; running: ringR.visible; onTriggered: ringR.r = nav.current ? nav.rectOf(nav.current) : ringR.r }
+  Timer { interval: 120; repeat: true; running: nav.shown && nav.active && !!nav.current
+    onTriggered: {
+      if (!nav.current) return
+      try { ringR.seen = nav.inView(nav.current); ringR.r = nav.rectOf(nav.current); nav.last = ringR.r }
+      catch (e) { if (!nav.recover()) ringR.seen = false }   // строку удалили — рамку на соседнюю на том же месте
+    } }
 }

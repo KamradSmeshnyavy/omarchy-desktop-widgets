@@ -6,6 +6,7 @@ import QtQuick
 // Стрелки / Tab / Enter (KeyNav), [ / ] — повернуть кольцо, Esc — назад / закрыть.
 MenuBase {
   id: m
+  body: sbody
   readonly property color fg: host ? host.foreground : "white"
   readonly property color bg: host ? host.background : "black"
   readonly property color acc: host ? host.accent : "white"
@@ -86,6 +87,7 @@ MenuBase {
     MouseArea { anchors.fill: parent }
     Text { x: 24; y: 18; opacity: m.flow; text: ({ wifi: "\u{F05A9}  wi-fi", bt: "\u{F00AF}  bluetooth", audio: "\u{F057E}  sound" })[m.page] || ""; color: m.fg; font.pixelSize: 16; font.weight: 700 }
     SectionBody {
+      id: sbody
       opacity: m.flow
       x: 20; y: 54; width: panel.width - 40; height: panel.height - 72
       md: m.md; page: m.page
