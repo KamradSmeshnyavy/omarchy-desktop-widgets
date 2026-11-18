@@ -53,7 +53,7 @@ PanelWindow {
     }
   }
 
-  visible: host.overviewOpen
+  visible: host.overviewOpen && host.value("overviewStyle") !== "starmap"
   screen: host.focusedScreen
   anchors { top: true; bottom: true; left: true; right: true }
   exclusionMode: ExclusionMode.Ignore

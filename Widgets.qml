@@ -111,6 +111,8 @@ Item {
     settingsPanel: "auto",
     // Меню выключения: edge — полоса у края (PowerMenu), glyph — столбец слов Doto из glyph-rice (glyph/GlyphPower)
     powerStyle: "auto",
+    // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap)
+    overviewStyle: "auto",
     // Super+Ctrl+V: stock — стоковый менеджер буфера Omarchy, glyph — Clip из glyph-rice (glyph/Clip.qml)
     clipboardPanel: "auto"
   })
@@ -131,7 +133,7 @@ Item {
     return r === "liquid" ? "vitreus" : r
   }
   readonly property var partDefaults: ({
-    "default":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock" },
+    "default":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "grid" },
     "glyph":     { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
     "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "instrument", powerStyle: "edge", clipboardPanel: "stock" },
     // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
@@ -146,7 +148,7 @@ Item {
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
     "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
     // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
-    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock" }
+    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "starmap" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -601,6 +603,12 @@ Item {
 
   Overview {
     host: root
+  }
+
+  // звёздная карта Space: создаётся, только пока открыта (живые превью окон, шейдер неба)
+  LazyLoader {
+    active: root.overviewOpen && root.value("overviewStyle") === "starmap"
+    OverviewStarmap { host: root }
   }
 
   Process {
