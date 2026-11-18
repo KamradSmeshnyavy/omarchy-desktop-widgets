@@ -1,0 +1,15 @@
+singleton Theme 1.0 Theme.qml
+singleton StoreShared 1.0 StoreShared.qml
+singleton Ui 1.0 Ui.qml
+Sheet 1.0 Sheet.qml
+Controls 1.0 Controls.qml
+Field 1.0 Field.qml
+Button 1.0 Button.qml
+Slider 1.0 Slider.qml
+DecodeText 1.0 DecodeText.qml
+MorphShared 1.0 MorphShared.qml
+SettleShared 1.0 SettleShared.qml
+SettingBezierShared 1.0 SettingBezierShared.qml
+HoverShared 1.0 HoverShared.qml
+CurvePlotShared 1.0 CurvePlotShared.qml
+LabelShared 1.0 LabelShared.qml

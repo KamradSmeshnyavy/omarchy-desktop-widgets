@@ -6,7 +6,7 @@ import Quickshell.Wayland
 import QtQuick
 import qs.Commons as Commons
 import "glyph" as Glyph
-import "prefs" as RicePrefs
+import "sheet" as SheetUi
 import "dotmatrix" as DotMatrix
 import "voyage" as Voy
 
@@ -408,6 +408,13 @@ Item {
   property bool settingsOpen: false
   // Prefs (glyph/Prefs.qml): быстрые настройки Glyph, Super+Alt+I
   property bool prefsOpen: false
+  // Sheet (sheet/Sheet.qml) — его панель настроек вместо прежней Prefs: живёт, пока открыта; повторный вызов не обрывает,
+  // а закрывает её с анимацией (close), конец — done
+  property bool sheetOn: false
+  onPrefsOpenChanged: {
+    if (prefsOpen && !sheetOn) { SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
+    else if (!prefsOpen && sheetOn && sheetLoader.item) sheetLoader.item.close()
+  }
   property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
   // Меню выключения (PowerMenu.qml). Открытие одного закрывает другое.
   property bool powerOpen: false
@@ -603,7 +610,11 @@ Item {
   PlayerHost { host: root }
   // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)
   NierVolume { host: root }
-  RicePrefs.Prefs { host: root }
+  LazyLoader {
+    id: sheetLoader
+    active: root.sheetOn
+    SheetUi.Sheet { onDone: { root.sheetOn = false; root.prefsOpen = false } }
+  }
 
   EdgeHotzones {
     host: root

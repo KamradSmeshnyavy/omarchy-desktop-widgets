@@ -43,3 +43,10 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   `Theme.qml`, `HyprShared.qml`, `Ui.qml` are adapters after his singletons of the same names.
   From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts,
   licensed under the GNU General Public License v3.0.
+
+- Settings sheet (`sheet/`): `Sheet.qml` is his `Space/settings/Settings.qml`; `Controls.qml`, `Field.qml`, `Button.qml`,
+  `Slider.qml`, `DecodeText.qml` + `decode.js` from his `Space/common`; `MorphShared.qml`, `SettleShared.qml`,
+  `HoverShared.qml`, `LabelShared.qml`, `SettingBezierShared.qml`, `CurvePlotShared.qml`, `MotionShared.js`,
+  `SchemaShared.js` from his `shared/`; `sheet.py` follows his `hypr-settings.py`. Our tabs and storage are own code.
+  From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts, GPL-3.0.
+- Space dashboard full screen (`DashSpaceFull.qml`): own code after his `Space/home/Home.qml`.
