@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 
@@ -13,6 +14,10 @@ import Quickshell.Widgets
 // стол переключается). Клавиши: hjkl / wasd / стрелки — ближайшая звезда в ту сторону, Tab / Shift+Tab — следующая /
 // предыдущая система, Enter / пробел — сесть, 1–9 — сразу на стол, колесо — ближе / дальше, Esc — назад.
 // Клик по звезде — лететь к ней (по выбранной — сесть), по планете — фокус на окне.
+// Дикие системы (его wild): неизведанные звёзды вокруг, у каждой свой мир — одна из его девяти палитр и акцент из неё.
+// Посадка на дикую звезду занимает свободный стол на её месте и перекрашивает рабочий стол в этот мир с новой землёй
+// (omarchy-space-world из omarchy-rices/space). Стол запоминает звезду и мир (~/.local/state/omarchy/space-stars.json):
+// посадка на него с карты возвращает его мир. R — новая галактика (другие дикие системы).
 PanelWindow {
   id: map
   required property var host
@@ -38,33 +43,96 @@ PanelWindow {
   readonly property int current: monitor && monitor.activeWorkspace ? monitor.activeWorkspace.id : 1
   function pad(n) { return (n < 10 ? "0" : "") + n }
   function r3(x, y, z) { var v = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453; return v - Math.floor(v) }
-  // его World.starOf: спираль, дальше от центра с номером
-  function starOf(id) { var t = id * 2.4; return [Math.cos(t) * (60 + id * 22), Math.sin(id * 1.3) * 26, Math.sin(t) * (60 + id * 22)] }
+  // его World.starOf: спираль, дальше от центра с номером; стол, занятый посадкой на дикую звезду, — на её месте
+  function starOf(id) {
+    var st = stored[String(id)]
+    if (st && st.pos) return st.pos
+    var t = id * 2.4; return [Math.cos(t) * (60 + id * 22), Math.sin(id * 1.3) * 26, Math.sin(t) * (60 + id * 22)]
+  }
+
+  // ── миры и память звёзд ──
+  readonly property string home: Quickshell.env("HOME")
+  property var worlds: []   // omarchy-space-world --list: {theme, acc, color, bg, title}
+  property var stored: ({}) // стол → {pos, theme, acc, seed}
+  property int galaxy: 1    // сид диких систем (R — новая галактика)
+  property var curWorld: null
+  Process {
+    running: true
+    command: ["omarchy-space-world", "--list"]
+    stdout: StdioCollector { onStreamFinished: { try { map.worlds = JSON.parse(text) } catch (e) { map.worlds = [] } } }
+  }
+  FileView {
+    id: starsFile
+    path: map.home + "/.local/state/omarchy/space-stars.json"
+    printErrors: false
+    onLoaded: { try { var d = JSON.parse(text() || "{}"); map.stored = d.stars || {}; map.galaxy = d.galaxy || 1 } catch (e) {} }
+  }
+  function saveStars() { starsFile.setText(JSON.stringify({ galaxy: galaxy, stars: stored }, null, 1)) }
+  FileView {
+    path: map.home + "/.local/state/omarchy/current/theme/world.json"
+    printErrors: false
+    onLoaded: { try { map.curWorld = JSON.parse(text() || "null") } catch (e) { map.curWorld = null } }
+  }
+  function worldOf(theme, acc) {
+    for (var i = 0; i < worlds.length; i++) if (worlds[i].theme === theme && worlds[i].acc === acc) return worlds[i]
+    return null
+  }
+  function sameWorld(st) { return !!curWorld && curWorld.theme === st.theme && curWorld.acc === st.acc && curWorld.seed === st.seed }
+  function d3(p, q) { var x = p[0] - q[0], y = p[1] - q[1], z = p[2] - q[2]; return Math.sqrt(x * x + y * y + z * z) }
   function specialPos(name) {
     var h = 7
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0
     var t = r3(h, 1, 2) * Math.PI * 2, r = 90 + r3(h, 3, 4) * 80
     return [Math.cos(t) * r, (r3(h, 5, 6) - 0.5) * 40, Math.sin(t) * r]
   }
-  readonly property var systems: {
+  readonly property var used: {
     var list = Hyprland.workspaces.values, ws = [], sp = []
     for (var i = 0; i < list.length; i++) {
       var w = list[i]
-      if (w.id > 0) ws.push({ id: w.id, key: "ws" + w.id, name: "system " + pad(w.id), ws: w, pos: starOf(w.id), special: "" })
-      else if (String(w.name).indexOf("special:") === 0 && w.toplevels.values.length > 0) {
+      if (w.id > 0) {
+        var st = stored[String(w.id)]
+        ws.push({ id: w.id, key: "ws" + w.id, kind: "ws", name: "system " + pad(w.id), ws: w, pos: starOf(w.id), special: "",
+                  world: st ? worldOf(st.theme, st.acc) : null, st: st || null })
+      } else if (String(w.name).indexOf("special:") === 0 && w.toplevels.values.length > 0) {
         var n = String(w.name).slice(8)
-        sp.push({ id: w.id, key: "sp" + n, name: n, ws: w, pos: specialPos(w.name), special: n })
+        sp.push({ id: w.id, key: "sp" + n, kind: "special", name: n, ws: w, pos: specialPos(w.name), special: n, world: null, st: null })
       }
     }
     ws.sort(function(x, y) { return x.id - y.id })
     return ws.concat(sp)
   }
+  // дикие системы (его rebuild): небо поделено на клетки по 40, в клетке звезда с вероятностью 0.22 — вокруг выбранной
+  // системы ±3 клетки по горизонтали и ±1 по высоте, так что куда ни прилетишь, рядом есть неизведанное. Звезда и её
+  // мир — хэш клетки и галактики; у занятых звёзд дикие не рождаются; мир — не тот, что стоит сейчас.
+  readonly property int cell: 40
+  property var here: [0, 0, 0]
+  readonly property var wilds: {
+    if (!worlds.length) return []
+    var out = [], taken = used.map(function(s) { return s.pos }), g = galaxy * 101
+    var a0 = Math.floor(here[0] / cell), b0 = Math.floor(here[1] / cell), c0 = Math.floor(here[2] / cell)
+    for (var i = -3; i <= 3; i++) for (var j = -1; j <= 1; j++) for (var k = -3; k <= 3; k++) {
+      var ca = a0 + i, cb = b0 + j, cc = c0 + k
+      if (r3(ca + g, cb, cc) > 0.22) continue
+      var p = [(ca + 0.15 + 0.7 * r3(cb, cc + g, ca)) * cell, (cb + 0.15 + 0.7 * r3(cc, ca, cb + g)) * cell * 0.6,
+               (cc + 0.15 + 0.7 * r3(ca, ca + g, cc)) * cell]
+      var near = false
+      for (var q = 0; q < taken.length && !near; q++) near = d3(p, taken[q]) < 18
+      if (near) continue
+      var n = Math.floor(r3(cc, cb + g, ca) * worlds.length), w = worlds[n]
+      if (curWorld && w.theme === curWorld.theme && w.acc === curWorld.acc) w = worlds[(n + 7) % worlds.length]
+      out.push({ id: -1, key: "w" + galaxy + ":" + ca + "," + cb + "," + cc, kind: "wild", name: "uncharted system", ws: null,
+                 pos: p, special: "", world: w, seed: 1 + Math.floor(r3(cb + g, ca, cc) * 996) })
+    }
+    return out
+  }
+  readonly property var systems: used.concat(wilds)
   function sysByKey(k) { for (var i = 0; i < systems.length; i++) if (systems[i].key === k) return systems[i]; return null }
   property string selKey: "ws" + current
   readonly property var sel: sysByKey(selKey) || (systems.length ? systems[0] : null)
   function appOf(t) { var o = t && t.lastIpcObject; var c = String(o && o.class ? o.class : (t && t.title ? t.title : "")); return c.split(".").pop() }
   function appsOf(s) {
     if (!s) return ""
+    if (!s.ws) return ""
     var seen = [], ts = s.ws.toplevels.values
     for (var i = 0; i < ts.length && seen.length < 2; i++) { var n = appOf(ts[i]); if (n && seen.indexOf(n) < 0) seen.push(n) }
     return seen.join(" · ")
@@ -141,6 +209,7 @@ PanelWindow {
     if (!s || landing) return
     if (s.key === selKey && flight.running) return
     selKey = s.key
+    here = s.pos
     flyTo(s.pos, dist, pitch, 1100, true)
     bloomAnim.restart()
   }
@@ -161,6 +230,7 @@ PanelWindow {
     Hyprland.refreshToplevels()
     var s = sel
     var p = s ? s.pos : [0, 0, 0]
+    here = p
     // встать над звездой текущего стола
     curT = fromT = toT = p; curYaw = fromYaw = toYaw = yawOf(p); curD = fromD = toD = 7; curP = fromP = toP = -1.05
     apply()
@@ -171,13 +241,31 @@ PanelWindow {
   NumberAnimation { id: uiIn; target: map; property: "ui"; from: 0; to: 1; duration: 450; easing.type: Easing.OutCubic }
   function hl(lua) { Quickshell.execDetached(["hyprctl", "eval", lua]) }
   property var landAction: null
+  function freeWs() {
+    var ids = Hyprland.workspaces.values.map(function(w) { return w.id })
+    for (var i = 1; i <= 10; i++) if (ids.indexOf(i) < 0 && !stored[String(i)]) return i
+    for (i = 1; i <= 10; i++) if (ids.indexOf(i) < 0) return i
+    return 10
+  }
+  function world(st, id) {
+    Quickshell.execDetached(["omarchy-space-world", st.theme, String(st.acc), String(st.seed), String(id)])
+  }
   function land(s) {
     if (!s || landing) return
     landing = true
     selKey = s.key
-    landAction = s.special !== ""
-      ? function() { map.hl("hl.dispatch(hl.dsp.workspace.toggle_special('" + s.special + "'))") }
-      : function() { map.hl("hl.dispatch(hl.dsp.focus({ workspace = '" + s.id + "' }))") }
+    if (s.kind === "wild") {
+      // дикая звезда: свободный стол встаёт на её место и получает её мир
+      var id = freeWs(), st = { pos: s.pos, theme: s.world.theme, acc: s.world.acc, seed: s.seed }
+      var next = Object.assign({}, stored); next[String(id)] = st; stored = next
+      saveStars()
+      landAction = function() { map.hl("hl.dispatch(hl.dsp.focus({ workspace = '" + id + "' }))"); map.world(st, id) }
+    } else if (s.special !== "")
+      landAction = function() { map.hl("hl.dispatch(hl.dsp.workspace.toggle_special('" + s.special + "'))") }
+    else {
+      var keep = s.st && s.st.theme && !sameWorld(s.st) ? s.st : null
+      landAction = function() { map.hl("hl.dispatch(hl.dsp.focus({ workspace = '" + s.id + "' }))"); if (keep) map.world(keep, s.id) }
+    }
     flyTo(s.pos, 3, -0.15, 650, false)
     landAnim.restart()
   }
@@ -222,9 +310,14 @@ PanelWindow {
     if (best) select(best)
   }
   function step(d) {
-    if (!systems.length) return
-    var i = Math.max(0, systems.indexOf(sel))
-    select(systems[(i + d + systems.length) % systems.length])
+    if (!used.length) return
+    var i = Math.max(0, used.indexOf(sel))
+    select(used[(i + d + used.length) % used.length])
+  }
+  function newGalaxy() {
+    galaxy = galaxy + 1
+    saveStars()
+    if (sel && sel.kind === "wild") select(used.length ? used[0] : null)
   }
 
   // ── фоновые звёзды: 180 точек вокруг карты, параллакс при полёте ──
@@ -243,8 +336,9 @@ PanelWindow {
   function orbitPt(c, r, t) { var z = Math.sin(t) * r; return [c[0] + Math.cos(t) * r, c[1] + z * Math.sin(tilt), c[2] + z * Math.cos(tilt)] }
   readonly property var planets: {
     if (!sel) return []
-    var ts = sel.ws.toplevels.values, out = []
     var base = r3(sel.id, 7, 7) * Math.PI * 2
+    if (sel.kind === "wild") return [{ t: null, home: true, r: 10, ang: base }]  // его home: одна планета — сам мир
+    var ts = sel.ws.toplevels.values, out = []
     for (var i = 0; i < ts.length && i < 9; i++) out.push({ t: ts[i], r: 10 + i * 3.6, ang: base + i * 2.399 })
     return out
   }
@@ -310,10 +404,10 @@ PanelWindow {
 
     // трасса между столами по порядку
     Repeater {
-      model: Math.max(0, map.systems.filter(function(s) { return s.special === "" }).length - 1)
+      model: Math.max(0, map.used.filter(function(s) { return s.kind === "ws" }).length - 1)
       Rectangle {
         required property int index
-        readonly property var g: map.segment(map.systems[index].pos, map.systems[index + 1].pos)
+        readonly property var g: map.segment(map.used[index].pos, map.used[index + 1].pos)
         visible: !!g
         x: g ? g[0].x : 0
         y: g ? g[0].y : 0
@@ -353,9 +447,11 @@ PanelWindow {
         readonly property var p: map.project(modelData.pos)
         readonly property real far: p ? Math.min(1, p.z / 260) : 1
         readonly property bool picked: map.sel && map.sel.key === modelData.key
-        readonly property bool here: modelData.special === "" && modelData.id === map.current
+        readonly property bool here: modelData.kind === "ws" && modelData.id === map.current
+        readonly property bool wild: modelData.kind === "wild"
+        readonly property bool hov: map.hoverKey === "s" + modelData.key
         z: 5
-        property real boost: picked ? 1.7 : 1
+        property real boost: (picked ? 1.7 : 1) * (wild ? 0.75 : 1)
         Behavior on boost { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
         ShaderEffect {
           id: orb
@@ -364,11 +460,13 @@ PanelWindow {
           height: width
           x: (st.p ? st.p.x : 0) - width / 2
           y: (st.p ? st.p.y : 0) - height / 2
-          readonly property color tint: st.modelData.special !== "" ? map.mixc(map.fg, map.acc, 0.6) : map.mixc("#ffffff", map.acc, 0.25)
+          // дикие — цветом своего мира; столы, занятые посадкой, — тоже (его hue звезды)
+          readonly property color tint: st.modelData.world ? map.mixc("#ffffff", st.modelData.world.color, st.wild ? 0.55 : 0.4)
+            : st.modelData.special !== "" ? map.mixc(map.fg, map.acc, 0.6) : map.mixc("#ffffff", map.acc, 0.25)
           readonly property real core: 0.24
           readonly property real glow: 1
           readonly property real shade: 0
-          opacity: Math.max(0.55, 1 - st.far * st.far) * Math.min(1, ((st.p ? st.p.z : 0) - 3) / 10)
+          opacity: Math.max(0.55, 1 - st.far * st.far) * Math.min(1, ((st.p ? st.p.z : 0) - 3) / 10) * (st.wild && !st.picked && !st.hov ? 0.7 : 1)
           fragmentShader: Qt.resolvedUrl("shaders/orb.frag.qsb")
           MouseArea {
             anchors.centerIn: parent
@@ -389,21 +487,22 @@ PanelWindow {
           border.width: 1; border.color: map.acc
         }
         Column {
-          visible: orb.visible && !st.picked
+          // дикие подписаны только под курсором — иначе небо в надписях
+          visible: orb.visible && !st.picked && (!st.wild || st.hov)
           x: (st.p ? st.p.x : 0) + orb.width * 0.3 + 6
           y: (st.p ? st.p.y : 0) - 8
           SpaceDecode {
             decode: false
             text: st.modelData.name + (st.here ? "  ◂" : "")
             color: st.here ? map.acc : map.fg
-            opacity: map.hoverKey === "s" + st.modelData.key ? 1 : 0.6
+            opacity: st.hov ? 1 : 0.6
           }
           SpaceDecode {
             decode: false
             size: 10
-            text: map.appsOf(st.modelData)
-            color: map.a(map.fg, 0.5)
-            visible: text !== "" && (st.here || map.hoverKey === "s" + st.modelData.key)
+            text: st.modelData.world && (st.wild || st.hov) ? st.modelData.world.title : map.appsOf(st.modelData)
+            color: st.modelData.world && (st.wild || st.hov) ? st.modelData.world.color : map.a(map.fg, 0.5)
+            visible: text !== "" && (st.here || st.hov)
           }
         }
       }
@@ -418,8 +517,10 @@ PanelWindow {
         required property int index
         readonly property var p: map.sel ? map.project(map.orbitPt(map.sel.pos, modelData.r, modelData.ang)) : null
         readonly property real grow: Math.max(0, Math.min(1, map.bloom * 1.5 - 0.1 * index))
-        readonly property real rpx: p ? 1.25 * map.focal / p.z * grow : 0
-        readonly property var ipc: modelData.t.lastIpcObject || ({})
+        readonly property real rpx: p ? (homeWorld ? 1.7 : 1.25) * map.focal / p.z * grow : 0
+        readonly property bool homeWorld: !!modelData.home
+        readonly property var wworld: map.sel ? map.sel.world : null
+        readonly property var ipc: modelData.t && modelData.t.lastIpcObject ? modelData.t.lastIpcObject : ({})
         readonly property real aspect: ipc.size && ipc.size[1] ? ipc.size[0] / ipc.size[1] : 1.6
         readonly property bool lit: map.hoverKey === String(index)
         visible: !!p && rpx > 1.5 && !map.landing
@@ -430,12 +531,24 @@ PanelWindow {
         ClippingRectangle {
           anchors.fill: parent
           radius: width / 2
-          color: map.mixc(map.bg, map.acc, 0.25)
+          color: pl.homeWorld && pl.wworld ? pl.wworld.bg : map.mixc(map.bg, map.acc, 0.25)
+          // планета дикой системы — сам мир: его фон, акцент полосой атмосферы у горизонта (как небо его пейзажа)
+          Rectangle {
+            visible: pl.homeWorld && !!pl.wworld
+            anchors.fill: parent
+            gradient: Gradient {
+              GradientStop { position: 0; color: pl.wworld ? pl.wworld.bg : "black" }
+              GradientStop { position: 0.55; color: pl.wworld ? map.mixc(pl.wworld.color, pl.wworld.bg, 0.35) : "black" }
+              GradientStop { position: 0.62; color: pl.wworld ? map.mixc(pl.wworld.bg, "#0e1528", 0.6) : "black" }
+              GradientStop { position: 1; color: pl.wworld ? map.mixc(pl.wworld.bg, "#000000", 0.4) : "black" }
+            }
+          }
           ScreencopyView {
+            visible: !pl.homeWorld
             anchors.centerIn: parent
             width: pl.aspect >= 1 ? parent.height * pl.aspect : parent.width
             height: pl.aspect >= 1 ? parent.height : parent.width / pl.aspect
-            captureSource: pl.modelData.t.wayland
+            captureSource: pl.modelData.t ? pl.modelData.t.wayland : null
             live: false
             opacity: 0.9
           }
@@ -461,7 +574,7 @@ PanelWindow {
           width: parent.width + 6; height: width; radius: width / 2
           color: "transparent"
           border.width: 1
-          border.color: map.a(pl.lit ? map.acc : map.fg, pl.lit ? 0.8 : 0.22)
+          border.color: pl.homeWorld && pl.wworld ? map.a(pl.wworld.color, pl.lit ? 0.9 : 0.5) : map.a(pl.lit ? map.acc : map.fg, pl.lit ? 0.8 : 0.22)
         }
         Rectangle {
           visible: pl.lit
@@ -475,8 +588,8 @@ PanelWindow {
           x: parent.width + 14; y: parent.height / 2 - height / 2
           decode: false
           size: 10
-          text: map.appOf(pl.modelData.t)
-          color: map.acc
+          text: pl.homeWorld ? (pl.wworld ? pl.wworld.title : "") : map.appOf(pl.modelData.t)
+          color: pl.homeWorld && pl.wworld ? pl.wworld.color : map.acc
         }
         MouseArea {
           anchors.fill: parent
@@ -484,14 +597,14 @@ PanelWindow {
           cursorShape: Qt.PointingHandCursor
           onEntered: map.hoverKey = String(pl.index)
           onExited: if (map.hoverKey === String(pl.index)) map.hoverKey = ""
-          onClicked: map.focusWindow(pl.modelData.t)
+          onClicked: if (pl.homeWorld) map.land(map.sel); else map.focusWindow(pl.modelData.t)
         }
       }
     }
 
-    // звёзды за краем экрана: ромб на краю с номером
+    // звёзды за краем экрана: ромб на краю с номером (только столы — дикие не подписываются)
     Repeater {
-      model: map.systems
+      model: map.used
       Item {
         id: mk
         required property var modelData
@@ -501,7 +614,7 @@ PanelWindow {
         readonly property real ang: Math.atan2(-q[1], q[0])
         readonly property real k: Math.min((map.width / 2 - 36) / Math.max(1e-3, Math.abs(Math.cos(ang))),
                                            (map.height / 2 - 36) / Math.max(1e-3, Math.abs(Math.sin(ang))))
-        readonly property bool here: modelData.special === "" && modelData.id === map.current
+        readonly property bool here: modelData.kind === "ws" && modelData.id === map.current
         visible: off && !flight.running
         x: map.cx + Math.cos(ang) * k
         y: map.cy + Math.sin(ang) * k
@@ -554,7 +667,8 @@ PanelWindow {
         Column {
           id: info
           readonly property var s: map.sel
-          readonly property var wins: s ? s.ws.toplevels.values : []
+          readonly property bool wild: !!s && s.kind === "wild"
+          readonly property var wins: s && s.ws ? s.ws.toplevels.values : []
           x: 16; y: 12
           width: parent.width - 30
           spacing: 5
@@ -565,7 +679,15 @@ PanelWindow {
           }
           SpaceDecode {
             color: map.acc
-            text: info.s ? (info.s.special !== "" ? "scratchpad // " : "") + (info.wins.length === 0 ? "no planets" : info.wins.length + (info.wins.length === 1 ? " planet" : " planets")) : ""
+            text: !info.s ? "" : info.wild ? "1 planet // unexplored"
+              : (info.s.special !== "" ? "scratchpad // " : "") + (info.wins.length === 0 ? "no planets" : info.wins.length + (info.wins.length === 1 ? " planet" : " planets"))
+          }
+          // мир системы: у дикой — куда перекрасит посадка, у занятой — запомненный
+          SpaceDecode {
+            visible: !!info.s && !!info.s.world
+            size: 10
+            text: info.s && info.s.world ? "world // " + info.s.world.title : ""
+            color: info.s && info.s.world ? info.s.world.color : map.fg
           }
           Repeater {
             model: info.wins.slice(0, 8)
@@ -583,7 +705,7 @@ PanelWindow {
           }
           Item {
             width: info.width; height: hint.height + 4
-            SpaceDecode { id: hint; y: 4; decode: false; size: 9; color: map.a(map.fg, 0.4); text: "enter  land    click planet  focus" }
+            SpaceDecode { id: hint; y: 4; decode: false; size: 9; color: map.a(map.fg, 0.4); text: info.wild ? "enter  land  //  new world" : "enter  land    click planet  focus" }
           }
         }
       }
@@ -594,7 +716,7 @@ PanelWindow {
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.bottomMargin: 26
       decode: false
-      text: "hjkl wasd  pick    tab  next system    enter  land    1-9  jump    wheel  zoom    esc  back"
+      text: "hjkl wasd  pick    tab  next system    enter  land    1-9  jump    r  new galaxy    wheel  zoom    esc  back"
       color: map.a(map.fg, 0.45)
     }
   }
@@ -610,6 +732,7 @@ PanelWindow {
       else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter || e.key === Qt.Key_Space) map.land(map.sel)
       else if (e.key === Qt.Key_Backtab) map.step(-1)
       else if (e.key === Qt.Key_Tab) map.step(1)
+      else if (t === "r") map.newGalaxy()
       else if (e.key === Qt.Key_Left || t === "h" || t === "a") map.pickDir(-1, 0)
       else if (e.key === Qt.Key_Right || t === "l" || t === "d") map.pickDir(1, 0)
       else if (e.key === Qt.Key_Up || t === "k" || t === "w") map.pickDir(0, -1)
