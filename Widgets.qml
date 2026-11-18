@@ -113,6 +113,9 @@ Item {
     powerStyle: "auto",
     // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap)
     overviewStyle: "auto",
+    // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
+    starmapNav: "route",
+    starmapSpin: false,
     // Super+Ctrl+V: stock — стоковый менеджер буфера Omarchy, glyph — Clip из glyph-rice (glyph/Clip.qml)
     clipboardPanel: "auto"
   })
