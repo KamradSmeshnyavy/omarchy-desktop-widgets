@@ -133,7 +133,8 @@ PanelWindow {
   readonly property real slide: animation === "slide" ? (1 - progress) * -(bodyHeight + margin) : 0
   readonly property real fadeOpacity: animation === "grow" || liquid ? Math.min(1, progress * 3) : progress
 
-  visible: !host.dotmatrixDash && (progress > 0.001 || wave.running)
+  // space — на весь экран, своим окном (DashSpaceFull.qml)
+  visible: !host.dotmatrixDash && !spaceDash && (progress > 0.001 || wave.running)
   screen: host.focusedScreen
   // у нижнего бара Hub surface поднимается снизу
   readonly property bool surfBottom: surface && !fromBar && geo.edge === "bottom"
@@ -152,7 +153,7 @@ PanelWindow {
   surfaceFormat.opaque: false
   WlrLayershell.namespace: "omarchy-dashboard"
   WlrLayershell.layer: WlrLayer.Top
-  WlrLayershell.keyboardFocus: !host.dotmatrixDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+  WlrLayershell.keyboardFocus: !host.dotmatrixDash && !spaceDash && host.dashboardOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   mask: Region { item: dash.cardDrag || dash.pulling ? null : hit; regions: dash.cardDrag || dash.pulling ? [dragAll] : grips.tabItem.visible ? [tabRegion] : [] }
   Region { id: tabRegion; item: grips.tabItem }
   Region { id: dragAll; x: 0; y: 0; width: dash.width; height: dash.height }
@@ -180,7 +181,7 @@ PanelWindow {
   readonly property real neckK: !fromBar ? 0 : !loose ? dg.neckK : pulling && pullDist < 170 ? dg.neckK + pullDist * 0.35 : 0
 
   HyprlandFocusGrab {
-    active: !dash.host.dotmatrixDash && dash.host.dashboardOpen && !dash.detached
+    active: !dash.host.dotmatrixDash && !dash.spaceDash && dash.host.dashboardOpen && !dash.detached
     windows: [dash]
     onCleared: dash.host.dashboardOpen = false
   }

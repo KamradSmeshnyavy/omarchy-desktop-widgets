@@ -11,13 +11,19 @@ import Quickshell.Services.UPower
 // MEMORY (шкала, занято), справа GRAPHICS (если есть видеокарта), LINK (сеть, громкость, батарея) и NOW PLAYING
 // (обложка, трек, ⏮ ⏯ ⏭, перемотка штрихами). Плашка — срезанный угол 14 px, рамка акцентом 35 %, черта 2 px акцентом
 // с внешней стороны, плашки въезжают сбоку по очереди. Подписи капсом вразрядку «расшифровываются» (SpaceDecode).
+// full — на весь экран, как его Home (space/home.png): уголки в углах экрана, часы по центру сверху, плашки — колонками
+// у левого и правого края (окно — DashSpaceFull.qml).
 Item {
   id: sp
   required property var host
   property real rise: 1
+  property bool full: false
   readonly property bool live: rise > 0.01
   width: 860
   height: 540
+  readonly property real edge: full ? Math.round(width * 0.055) : 0      // отступ колонок от края
+  readonly property real colY: full ? Math.round(height * 0.17) : 112   // верх колонок
+  readonly property real cornerIn: full ? 20 : 0                         // уголки — от края экрана
 
   readonly property color fg: host.foreground
   readonly property color bg: host.background
@@ -66,8 +72,8 @@ Item {
       readonly property bool r: index % 2 === 1
       readonly property bool b: index > 1
       readonly property real inset: 30 * (1 - sp.rise)
-      x: r ? sp.width - 40 - inset : inset
-      y: b ? sp.height - 40 - inset : inset
+      x: r ? sp.width - 40 - inset - sp.cornerIn : inset + sp.cornerIn
+      y: b ? sp.height - 40 - inset - sp.cornerIn : inset + sp.cornerIn
       width: 40; height: 40
       opacity: sp.rise
       Rectangle { width: 40; height: 2; y: parent.b ? 38 : 0; color: sp.acc }
@@ -78,7 +84,7 @@ Item {
   // ── часы ──
   Column {
     anchors.horizontalCenter: parent.horizontalCenter
-    y: 26
+    y: sp.full ? Math.round(sp.height * 0.07) : 26
     spacing: 2
     opacity: sp.rise
     Text {
@@ -210,8 +216,8 @@ Item {
 
   // ── слева ──
   Column {
-    x: 0
-    y: 112
+    x: sp.edge
+    y: sp.colY
     spacing: 14
     Block {
       order: 0; glyph: "󰒋"; title: sp.sys.HOST || "system"
@@ -234,8 +240,8 @@ Item {
 
   // ── справа ──
   Column {
-    x: sp.width - 320
-    y: 112
+    x: sp.width - 320 - sp.edge
+    y: sp.colY
     spacing: 14
     Block {
       visible: (sp.sys.GPU || "") !== ""

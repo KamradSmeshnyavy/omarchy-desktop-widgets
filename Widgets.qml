@@ -558,6 +558,11 @@ Item {
     host: root
   }
 
+  // дашборд Space — на весь экран (как его Home)
+  DashSpaceFull {
+    host: root
+  }
+
   DotMatrixDashboard {
     host: root
   }
