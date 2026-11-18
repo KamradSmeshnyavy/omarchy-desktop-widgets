@@ -8,6 +8,7 @@ import qs.Commons as Commons
 import "glyph" as Glyph
 import "prefs" as RicePrefs
 import "dotmatrix" as DotMatrix
+import "voyage" as Voy
 
 // Виджеты рабочего стола: часы, now playing, визуализатор cava, кольца системы,
 // и дашборд, выезжающий из-под бара / рамки (Dashboard.qml, IPC widgets toggleDashboard).
@@ -151,7 +152,7 @@ Item {
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
     "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
     // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
-    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "starmap" }
+    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -417,7 +418,10 @@ Item {
   onPowerOpenChanged: if (powerOpen) { dashboardOpen = false; settingsOpen = false; overviewOpen = false; dashStyle.refresh() }
   // Обзор рабочих столов (Overview.qml).
   property bool overviewOpen: false
-  onOverviewOpenChanged: if (overviewOpen) { dashboardOpen = false; settingsOpen = false; powerOpen = false }
+  onOverviewOpenChanged: {
+    if (overviewOpen) { dashboardOpen = false; settingsOpen = false; powerOpen = false }
+    if (value("overviewStyle") === "voyage") voyageToggle(overviewOpen)
+  }
   onSettingsOpenChanged: {
     if (settingsOpen) { dashboardOpen = false; powerOpen = false; overviewOpen = false }
     settingsFlag.setText(settingsOpen ? "1\n" : "0\n")
@@ -612,6 +616,19 @@ Item {
   LazyLoader {
     active: root.overviewOpen && root.value("overviewStyle") === "starmap"
     OverviewStarmap { host: root }
+  }
+
+  // voyage — звёздная карта elifouts (voyage/Voyage.qml) как у него: живёт, пока идёт взлёт / полёт / посадка; повторный
+  // вызов (Super+` / closeOverview) не обрывает её, а сажает домой (close), конец посадки — done
+  property bool voyageOn: false
+  LazyLoader {
+    id: voyage
+    active: root.voyageOn
+    Voy.Voyage { onDone: { root.voyageOn = false; root.overviewOpen = false } }
+  }
+  function voyageToggle(open) {
+    if (open && !voyageOn) { Voy.Ui.target = root.focusedScreen; voyageOn = true }
+    else if (!open && voyageOn && voyage.item) voyage.item.close()
   }
 
   Process {

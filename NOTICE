@@ -36,3 +36,10 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   and its `World.starOf` layout; the rest is own code in its look.
   Copyright (c) Eli Fouts
   Licensed under the GNU General Public License v3.0.
+
+- Star map voyage (`voyage/`): `Voyage.qml` is his `Space/overview/Overview.qml` almost verbatim, with his
+  `overview.frag`, `glow.png`, `common/{DecodeText.qml,decode.js,Orb.qml,orb.frag,RenderScale.qml}`,
+  `shared/{PaceShared,SettleShared}.qml`, `wallpaper/Terrain.qml` + `terrain.frag` / `terrain/*.glsl`; `World.qml`,
+  `Theme.qml`, `HyprShared.qml`, `Ui.qml` are adapters after his singletons of the same names.
+  From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts,
+  licensed under the GNU General Public License v3.0.

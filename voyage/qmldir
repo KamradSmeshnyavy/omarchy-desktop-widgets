@@ -1,0 +1,11 @@
+singleton Theme 1.0 Theme.qml
+singleton World 1.0 World.qml
+singleton HyprShared 1.0 HyprShared.qml
+singleton Ui 1.0 Ui.qml
+singleton RenderScale 1.0 RenderScale.qml
+Voyage 1.0 Voyage.qml
+Terrain 1.0 Terrain.qml
+Orb 1.0 Orb.qml
+DecodeText 1.0 DecodeText.qml
+PaceShared 1.0 PaceShared.qml
+SettleShared 1.0 SettleShared.qml
