@@ -112,7 +112,8 @@ Item {
     settingsPanel: "auto",
     // Меню выключения: edge — полоса у края (PowerMenu), glyph — столбец слов Doto из glyph-rice (glyph/GlyphPower)
     powerStyle: "auto",
-    // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap)
+    // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap),
+    // voyage — его звёздная карта, table — все окна таблицей (OverviewTable, Retro CRT)
     overviewStyle: "auto",
     // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
     starmapNav: "route",
@@ -152,7 +153,9 @@ Item {
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
     "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
     // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
-    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" }
+    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" },
+    // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
+    "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -570,6 +573,11 @@ Item {
     host: root
   }
 
+  // дашборд Retro CRT — экран состояния на весь экран (его Home), включается как трубка
+  DashCrt {
+    host: root
+  }
+
   DotMatrixDashboard {
     host: root
   }
@@ -606,6 +614,7 @@ Item {
   MenuShell { host: root; kind: "glassring"; source: Qt.resolvedUrl("menus/MenuGlass.qml"); dim: 0.25 }
   MenuShell { host: root; kind: "instrument"; source: Qt.resolvedUrl("menus/MenuDots.qml"); ring: DotMatrix.Palette.signal }
   MenuShell { host: root; kind: "space"; source: Qt.resolvedUrl("menus/MenuSpace.qml"); dim: 0.35 }
+  MenuShell { host: root; kind: "crt"; source: Qt.resolvedUrl("menus/MenuCrt.qml"); dim: 0.6 }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
   // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)
@@ -632,6 +641,12 @@ Item {
   LazyLoader {
     active: root.overviewOpen && root.value("overviewStyle") === "starmap"
     OverviewStarmap { host: root }
+  }
+
+  // table — все окна таблицей (Retro CRT, его Overview)
+  LazyLoader {
+    active: root.overviewOpen && root.value("overviewStyle") === "table"
+    OverviewTable { host: root }
   }
 
   // voyage — звёздная карта elifouts (voyage/Voyage.qml) как у него: живёт, пока идёт взлёт / полёт / посадка; повторный

@@ -223,7 +223,10 @@ PanelWindow {
         return out
     }
     function slug(x) { return String(x).toLowerCase().replace(/[^a-z0-9]/g, "") }
-    readonly property string riceNow: (riceHeads.find(h => slug(h.label) === slug(StoreShared.active.rice)) || {}).label || ""
+    function presetOf(r) { return String(r.value).split("/").pop().replace(/\.json$/, "") }
+    // райс — тот, среди вариантов которого активный пресет; иначе — по имени (id «crt» ≠ заголовок «Retro CRT»)
+    readonly property string riceNow: (riceHeads.find(h => riceVariants(h.label).some(r => presetOf(r) === StoreShared.active.preset))
+        || riceHeads.find(h => slug(h.label) === slug(StoreShared.active.rice)) || {}).label || ""
     property string riceSel: riceNow
     Component {
         id: core

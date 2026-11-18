@@ -27,10 +27,12 @@ Singleton {
   readonly property color bright: fg
   readonly property color edge: alpha(accent, 0.35)
   readonly property string mono: Qt.fontFamilies().indexOf("JetBrainsMono Nerd Font") !== -1 ? "JetBrainsMono Nerd Font" : "monospace"
-  readonly property string font: hud ? mono : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
+  // Retro CRT — Terminess, как у него в Retro/common/Theme.qml
+  readonly property string term: Qt.fontFamilies().indexOf("Terminess Nerd Font Mono") !== -1 ? "Terminess Nerd Font Mono" : mono
+  readonly property string font: rice === "crt" ? term : hud ? mono : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
   readonly property string sans: font
   readonly property int caps: hud ? Font.AllUppercase : Font.MixedCase
-  readonly property real tracking: hud ? 1.6 : 0.4
+  readonly property real tracking: rice === "crt" ? 1 : hud ? 1.6 : 0.4
   readonly property real lines: 1
   readonly property real round: hud ? 0 : 1
   readonly property real rounding: hud ? 0 : 10

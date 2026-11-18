@@ -53,7 +53,7 @@ PanelWindow {
     }
   }
 
-  visible: host.overviewOpen && host.value("overviewStyle") !== "starmap" && host.value("overviewStyle") !== "voyage"
+  visible: host.overviewOpen && ["starmap", "voyage", "table"].indexOf(String(host.value("overviewStyle"))) === -1
   screen: host.focusedScreen
   anchors { top: true; bottom: true; left: true; right: true }
   exclusionMode: ExclusionMode.Ignore
