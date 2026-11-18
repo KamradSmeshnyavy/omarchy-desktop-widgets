@@ -12,6 +12,7 @@ Item {
   property alias color: label.color
   property alias elide: label.elide
   property alias horizontalAlignment: label.horizontalAlignment
+  property alias wrapMode: label.wrapMode
   property real n: 1e6
   implicitWidth: Math.ceil(tm.advanceWidth) + 1
   implicitHeight: label.implicitHeight

@@ -295,6 +295,7 @@ var PAGES = [
                 choice("w.dashStyle", "Dashboard", [opt("default", "Default"), opt("dotmatrix", "DOT-MATRIX"), opt("vitreus", "Vitreus"), opt("pencils", "Pencils"), opt("rumda", "Rumda"), opt("surface", "Surface"), opt("bruteon", "Bruteon"), opt("unit3", "Unit-3"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("glyph", "Glyph"), opt("space", "Space"), opt("crt", "Retro CRT")]),
                 choice("w.powerStyle", "Power menu", [opt("auto", "Auto"), opt("edge", "Edge"), opt("glyph", "Glyph"), opt("cassini", "Cassini"), opt("cozytile", "Cozytile")]),
                 choice("w.clipboardPanel", "Clipboard", [opt("auto", "Auto"), opt("stock", "Stock"), opt("glyph", "Glyph")]),
+                choice("w.settingsSkin", "Settings sheet", [opt("auto", "Auto"), opt("space", "Space"), opt("crt", "Retro CRT")]),
                 choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage"), opt("table", "Table")])
             ]),
             section("Pickers and screens", [

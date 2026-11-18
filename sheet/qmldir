@@ -2,6 +2,7 @@ singleton Theme 1.0 Theme.qml
 singleton StoreShared 1.0 StoreShared.qml
 singleton Ui 1.0 Ui.qml
 Sheet 1.0 Sheet.qml
+SheetCrt 1.0 SheetCrt.qml
 Controls 1.0 Controls.qml
 Field 1.0 Field.qml
 Button 1.0 Button.qml

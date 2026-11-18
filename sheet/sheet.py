@@ -18,6 +18,7 @@
   sheet.py do rice|preset|font|bar|theme|world|save VALUE…
 """
 import json
+import re
 import os
 import subprocess
 import sys
@@ -205,6 +206,11 @@ def state(keys):
     mons = load_cmd(["hyprctl", "monitors", "-j"]) or []
     caps = {"touchpad": any("touchpad" in m.get("name", "") for m in devices.get("mice", [])),
             "multimonitor": len(mons) > 1, "glyphBar": bool(tray)}
+    # Retro CRT: шрифт и размер текста (его retro.font / retro.size) — crt.json → ui
+    ui = (load(CFG / "crt.json", {}) or {}).get("ui") or {}
+    for k in ("font", "size"):
+        if ui.get(k) not in (None, ""):
+            values["ui." + k] = ui[k]
     # Retro CRT: ручки шейдера и фильтра — у темы с трубкой (tube.json — темы crt-*)
     caps["crt"] = (HOME / ".local/state/omarchy/current/theme/tube.json").exists()
     if caps["crt"] and any(k.startswith(("crt.", "filter.")) for k in keys):
@@ -265,10 +271,62 @@ def themes():
     return out
 
 
+CZP = CFG / "plugins/kamradsmeshnyavy.customizer"
+USER_PRESETS = CFG / "customizer/presets"
+
+
+def cur_rice():
+    s = load(CFG / "style.json", {})
+    return str(s.get("rice") or "")
+
+
+def rice_entry(rid):
+    for r in (load(CZP / "rices.json", {}) or {}).get("rices", []):
+        if r.get("id") == rid:
+            return r
+    return None
+
+
+def profiles(rid):
+    """Профили райса для страницы PROFILES: его (rices.json → profiles / variants) и свои (поле rice в пресете)."""
+    out, r = [], rice_entry(rid)
+    if not r:
+        return out
+    for stem in (r.get("profiles") or [v["preset"] for v in r.get("variants", [])]):
+        d = load(CZP / "presets" / f"{stem}.json", {})
+        out.append({"id": stem, "name": d.get("name") or stem, "name_ru": d.get("name_ru") or "", "mine": False,
+                    "path": str(CZP / "presets" / f"{stem}.json")})
+    if USER_PRESETS.is_dir():
+        for f in sorted(USER_PRESETS.glob("*.json")):
+            d = load(f, {})
+            if d.get("rice") == rid:
+                out.append({"id": f.stem, "name": d.get("name") or f.stem, "name_ru": "", "mine": True, "path": str(f)})
+    return out
+
+
+def rice_themes(rid):
+    """Темы своего райса (из его пресетов) — COLORS у райсов без своей палитры показывает только их."""
+    out = []
+    for p in profiles(rid):
+        t = load(Path(p["path"]), {}).get("theme")
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
 def lists():
     cur = (HOME / ".local/state/omarchy/current/theme.name")
-    return {"rices": rows("rices"), "presets": rows("presets"), "fonts": rows("fonts"), "bars": rows("bar-skins"),
-            "themes": themes(), "theme": cur.read_text().strip() if cur.exists() else ""}
+    rid = cur_rice()
+    l = {"rices": rows("rices"), "presets": rows("presets"), "fonts": rows("fonts"), "bars": rows("bar-skins"),
+         "themes": themes(), "theme": cur.read_text().strip() if cur.exists() else "",
+         "rice": rid, "profiles": profiles(rid), "riceThemes": rice_themes(rid)}
+    if rid == "crt":
+        l["barLayouts"] = [r for r in rows("bar-layouts") if r["label"] in ("crt", "crt-boxes", "crt-zen")]
+    if rid == "crt":
+        l["crtColors"] = load_cmd(["omarchy-crt-colors", "--list"]) or []
+        l["monoFonts"] = sorted({x.split(",")[0].strip() for x in run("fc-list", ":spacing=mono", "family").splitlines()
+                                 if x.strip() and not x.startswith(".")})
+    return l
 
 
 # ── set ──
@@ -335,6 +393,14 @@ def setv(pairs):
             elif k == "bar.titleLength" and title:
                 title["length"] = int(v)
             write(SHELL, sh)
+        elif k.startswith("ui."):
+            c = load(CFG / "crt.json", {}) or {}
+            u = c.setdefault("ui", {})
+            if v is None:
+                u.pop(k[3:], None)
+            else:
+                u[k[3:]] = v
+            write(CFG / "crt.json", c)
         elif k == "crt.on":
             run(str(CZ.parent.parent / "scripts/crt-toggle.sh"), "on" if v else "off", *(["retro-crt"] if v else []))
         elif k.startswith("crt."):
@@ -381,10 +447,21 @@ def do(what, args):
         cz("apply", "fonts", v)
     elif what == "bar":
         cz("apply", "bar-skins", v)
+    elif what == "barLayout":
+        cz("apply", "bar-layouts", v)
     elif what == "theme":
         subprocess.Popen(["omarchy-theme-set", v], start_new_session=True)
     elif what == "world":  # тема, акцент, сид — мир Space
         subprocess.Popen(["omarchy-space-world"] + args, start_new_session=True)
+    elif what == "profile":
+        cz("apply", "presets", v if v.startswith("/") else str(CZP / "presets" / f"{v}.json"))
+    elif what == "crtColors":  # его COLORS: id цветов и слот акцента
+        subprocess.Popen(["omarchy-crt-colors"] + args, start_new_session=True,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif what == "delete" and re.fullmatch(r"[a-z0-9_-]+", v or ""):
+        f = USER_PRESETS / f"{v}.json"
+        if f.is_file() and load(f, {}).get("rice"):
+            f.unlink()
     elif what == "save" and v.strip():
         # его «save as»: снимок Customizer под этим именем (без диалогов zenity)
         code = ("import sys; sys.path.insert(0, sys.argv[1]); from customizer import apply_ops, state; import os\n"
@@ -393,6 +470,17 @@ def do(what, args):
                 "apply_ops.snapshot(state.USER_PRESETS / (slug + '.json'), sys.argv[2], '')\n"
                 "state.ACTIVE_PRESET.write_text(slug + '\\n')")
         run("/usr/bin/python3", "-I", "-c", code, str(CZ.parent), v.strip())
+        # профиль райса: пометить райсом; у Retro CRT с цветами crt-live — состояние и сборка (тема собирается заново)
+        slug = re.sub(r"[^a-z0-9_-]", "", v.strip().lower().replace(" ", "-")) or "preset"
+        f = USER_PRESETS / f"{slug}.json"
+        d = load(f, {})
+        rid = cur_rice()
+        if d and rid:
+            d["rice"] = rid
+            if d.get("theme") == "crt-live":
+                d["crtState"] = load_cmd(["omarchy-crt-colors", "--dump"]) or {}
+                d["build"] = ["omarchy-crt-colors", "--state", "{preset}"]
+            write(f, d)
 
 
 def main():

@@ -117,6 +117,7 @@ Item {
     // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap),
     // voyage — его звёздная карта, table — все окна таблицей (OverviewTable, Retro CRT)
     overviewStyle: "auto",
+    settingsSkin: "auto",       // скин панели настроек (Super+Alt+I): auto — по райсу, space, crt
     // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
     starmapNav: "route",
     starmapSpin: false,
@@ -416,9 +417,13 @@ Item {
   // Sheet (sheet/Sheet.qml) — его панель настроек вместо прежней Prefs: живёт, пока открыта; повторный вызов не обрывает,
   // а закрывает её с анимацией (close), конец — done
   property bool sheetOn: false
+  // скин панели: settingsSkin auto | space | crt; auto — по райсу (Retro CRT — его SETUP, остальные — облик Space)
+  property string sheetSkin: "space"
+  function skinNow() { var v = String(value("settingsSkin") || "auto"); return v !== "auto" ? v : rice === "crt" ? "crt" : "space" }
+  readonly property var sheetItem: sheetSkin === "crt" ? sheetCrtLoader.item : sheetLoader.item
   onPrefsOpenChanged: {
-    if (prefsOpen && !sheetOn) { SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
-    else if (!prefsOpen && sheetOn && sheetLoader.item) sheetLoader.item.close()
+    if (prefsOpen && !sheetOn) { sheetSkin = skinNow(); SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
+    else if (!prefsOpen && sheetOn && sheetItem) sheetItem.close()
   }
   property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
   // Меню выключения (PowerMenu.qml). Открытие одного закрывает другое.
@@ -467,6 +472,8 @@ Item {
     // Shot: скриншот / запись области, окна или экрана с правкой снимка
     function shot(): void { glyphShot.open() }
     function togglePrefs(): void { root.prefsOpen = !root.prefsOpen }
+    // открыть панель настроек на странице (кнопка FILTER пикера SCREENS → screen)
+    function openPrefsPage(page: string): void { SheetUi.Ui.sheet = page; root.prefsOpen = true }
     // Clip: история буфера обмена (cliphist) в виде glyph-rice
     function clip(): void {
       if (root.value("clipboardPanel") === "glyph") glyphClip.toggle()
@@ -623,8 +630,13 @@ Item {
   NierVolume { host: root }
   LazyLoader {
     id: sheetLoader
-    active: root.sheetOn
+    active: root.sheetOn && root.sheetSkin !== "crt"
     SheetUi.Sheet { onDone: { root.sheetOn = false; root.prefsOpen = false } }
+  }
+  LazyLoader {
+    id: sheetCrtLoader
+    active: root.sheetOn && root.sheetSkin === "crt"
+    SheetUi.SheetCrt { onDone: { root.sheetOn = false; root.prefsOpen = false } }
   }
 
   EdgeHotzones {

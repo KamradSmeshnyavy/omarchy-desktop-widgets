@@ -55,3 +55,5 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   his `Retro/overview/Overview.qml`, `CrtBox.qml` / `CrtType.qml` / `CrtButton.qml` / `CrtTube.qml` / `CrtMedia.qml`
   his `Retro/common/{Box,Type,Button,Tube,MediaCard}.qml`; the «Главное меню ЭВМ» menu and the player are own code.
   From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts, GPL-3.0.
+- Settings sheet skin crt (`sheet/SheetCrt.qml`): his `Retro/settings/Settings.qml` almost verbatim on our StoreShared /
+  Schema / sheet.py, with his Retro controls (Pick, Knob, Flip, Title, Line). From elifouts/Dotfiles, GPL-3.0.
