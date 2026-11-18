@@ -132,7 +132,9 @@ Rectangle {
       height: parent.height
       radius: 2
       color: card.host.accent
-      Behavior on width { NumberAnimation { duration: 900 } }
+      // без Behavior: позиция приходит раз в секунду, и плавный доезд 900 мс держал слой виджетов (полноэкранный, с
+      // размытием) в непрерывной перерисовке всё время, пока играет музыка — Hyprland ~40 % видеокарты. Шаг раз в
+      // секунду на 4-пиксельной полоске не виден.
     }
   }
 
