@@ -28,3 +28,11 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   `components/Scanlines.qml`, `widgets/VolumeBar.qml`, https://github.com/samyns/Unit-3)
   Copyright (c) 2026 samyns
   Licensed under the MIT License.
+
+- Space rice parts (`DashSpace.qml`, `menus/MenuSpace.qml`, `players/PlayerSpace.qml`, `SpaceDecode.qml`,
+  `OverviewStarmap.qml`, `shaders/starmap.frag`, `shaders/orb.frag`):
+  After the Space style of elifouts/Dotfiles (https://github.com/elifouts/Dotfiles) — `SpaceDecode.qml` ports its
+  `common/DecodeText.qml` + `decode.js`, the star map uses its `overview/overview.frag` and `common/orb.frag` shaders
+  and its `World.starOf` layout; the rest is own code in its look.
+  Copyright (c) Eli Fouts
+  Licensed under the GNU General Public License v3.0.
