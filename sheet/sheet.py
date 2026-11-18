@@ -205,6 +205,14 @@ def state(keys):
     mons = load_cmd(["hyprctl", "monitors", "-j"]) or []
     caps = {"touchpad": any("touchpad" in m.get("name", "") for m in devices.get("mice", [])),
             "multimonitor": len(mons) > 1, "glyphBar": bool(tray)}
+    # Retro CRT: ручки шейдера и фильтра — у темы с трубкой (tube.json — темы crt-*)
+    caps["crt"] = (HOME / ".local/state/omarchy/current/theme/tube.json").exists()
+    if caps["crt"] and any(k.startswith(("crt.", "filter.")) for k in keys):
+        knobs = load_cmd(["omarchy-crt-shader", "get"]) or {}
+        values.update({"crt." + k: v for k, v in knobs.items()})
+        cur = (HOME / ".local/state/hypr/screen-shader")
+        values["crt.on"] = cur.exists() and "retro-crt.frag" in cur.read_text()
+        values.update({"filter." + k: v for k, v in (load_cmd(["omarchy-crt-filter", "--get"]) or {}).items()})
     style = load(CFG / "style.json", {})
     return {"values": values, "missing": missing, "caps": caps, "lists": lists(),
             "active": {"rice": style.get("rice") or "", "style": style.get("id") or "", "preset": active_preset()}}
@@ -269,6 +277,7 @@ def setv(pairs):
     cfg, anim = s.setdefault("config", {}), s.setdefault("animation", {})
     live, reload_ = {}, False
     wid_tw, look = [], None
+    crt_set, filt_set = [], []
     for k, raw in pairs:
         v = json.loads(raw)
         if k in OWNED:
@@ -326,6 +335,14 @@ def setv(pairs):
             elif k == "bar.titleLength" and title:
                 title["length"] = int(v)
             write(SHELL, sh)
+        elif k == "crt.on":
+            run(str(CZ.parent.parent / "scripts/crt-toggle.sh"), "on" if v else "off", *(["retro-crt"] if v else []))
+        elif k.startswith("crt."):
+            if v is not None:
+                crt_set += [k[4:], str(v)]
+        elif k.startswith("filter."):
+            if v is not None:
+                filt_set += [k[7:], "1" if v is True else "0" if v is False else str(v)]
         elif k == "part.picker":
             cz("apply", "theme-switcher", "style:" + str(v))
         elif k == "part.launcher":
@@ -342,6 +359,11 @@ def setv(pairs):
         cz("tweak", k, "set", json.dumps(v) if isinstance(v, (bool, list, dict)) else str(v))
     if look is not None:
         write(LOOK, look)
+    if crt_set:
+        run("omarchy-crt-shader", "set", *crt_set)
+    if filt_set:
+        subprocess.Popen(["omarchy-crt-filter", "--set", *filt_set, "--apply"], start_new_session=True,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if reload_:
         run("hyprctl", "reload")
     else:

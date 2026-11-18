@@ -45,6 +45,8 @@ Item {
     todo: false,                // Todo / заметки (TodoWidget, ~/.config/omarchy/widgets-todo.json)
     todoAnchor: "right",
     todoMax: 8,
+    term: false,                // терминал на обоях (TermWidget + omarchy-desk-term: kitty-панель на фоновом слое)
+    termAnchor: "top-left",
     quote: false,               // цитата дня (QuoteWidget, свои — ~/.config/omarchy/widgets-quotes.txt)
     quoteAnchor: "bottom-right",
     weather: false,             // погода карточкой (WeatherWidget; город — weatherCity)
@@ -193,7 +195,7 @@ Item {
   // карточка погоды на столе: при включении и раз в 20 мин (refreshIfStale сам не ходит чаще)
   Timer { interval: 20 * 60 * 1000; repeat: true; running: root.flag("weather"); triggeredOnStart: true; onTriggered: weatherFetcher.refreshIfStale() }
   onEditModeChanged: if (editMode) { dashboardOpen = false; settingsOpen = false; powerOpen = false; overviewOpen = false }
-  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib", "calendar", "weather"]
+  readonly property var widgetNames: ["clock", "media", "sysinfo", "network", "todo", "quote", "photo", "contrib", "calendar", "weather", "term"]
   readonly property bool anyFloat: widgetNames.some(function(n) {
     return flag(n) && String(value(n + "Anchor")) === "free" && flag(n + "Float")
   })

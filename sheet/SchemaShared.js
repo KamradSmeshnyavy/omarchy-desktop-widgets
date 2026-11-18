@@ -27,7 +27,37 @@ function opt(v, l, extra) {
 var ON = { eq: true }
 var NOT_THEME = { key: "animation.preset", ne: "theme" }
 
+// Retro CRT: его страница SCREEN (Retro/common/Schema.js) — ЭЛТ-шейдер и фильтр обоев; видна у тем с трубкой (caps.crt)
+function crt(k, label, min, max, step, dflt) { return slider("crt." + k, label, min, max, step, "", { dflt: dflt, cap: "crt" }) }
+function wall(k, label, min, max, step, dflt) { return slider("filter." + k, label, min, max, step, "", { dflt: dflt, cap: "crt" }) }
+
 var PAGES = [
+    {
+        id: "screen", label: "Screen", icon: "",
+        sections: [
+            section("Tube", [
+                toggle("crt.on", "Screen filter", { dflt: true, cap: "crt" }),
+                crt("mono", "Phosphor tint", 0, 1, 0.05, 0.85),
+                crt("glow", "Glow", 0, 1.5, 0.05, 0.5),
+                crt("lines", "Scanlines", 0, 0.9, 0.05, 0.35)
+            ]),
+            section("Glass", [
+                crt("vignette", "Vignette", 0, 1, 0.05, 0.5),
+                crt("corners", "Round corners", 0, 1, 0.05, 0.5),
+                crt("bend", "Curve", 0, 1, 0.05, 0),
+                crt("grain", "Grain", 0, 1, 0.05, 0.4)
+            ]),
+            section("Wallpaper filter", [
+                toggle("filter.on", "Wallpaper", { dflt: true, cap: "crt" }),
+                choice("filter.tone", "Color", [opt("lines", "Lines", { dflt: true }), opt("tube", "Tube"), opt("palette", "Palette"), opt("source", "Source")], { cap: "crt", when: { key: "filter.on", eq: true } }),
+                choice("filter.dither", "Dither", [opt("bayer", "Bayer", { dflt: true }), opt("fine", "Fine"), opt("halftone", "Halftone"), opt("diffuse", "Diffuse"), opt("none", "None")], { cap: "crt", when: { key: "filter.on", eq: true } }),
+                wall("pixel", "Pixel size", 1, 6, 1, 2),
+                wall("levels", "Levels", 2, 12, 1, 6),
+                wall("contrast", "Contrast", 0, 1, 0.05, 0.5),
+                wall("bright", "Brightness", 0.1, 1, 0.05, 0.4)
+            ])
+        ]
+    },
     {
         id: "colors", label: "Colors", icon: "\uf1fc",
         themes: true,
@@ -261,16 +291,16 @@ var PAGES = [
         id: "shell", label: "Shell", icon: "",
         sections: [
             section("Parts of the rice", [
-                choice("w.settingsPanel", "Super+M", [opt("auto", "Auto"), opt("drawer", "Drawer"), opt("quick", "Quick"), opt("surface", "Surface"), opt("unit3", "Unit-3"), opt("bruteon", "Bruteon"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("rumda", "Rumda"), opt("glassring", "Glass ring"), opt("instrument", "Instrument"), opt("space", "Space")]),
-                choice("w.dashStyle", "Dashboard", [opt("default", "Default"), opt("dotmatrix", "DOT-MATRIX"), opt("vitreus", "Vitreus"), opt("pencils", "Pencils"), opt("rumda", "Rumda"), opt("surface", "Surface"), opt("bruteon", "Bruteon"), opt("unit3", "Unit-3"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("glyph", "Glyph"), opt("space", "Space")]),
+                choice("w.settingsPanel", "Super+M", [opt("auto", "Auto"), opt("drawer", "Drawer"), opt("quick", "Quick"), opt("surface", "Surface"), opt("unit3", "Unit-3"), opt("bruteon", "Bruteon"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("rumda", "Rumda"), opt("glassring", "Glass ring"), opt("instrument", "Instrument"), opt("space", "Space"), opt("crt", "Retro CRT")]),
+                choice("w.dashStyle", "Dashboard", [opt("default", "Default"), opt("dotmatrix", "DOT-MATRIX"), opt("vitreus", "Vitreus"), opt("pencils", "Pencils"), opt("rumda", "Rumda"), opt("surface", "Surface"), opt("bruteon", "Bruteon"), opt("unit3", "Unit-3"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("glyph", "Glyph"), opt("space", "Space"), opt("crt", "Retro CRT")]),
                 choice("w.powerStyle", "Power menu", [opt("auto", "Auto"), opt("edge", "Edge"), opt("glyph", "Glyph"), opt("cassini", "Cassini"), opt("cozytile", "Cozytile")]),
                 choice("w.clipboardPanel", "Clipboard", [opt("auto", "Auto"), opt("stock", "Stock"), opt("glyph", "Glyph")]),
-                choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage")])
+                choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage"), opt("table", "Table")])
             ]),
             section("Pickers and screens", [
-                choice("part.launcher", "Launcher", [opt("space", "Space"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3"), opt("cozytile", "Cozytile"), opt("surface", "Surface"), opt("liquid", "Liquid"), opt("terminal", "Terminal"), opt("constellation", "Constellation"), opt("list", "Stock")]),
-                choice("part.picker", "Wallpapers", [opt("space", "Space"), opt("slices", "Slices"), opt("cards", "Cards"), opt("coverflow", "Coverflow"), opt("strip", "Strip"), opt("wide", "Wide"), opt("polaroid", "Polaroid"), opt("honeycomb", "Honeycomb"), opt("dots", "Dots"), opt("nier", "NieR"), opt("glyph", "Glyph")]),
-                choice("part.lock", "Lock screen", [opt("space", "Space"), opt("classic", "Classic"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3")])
+                choice("part.launcher", "Launcher", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3"), opt("cozytile", "Cozytile"), opt("surface", "Surface"), opt("liquid", "Liquid"), opt("terminal", "Terminal"), opt("constellation", "Constellation"), opt("list", "Stock")]),
+                choice("part.picker", "Wallpapers", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("slices", "Slices"), opt("cards", "Cards"), opt("coverflow", "Coverflow"), opt("strip", "Strip"), opt("wide", "Wide"), opt("polaroid", "Polaroid"), opt("honeycomb", "Honeycomb"), opt("dots", "Dots"), opt("nier", "NieR"), opt("glyph", "Glyph")]),
+                choice("part.lock", "Lock screen", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("classic", "Classic"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3")])
             ])
         ]
     }

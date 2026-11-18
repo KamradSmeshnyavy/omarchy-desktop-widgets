@@ -5,6 +5,7 @@
 // без его страницы «land» (земля Space у нас — в теме), плюс наши страницы.
 var shown = Base.shown
 var LAYOUT = {
+    screen: [["Tube", "Glass"], ["Wallpaper filter"]],
     windows: [["Spacing", "Borders", "Opacity"], ["Tiling"], ["Behavior"]],
     effects: [["Blur"], ["Shadow", "Glow", "Focus"]],
     animations: [["Motion", "Details"], ["Curve"]],

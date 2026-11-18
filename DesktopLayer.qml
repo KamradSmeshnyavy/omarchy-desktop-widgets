@@ -89,7 +89,7 @@ PanelWindow {
     return ({
       contrib: "GitHub", clock: host.tr("Clock", "Часы"), media: host.tr("Player", "Плеер"), sysinfo: host.tr("System", "Система"),
       network: host.tr("Network", "Сеть"), todo: "Todo", quote: host.tr("Quote", "Цитата"), weather: host.tr("Weather", "Погода"), photo: host.tr("Photo", "Фото"),
-      calendar: host.tr("Calendar", "Календарь")
+      calendar: host.tr("Calendar", "Календарь"), term: host.tr("Terminal", "Терминал")
     })[name] || name
   }
 
@@ -250,6 +250,19 @@ PanelWindow {
     scale: desk.scaleOf("weather")
     y: desk.place(wxW, "weatherAnchor").y
   }
+  // терминал на обоях: сам виджет прозрачный, bash — kitty-панель под этим слоем (клики идут сквозь, в mask его нет)
+  TermWidget {
+    id: termW
+    host: desk.host
+    output: desk.screenName
+    visible: !desk.floating && desk.host.flag("term") && desk.shows("term")
+    origin: Qt.point(bgeo.edge === "left" && desk.screen ? desk.screen.width - desk.width : 0,
+                     bgeo.edge === "top" && desk.screen ? desk.screen.height - desk.height : 0)
+    x: desk.place(termW, "termAnchor").x
+    scale: desk.scaleOf("term")
+    transformOrigin: Item.TopLeft
+    y: desk.place(termW, "termAnchor").y
+  }
   QuoteWidget {
     id: quoteW
     host: desk.host
@@ -322,6 +335,7 @@ PanelWindow {
   DragHandle { host: desk.host; desk: desk; target: photoW; name: "photo"; pad: desk.padOf(photoW) }
   DragHandle { host: desk.host; desk: desk; target: contribW; name: "contrib"; pad: desk.padOf(contribW) }
   DragHandle { host: desk.host; desk: desk; target: calW; name: "calendar"; pad: desk.padOf(calW) }
+  DragHandle { host: desk.host; desk: desk; target: termW; name: "term"; pad: 0 }
 
   // Перенос без режима правки: взять и тянуть, углы — размер, булавка — на место (DirectGrab).
   DirectGrab { id: g_clock; host: desk.host; desk: desk; target: clockW; name: "clock"; pad: desk.padOf(clockW) }
@@ -401,7 +415,7 @@ PanelWindow {
   readonly property var entries: [
     [clockW, "clockAnchor"], [netW, "networkAnchor"], [media, "mediaAnchor"], [sysW, "sysinfoAnchor"],
     [todoW, "todoAnchor"], [quoteW, "quoteAnchor"], [wxW, "weatherAnchor"], [photoW, "photoAnchor"], [contribW, "contribAnchor"],
-    [calW, "calendarAnchor"]
+    [calW, "calendarAnchor"], [termW, "termAnchor"]
   ]
   // Позиция по якорю: top-left … bottom-right, center; отступ edgeMargin от бара / рамки до карточки.
   // Виджеты с одним якорем не налезают друг на друга, а встают колонкой (снизу — колонкой вверх).
