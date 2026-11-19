@@ -50,6 +50,10 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   `SchemaShared.js` from his `shared/`; `sheet.py` follows his `hypr-settings.py`. Our tabs and storage are own code.
   From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts, GPL-3.0.
 - Space dashboard full screen (`DashSpaceFull.qml`): own code after his `Space/home/Home.qml`.
+- Modern parts (`ModernIsland.qml`, `DashModern.qml`, `players/PlayerModern.qml`, `BootModern.qml`, `sheet/SheetModern.qml`,
+  `sheet/ModernPal.qml`, overviewStyle modern in `Overview.qml`): after the Modern style of elifouts/Dotfiles (GPL-3.0) —
+  his Modern/bar/Island, home/Home.qml, music/shell.qml, boot/BootShell.qml, settings/shell.qml + Themes.qml and
+  overview/shell.qml; own code.
 - Retro CRT parts (`DashCrt.qml`, `OverviewTable.qml`, `menus/MenuCrt.qml`, `players/PlayerCrt.qml`, `Crt*.qml`):
   after the Retro style of elifouts/Dotfiles — `DashCrt.qml` follows his `Retro/home/Home.qml`, `OverviewTable.qml`
   his `Retro/overview/Overview.qml`, `CrtBox.qml` / `CrtType.qml` / `CrtButton.qml` / `CrtTube.qml` / `CrtMedia.qml`
