@@ -160,7 +160,7 @@ Item {
     // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
     "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
     // Modern: Super+M — остров из бара (ModernIsland.qml)
-    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "grid" }
+    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "modern" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]

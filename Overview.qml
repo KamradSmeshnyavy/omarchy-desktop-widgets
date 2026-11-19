@@ -2,11 +2,15 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Effects
 
 // Обзор рабочих столов: сетка столов с обоями и живыми превью окон (ScreencopyView).
 // Клик по столу — перейти, по окну — фокус на нём, перетащить окно на другой стол — перенести
 // туда, не уходя с текущего. Клавиши: ←→↑↓ / hjkl, Enter, 1–9, Esc.
 // Диспетчеры — через `hyprctl eval` (Lua-конфиг: обычный `hyprctl dispatch` ничего не делает).
+// overviewStyle modern — по мотивам его Modern/overview/shell.qml (github.com/elifouts/Dotfiles, GPL-3.0): под сеткой
+// размытые обои вместо заливки, 3–4 колонки как у него, номер стола над плиткой (текущий — акцентом), подсказка
+// «1-9 to jump · Esc to close» над сеткой, плитки поднимаются по очереди.
 PanelWindow {
   id: ov
 
@@ -24,10 +28,11 @@ PanelWindow {
     }
     return Math.min(10, n)
   }
-  readonly property int columns: count <= 5 ? count : Math.ceil(count / 2)
+  readonly property bool modern: String(host.value("overviewStyle")) === "modern"
+  readonly property int columns: modern ? (count <= 3 ? count : count <= 6 ? 3 : 4) : count <= 5 ? count : Math.ceil(count / 2)
   readonly property int rows: Math.ceil(count / columns)
   readonly property real gap: 22
-  readonly property real tileW: Math.min((width - 120 - (columns - 1) * gap) / columns, (height - 160 - (rows - 1) * gap) / rows * width / height)
+  readonly property real tileW: Math.min(modern ? 560 : 1e9, (width - 120 - (columns - 1) * gap) / columns, (height - 160 - (rows - 1) * gap) / rows * width / height)
   readonly property real ratio: tileW / width
   readonly property real tileH: height * ratio
 
@@ -50,8 +55,13 @@ PanelWindow {
       if (!ov.host.overviewOpen) return
       Hyprland.refreshToplevels()
       ov.selected = ov.activeWs
+      rise.restart()
     }
   }
+  // modern: плитки поднимаются по очереди
+  property real t: 1
+  NumberAnimation { id: rise; target: ov; property: "t"; from: 0; to: 1; duration: ov.modern ? 900 : 1; easing.type: Easing.OutCubic }
+  function seg(i) { return Math.max(0, Math.min(1, (t - i) / (1 - i))) }
 
   visible: host.overviewOpen && ["starmap", "voyage", "table"].indexOf(String(host.value("overviewStyle"))) === -1
   screen: host.focusedScreen
@@ -63,9 +73,28 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: host.overviewOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
+  // modern: его Backdrop — обои под сильным размытием и затемнением
+  Image {
+    id: wallSrc
+    anchors.fill: parent
+    visible: false
+    source: ov.modern ? "file://" + ov.host.home + "/.local/state/omarchy/current/background" : ""
+    sourceSize.width: 960
+    fillMode: Image.PreserveAspectCrop
+    asynchronous: true
+  }
+  MultiEffect {
+    anchors.fill: parent
+    visible: ov.modern
+    source: wallSrc
+    blurEnabled: true; blur: 1; blurMax: 64
+    brightness: -0.18
+    opacity: ov.host.overviewOpen ? 1 : 0
+    Behavior on opacity { NumberAnimation { duration: 220 } }
+  }
   Rectangle {
     anchors.fill: parent
-    color: Qt.rgba(ov.host.panelStyle.color.r, ov.host.panelStyle.color.g, ov.host.panelStyle.color.b, 0.93)
+    color: Qt.rgba(ov.host.panelStyle.color.r, ov.host.panelStyle.color.g, ov.host.panelStyle.color.b, ov.modern ? 0.35 : 0.93)
     opacity: ov.host.overviewOpen ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 180 } }
     TapHandler { onTapped: ov.host.overviewOpen = false }
@@ -109,6 +138,9 @@ PanelWindow {
         width: ov.tileW
         height: ov.tileH + 24
         z: ov.dragging && ov.dragFrom === ws ? 10 : 1
+        readonly property real p: ov.modern ? ov.seg(Math.min(0.3, 0.06 + index * 0.04)) : 1
+        opacity: p
+        transform: Translate { y: (1 - tile.p) * 44 }
 
         Text {
           text: tile.ws
@@ -124,7 +156,7 @@ PanelWindow {
           y: 24
           width: ov.tileW
           height: ov.tileH
-          radius: 12
+          radius: ov.modern ? 8 : 12
           color: ov.host.background
           border.width: tile.current || drop.containsDrag ? 2 : 1
           border.color: drop.containsDrag ? ov.host.accent
@@ -231,11 +263,23 @@ PanelWindow {
 
   Text {
     anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 36 }
+    visible: !ov.modern
     text: ov.host.tr("click — go · drag a window — move it · ←→↑↓ Enter 1–9 · Esc",
       "клик — перейти · перетащить окно — перенести · ←→↑↓ Enter 1–9 · Esc")
     font.family: ov.host.fontFamily
     font.pixelSize: 12
     color: ov.host.foreground
     opacity: 0.55
+  }
+  // modern: его подсказка над сеткой
+  Text {
+    visible: ov.modern
+    anchors { horizontalCenter: parent.horizontalCenter; bottom: grid.top; bottomMargin: 26 }
+    text: "1-9 to jump  ·  Esc to close"
+    font.family: ov.host.fontFamily
+    font.pixelSize: 11
+    color: ov.host.foreground
+    opacity: 0.5 * ov.seg(0.02)
+    transform: Translate { y: (1 - ov.seg(0.02)) * -24 }
   }
 }
