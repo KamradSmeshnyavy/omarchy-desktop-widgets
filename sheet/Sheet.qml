@@ -464,15 +464,17 @@ PanelWindow {
                     }
                 }
             }
-            // остальные райсы: установленные темы Omarchy
+            // остальные райсы: темы самого райса (из его профилей) и его dynamic-тема; без райса — все темы Omarchy
             GridView {
+                readonly property var own: StoreShared.lists.rice ? StoreShared.lists.themes.filter(t =>
+                    (StoreShared.lists.riceThemes || []).indexOf(t.id) !== -1 || t.id === "dynamic-" + StoreShared.lists.rice) : []
                 visible: !parent.space
                 width: 9 * 90
-                height: 2 * 118
+                height: Math.min(2, Math.ceil(Math.max(1, count) / 9)) * 118
                 clip: true
                 cellWidth: 90
                 cellHeight: 118
-                model: StoreShared.lists.themes
+                model: own.length ? own : StoreShared.lists.themes
                 delegate: Item {
                     id: th
                     required property var modelData

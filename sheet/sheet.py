@@ -265,7 +265,10 @@ def themes():
                 if "=" in ln and '"#' in ln:
                     k, v = ln.split("=", 1)
                     c[k.strip()] = v.strip().strip('"')[:7]
-            sw = [c.get(k) for k in ("background", "color1", "color2", "color3", "color4", "color5", "accent") if c.get(k)]
+            # ключи colors.toml: color1…5 или именованные (темы райсов — red, green, …)
+            alias = {"color1": "red", "color2": "green", "color3": "yellow", "color4": "blue", "color5": "magenta"}
+            sw = [c.get(k) or c.get(alias.get(k, "")) for k in ("background", "color1", "color2", "color3", "color4", "color5", "accent")]
+            sw = [x for x in sw if x]
             if len(sw) >= 4:
                 out.append({"id": d.name, "c": sw})
     return out
