@@ -84,7 +84,7 @@ PanelWindow {
   property bool everHovered: false
   Timer { id: leaveTimer; interval: isl.everHovered ? 220 : 1200; onTriggered: if (isl.hoverMode && !cardHover.hovered) isl.page = "" }
 
-  MenuData { id: md; live: isl.open && ["network", "bt", "audio", "control"].indexOf(isl.shown) !== -1 }
+  MenuData { id: islData; live: isl.open && ["network", "bt", "audio", "control"].indexOf(isl.shown) !== -1 }
   property string controlTab: "wifi"
 
   Item {
@@ -175,7 +175,7 @@ PanelWindow {
     id: secC
     Menus.SectionBody {
       implicitHeight: 300
-      md: md
+      md: islData
       page: isl.drawn === "network" ? "wifi" : isl.drawn
       ink: isl.fg; litFill: isl.a(isl.accent, 0.3); litInk: isl.fg; hoverFill: isl.a(isl.fg, 0.08); line: isl.a(isl.fg, 0.14)
       radius: 10; size: 12; rowH: 36; field: isl.a(isl.fg, 0.06); font: isl.font
@@ -184,11 +184,11 @@ PanelWindow {
   Component {
     id: controlC
     Item {
-      implicitHeight: 320
+      implicitHeight: isl.controlTab === "power" ? 72 : 320
       Menus.SectionBody {
         visible: isl.controlTab !== "power"
         anchors.fill: parent
-        md: md
+        md: islData  // не «md: md» — это привязка свойства самого к себе
         page: isl.controlTab === "power" ? "" : isl.controlTab
         ink: isl.fg; litFill: isl.a(isl.accent, 0.3); litInk: isl.fg; hoverFill: isl.a(isl.fg, 0.08); line: isl.a(isl.fg, 0.14)
         radius: 10; size: 12; rowH: 36; field: isl.a(isl.fg, 0.06); font: isl.font
