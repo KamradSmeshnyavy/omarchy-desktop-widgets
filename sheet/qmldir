@@ -14,3 +14,5 @@ SettingBezierShared 1.0 SettingBezierShared.qml
 HoverShared 1.0 HoverShared.qml
 CurvePlotShared 1.0 CurvePlotShared.qml
 LabelShared 1.0 LabelShared.qml
+SheetModern 1.0 SheetModern.qml
+ModernPal 1.0 ModernPal.qml

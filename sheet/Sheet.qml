@@ -270,15 +270,27 @@ PanelWindow {
                 width: 320
                 height: Math.min(168, Math.max(72, count * 24))
                 clip: true
-                model: StoreShared.lists.presets.filter(e => e.value !== "save" && !e.header)
+                // у райса — только его профили (rices.json → profiles и свои сохранённые с полем rice), без райса — все пресеты
+                readonly property bool own: !!StoreShared.lists.rice
+                model: own ? (StoreShared.lists.profiles || [])
+                    : StoreShared.lists.presets.filter(e => e.value !== "save" && !e.header)
                 delegate: Controls.Line {
                     required property var modelData
+                    property bool armed: false
+                    readonly property bool cur: plist.own ? modelData.id === StoreShared.active.preset : modelData.cur
                     width: 320
-                    glyph: modelData.cur ? "◆" : "◇"
-                    text: modelData.label.replace(/^[★↩] /, "")
-                    value: modelData.label.startsWith("★") ? "mine" : modelData.label.startsWith("↩") ? "undo" : "preset"
-                    lit: modelData.cur
-                    onClicked: m => { if (m.button === Qt.LeftButton) StoreShared.act("preset", [modelData.value]) }
+                    glyph: cur ? "◆" : "◇"
+                    text: plist.own ? modelData.name : modelData.label.replace(/^[★↩] /, "")
+                    value: plist.own ? (armed ? "rclick again — delete" : modelData.mine ? "mine" : "profile")
+                        : modelData.label.startsWith("★") ? "mine" : modelData.label.startsWith("↩") ? "undo" : "preset"
+                    lit: cur
+                    onClicked: m => {
+                        if (!plist.own) { if (m.button === Qt.LeftButton) StoreShared.act("preset", [modelData.value]); return }
+                        if (m.button === Qt.LeftButton) return StoreShared.act("profile", [modelData.path])
+                        if (!modelData.mine) return
+                        if (armed) StoreShared.act("delete", [modelData.id])
+                        armed = !armed
+                    }
                 }
             }
             Column {

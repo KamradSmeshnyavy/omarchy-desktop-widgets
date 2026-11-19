@@ -322,6 +322,17 @@ def lists():
          "rice": rid, "profiles": profiles(rid), "riceThemes": rice_themes(rid)}
     if rid == "crt":
         l["barLayouts"] = [r for r in rows("bar-layouts") if r["label"] in ("crt", "crt-boxes", "crt-zen")]
+    if rid == "modern":
+        # его пять видов бара: раскладка + скин парой (Settings → Profile → Waybar)
+        l["barLayouts"] = [r for r in rows("bar-layouts") if r["label"].startswith("modern")]
+        l["modernColors"] = load_cmd(["omarchy-modern-colors", "--list"]) or []
+        l["modernState"] = load_cmd(["omarchy-modern-colors", "--dump"]) or {}
+        # обои его библиотеки с палитрами pywal (индекс omarchy-crt-library — общий с Retro)
+        idx = HOME / ".cache/omarchy/crt-walls/index.json"
+        l["walls"] = load(idx, [])
+        if not l["walls"]:
+            subprocess.Popen(["omarchy-crt-library", "index"], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if rid == "crt":
         l["crtColors"] = load_cmd(["omarchy-crt-colors", "--list"]) or []
         l["monoFonts"] = sorted({x.split(",")[0].strip() for x in run("fc-list", ":spacing=mono", "family").splitlines()
@@ -455,6 +466,13 @@ def do(what, args):
         subprocess.Popen(["omarchy-space-world"] + args, start_new_session=True)
     elif what == "profile":
         cz("apply", "presets", v if v.startswith("/") else str(CZP / "presets" / f"{v}.json"))
+    elif what == "modernBar":  # вид бара Modern: раскладка и её скин
+        cz("apply", "bar-layouts", v)
+        if len(args) > 1:
+            cz("apply", "bar-skins", args[1])
+    elif what in ("modernColors", "modernWall"):  # его Themes: цвета (id, слот) / обои его библиотеки
+        subprocess.Popen(["omarchy-modern-colors"] + (["--wallpaper", v] if what == "modernWall" else args),
+                         start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif what == "crtColors":  # его COLORS: id цветов и слот акцента
         subprocess.Popen(["omarchy-crt-colors"] + args, start_new_session=True,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -480,6 +498,9 @@ def do(what, args):
             if d.get("theme") == "crt-live":
                 d["crtState"] = load_cmd(["omarchy-crt-colors", "--dump"]) or {}
                 d["build"] = ["omarchy-crt-colors", "--state", "{preset}"]
+            elif d.get("theme") == "modern-live":
+                d["modernState"] = load_cmd(["omarchy-modern-colors", "--dump"]) or {}
+                d["build"] = ["omarchy-modern-colors", "--state", "{preset}"]
             write(f, d)
 
 

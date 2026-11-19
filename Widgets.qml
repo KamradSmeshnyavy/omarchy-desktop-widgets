@@ -117,7 +117,7 @@ Item {
     // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap),
     // voyage — его звёздная карта, table — все окна таблицей (OverviewTable, Retro CRT)
     overviewStyle: "auto",
-    settingsSkin: "auto",       // скин панели настроек (Super+Alt+I): auto — по райсу, space, crt
+    settingsSkin: "auto",       // скин панели настроек (Super+Alt+I): auto — по райсу, space, crt, modern
     // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
     starmapNav: "route",
     starmapSpin: false,
@@ -421,8 +421,8 @@ Item {
   property bool sheetOn: false
   // скин панели: settingsSkin auto | space | crt; auto — по райсу (Retro CRT — его SETUP, остальные — облик Space)
   property string sheetSkin: "space"
-  function skinNow() { var v = String(value("settingsSkin") || "auto"); return v !== "auto" ? v : rice === "crt" ? "crt" : "space" }
-  readonly property var sheetItem: sheetSkin === "crt" ? sheetCrtLoader.item : sheetLoader.item
+  function skinNow() { var v = String(value("settingsSkin") || "auto"); return v !== "auto" ? v : rice === "crt" ? "crt" : rice === "modern" ? "modern" : "space" }
+  readonly property var sheetItem: sheetSkin === "crt" ? sheetCrtLoader.item : sheetSkin === "modern" ? sheetModernLoader.item : sheetLoader.item
   onPrefsOpenChanged: {
     if (prefsOpen && !sheetOn) { sheetSkin = skinNow(); SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
     else if (!prefsOpen && sheetOn && sheetItem) sheetItem.close()
@@ -649,13 +649,18 @@ Item {
   NierVolume { host: root }
   LazyLoader {
     id: sheetLoader
-    active: root.sheetOn && root.sheetSkin !== "crt"
+    active: root.sheetOn && root.sheetSkin !== "crt" && root.sheetSkin !== "modern"
     SheetUi.Sheet { onDone: { root.sheetOn = false; root.prefsOpen = false } }
   }
   LazyLoader {
     id: sheetCrtLoader
     active: root.sheetOn && root.sheetSkin === "crt"
     SheetUi.SheetCrt { onDone: { root.sheetOn = false; root.prefsOpen = false } }
+  }
+  LazyLoader {
+    id: sheetModernLoader
+    active: root.sheetOn && root.sheetSkin === "modern"
+    SheetUi.SheetModern { onDone: { root.sheetOn = false; root.prefsOpen = false } }
   }
 
   EdgeHotzones {
