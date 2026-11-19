@@ -68,7 +68,11 @@ Singleton {
   // его applyProfile / applyTheme / savedRun: райс, пресет, шрифт, бар, тема, мир Space, сохранить
   function act(what, args) {
     Quickshell.execDetached(["/usr/bin/python3", "-I", py, "do", what].concat(args || []))
-    refreshLater.interval = what === "rice" || what === "preset" || what === "theme" || what === "world" ? 2500 : 600
+    var heavy = ["rice", "preset", "profile", "theme", "world", "crtColors"].indexOf(what) !== -1
+    refreshLater.interval = heavy ? 2500 : 600
     refreshLater.restart()
+    // пресет применяется секунд 10–20 (тема, бар, стиль): ещё раз, когда он закончит
+    if (heavy) refreshAfter.restart()
   }
+  Timer { id: refreshAfter; interval: 18000; onTriggered: root.refresh() }
 }
