@@ -590,6 +590,11 @@ Item {
     host: root
   }
 
+  // дашборд Modern — его Home на весь экран
+  DashModern {
+    host: root
+  }
+
   // Modern: пилюли бара вырастают в карточки, Super+M — тот же остров
   ModernIsland {
     id: modernIslandItem

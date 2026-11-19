@@ -18,7 +18,7 @@ PanelWindow {
     unit3: "players/PlayerUnit3.qml", bruteon: "players/PlayerBruteon.qml", cozytile: "players/PlayerCozytile.qml",
     rumda: "players/PlayerRumda.qml", surface: "players/PlayerSurface.qml", yami: "players/PlayerYami.qml",
     dotmatrix: "players/PlayerDots.qml", glyph: "players/PlayerDots.qml", vitreus: "players/PlayerVitreus.qml",
-    space: "players/PlayerSpace.qml", crt: "players/PlayerCrt.qml"
+    space: "players/PlayerSpace.qml", crt: "players/PlayerCrt.qml", modern: "players/PlayerModern.qml"
   })
   readonly property string style: {
     var v = String(host.value("playerStyle") || "auto")

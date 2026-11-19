@@ -45,7 +45,7 @@ PanelWindow {
   readonly property bool cozyDash: dstyle === "cozytile"
   readonly property bool glyphDash: dstyle === "glyph"
   // space — визор HUD Space (DashSpace.qml)
-  readonly property bool spaceDash: dstyle === "space" || dstyle === "crt"  // crt — тоже своим окном (DashCrt.qml)
+  readonly property bool spaceDash: dstyle === "space" || dstyle === "crt" || dstyle === "modern"  // crt — тоже своим окном (DashCrt.qml)
   // «из воды» с волнами и затемнением — только у Vitreus и Rumda; surface и bruteon просто всплывают
   readonly property bool plainRise: surface || brute || nier || yamiDash || cozyDash || glyphDash || spaceDash
   readonly property bool vit: glassTiles || pencils || rumda || surface || brute || nier || yamiDash || cozyDash || glyphDash || spaceDash
