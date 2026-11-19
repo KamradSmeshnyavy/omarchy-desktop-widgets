@@ -291,17 +291,18 @@ var PAGES = [
         id: "shell", label: "Shell", icon: "",
         sections: [
             section("Parts of the rice", [
-                choice("w.settingsPanel", "Super+M", [opt("auto", "Auto"), opt("drawer", "Drawer"), opt("quick", "Quick"), opt("surface", "Surface"), opt("unit3", "Unit-3"), opt("bruteon", "Bruteon"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("rumda", "Rumda"), opt("glassring", "Glass ring"), opt("instrument", "Instrument"), opt("space", "Space"), opt("crt", "Retro CRT")]),
-                choice("w.dashStyle", "Dashboard", [opt("default", "Default"), opt("dotmatrix", "DOT-MATRIX"), opt("vitreus", "Vitreus"), opt("pencils", "Pencils"), opt("rumda", "Rumda"), opt("surface", "Surface"), opt("bruteon", "Bruteon"), opt("unit3", "Unit-3"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("glyph", "Glyph"), opt("space", "Space"), opt("crt", "Retro CRT")]),
+                choice("w.settingsPanel", "Super+M", [opt("auto", "Auto"), opt("drawer", "Drawer"), opt("quick", "Quick"), opt("surface", "Surface"), opt("unit3", "Unit-3"), opt("bruteon", "Bruteon"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("rumda", "Rumda"), opt("glassring", "Glass ring"), opt("instrument", "Instrument"), opt("space", "Space"), opt("crt", "Retro CRT"), opt("modern", "Modern")]),
+                choice("w.dashStyle", "Dashboard", [opt("default", "Default"), opt("dotmatrix", "DOT-MATRIX"), opt("vitreus", "Vitreus"), opt("pencils", "Pencils"), opt("rumda", "Rumda"), opt("surface", "Surface"), opt("bruteon", "Bruteon"), opt("unit3", "Unit-3"), opt("yami", "Yami"), opt("cozytile", "Cozytile"), opt("glyph", "Glyph"), opt("space", "Space"), opt("crt", "Retro CRT"), opt("modern", "Modern")]),
                 choice("w.powerStyle", "Power menu", [opt("auto", "Auto"), opt("edge", "Edge"), opt("glyph", "Glyph"), opt("cassini", "Cassini"), opt("cozytile", "Cozytile")]),
                 choice("w.clipboardPanel", "Clipboard", [opt("auto", "Auto"), opt("stock", "Stock"), opt("glyph", "Glyph")]),
-                choice("w.settingsSkin", "Settings sheet", [opt("auto", "Auto"), opt("space", "Space"), opt("crt", "Retro CRT")]),
-                choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage"), opt("table", "Table")])
+                choice("w.settingsSkin", "Settings sheet", [opt("auto", "Auto"), opt("space", "Space"), opt("crt", "Retro CRT"), opt("modern", "Modern")]),
+                choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage"), opt("table", "Table"), opt("modern", "Modern")]),
+                toggle("w.bootIntro", "Boot animation on login (Modern)")
             ]),
             section("Pickers and screens", [
-                choice("part.launcher", "Launcher", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3"), opt("cozytile", "Cozytile"), opt("surface", "Surface"), opt("liquid", "Liquid"), opt("terminal", "Terminal"), opt("constellation", "Constellation"), opt("list", "Stock")]),
-                choice("part.picker", "Wallpapers", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("slices", "Slices"), opt("cards", "Cards"), opt("coverflow", "Coverflow"), opt("strip", "Strip"), opt("wide", "Wide"), opt("polaroid", "Polaroid"), opt("honeycomb", "Honeycomb"), opt("dots", "Dots"), opt("nier", "NieR"), opt("glyph", "Glyph")]),
-                choice("part.lock", "Lock screen", [opt("crt", "Retro CRT"), opt("space", "Space"), opt("classic", "Classic"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3")])
+                choice("part.launcher", "Launcher", [opt("modern", "Modern"), opt("crt", "Retro CRT"), opt("space", "Space"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3"), opt("cozytile", "Cozytile"), opt("surface", "Surface"), opt("liquid", "Liquid"), opt("terminal", "Terminal"), opt("constellation", "Constellation"), opt("list", "Stock")]),
+                choice("part.picker", "Wallpapers", [opt("modern", "Modern"), opt("crt", "Retro CRT"), opt("space", "Space"), opt("slices", "Slices"), opt("cards", "Cards"), opt("coverflow", "Coverflow"), opt("strip", "Strip"), opt("wide", "Wide"), opt("polaroid", "Polaroid"), opt("honeycomb", "Honeycomb"), opt("dots", "Dots"), opt("nier", "NieR"), opt("glyph", "Glyph")]),
+                choice("part.lock", "Lock screen", [opt("modern", "Modern"), opt("crt", "Retro CRT"), opt("space", "Space"), opt("classic", "Classic"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3")])
             ])
         ]
     }

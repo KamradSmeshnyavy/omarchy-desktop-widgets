@@ -117,6 +117,7 @@ Item {
     // Обзор столов: grid — сетка столов с живыми окнами (Overview), starmap — звёздная карта Space (OverviewStarmap),
     // voyage — его звёздная карта, table — все окна таблицей (OverviewTable, Retro CRT)
     overviewStyle: "auto",
+    bootIntro: true,           // заставка Modern при входе в сеанс (BootModern.qml), раз за вход
     settingsSkin: "auto",       // скин панели настроек (Super+Alt+I): auto — по райсу, space, crt, modern
     // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
     starmapNav: "route",
@@ -469,6 +470,7 @@ Item {
     function toggleTasks(): void { root.tasksOpen = !root.tasksOpen }
     function togglePlayer(): void { root.playerOpen = !root.playerOpen }
     function openOverview(): void { root.overviewOpen = true }
+    function bootIntro(): void { bootModern.play(600) }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
     // Shot: скриншот / запись области, окна или экрана с правкой снимка
@@ -587,6 +589,12 @@ Item {
 
   // дашборд Space — на весь экран (как его Home)
   DashSpaceFull {
+    host: root
+  }
+
+  // заставка Modern при входе в сеанс (раз за вход, bootIntro)
+  BootModern {
+    id: bootModern
     host: root
   }
 
