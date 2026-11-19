@@ -161,7 +161,7 @@ Item {
     // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
     "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
     // Modern: Super+M — остров из бара (ModernIsland.qml)
-    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "modern" }
+    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -636,6 +636,8 @@ Item {
   PowerCassini { host: root }
   // меню выключения Cozytile (powerStyle: "cozytile")
   PowerCozy { host: root }
+  // Диск — круговое меню выключения (powerStyle: "dial"), у Modern по умолчанию
+  PowerDial { host: root }
   // задачи и помодоро Bruteon (кнопка Tasks на баре, toggleTasks)
   TasksBrute { host: root }
   // Hub surface в Super+M (settingsPanel: "surface")
