@@ -470,7 +470,7 @@ Item {
     function toggleTasks(): void { root.tasksOpen = !root.tasksOpen }
     function togglePlayer(): void { root.playerOpen = !root.playerOpen }
     function openOverview(): void { root.overviewOpen = true }
-    function bootIntro(): void { bootModern.play(600) }
+    function bootIntro(): void { if (root.rice === "modern") bootModern.play(600); else Quickshell.execDetached([bootModern.transition, "boot", root.rice]) }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
     // Shot: скриншот / запись области, окна или экрана с правкой снимка

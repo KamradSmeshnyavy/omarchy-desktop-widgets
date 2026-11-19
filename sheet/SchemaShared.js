@@ -297,7 +297,7 @@ var PAGES = [
                 choice("w.clipboardPanel", "Clipboard", [opt("auto", "Auto"), opt("stock", "Stock"), opt("glyph", "Glyph")]),
                 choice("w.settingsSkin", "Settings sheet", [opt("auto", "Auto"), opt("space", "Space"), opt("crt", "Retro CRT"), opt("modern", "Modern")]),
                 choice("w.overviewStyle", "Overview", [opt("auto", "Auto"), opt("grid", "Grid"), opt("starmap", "3D star map"), opt("voyage", "Voyage"), opt("table", "Table"), opt("modern", "Modern")]),
-                toggle("w.bootIntro", "Boot animation on login (Modern)")
+                toggle("w.bootIntro", "Boot animation on login")
             ]),
             section("Pickers and screens", [
                 choice("part.launcher", "Launcher", [opt("modern", "Modern"), opt("crt", "Retro CRT"), opt("space", "Space"), opt("glyph", "Glyph"), opt("dotmatrix", "DOT-MATRIX"), opt("unit3", "Unit-3"), opt("cozytile", "Cozytile"), opt("surface", "Surface"), opt("liquid", "Liquid"), opt("terminal", "Terminal"), opt("constellation", "Constellation"), opt("list", "Stock")]),

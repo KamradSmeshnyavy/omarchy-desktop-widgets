@@ -10,12 +10,14 @@ import qs.Commons as Commons
 // вращаются навстречу, по центру «HYPRLAND» и «SESSION / INITIALIZING → READY»; слева сверху «BOOTSTRAP // LIVE» и
 // «CAT // файл», справа сверху и слева снизу печатаются строки твоих конфигов (hypr/*.lua, тема); внизу черта.
 // Показывается раз за вход (метка в $XDG_RUNTIME_DIR) у райса Modern, если bootIntro не выключен (панель настроек →
-// Shell); повтор — IPC widgets bootIntro. Клики не перехватывает, клавиатуру не берёт.
+// Shell); повтор — IPC widgets bootIntro. Клики не перехватывает, клавиатуру не берёт. У остальных райсов при входе —
+// заставка оверлея перехода Customizer (scripts/rice-transition.sh boot <имя райса>): размытые обои из чёрного.
 Scope {
   id: boot
   required property var host
 
-  readonly property bool enabled: host.rice === "modern" && host.value("bootIntro") !== false
+  readonly property bool enabled: host.rice !== "" && host.value("bootIntro") !== false
+  readonly property string transition: Quickshell.env("HOME") + "/.config/omarchy/plugins/kamradsmeshnyavy.customizer/scripts/rice-transition.sh"
   readonly property string marker: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-modern-boot"
 
   property bool shown: false
@@ -31,7 +33,13 @@ Scope {
     id: check
     running: false
     command: ["sh", "-c", "test -e \"$1\" && echo seen || { touch \"$1\"; echo new; }", "sh", boot.marker]
-    stdout: StdioCollector { onStreamFinished: if (text.trim() === "new") boot.play(1800) }
+    stdout: StdioCollector {
+      onStreamFinished: {
+        if (text.trim() !== "new") return
+        if (boot.host.rice === "modern") boot.play(1800)
+        else Quickshell.execDetached([boot.transition, "boot", boot.host.rice])
+      }
+    }
   }
   Timer { interval: 1500; running: true; onTriggered: if (boot.enabled) check.running = true }
 
