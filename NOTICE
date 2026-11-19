@@ -61,3 +61,6 @@ Third-party attributions for kamradsmeshnyavy.widgets:
   From elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), Copyright (c) Eli Fouts, GPL-3.0.
 - Settings sheet skin crt (`sheet/SheetCrt.qml`): his `Retro/settings/Settings.qml` almost verbatim on our StoreShared /
   Schema / sheet.py, with his Retro controls (Pick, Knob, Flip, Title, Line). From elifouts/Dotfiles, GPL-3.0.
+
+- Timer and alarm (`TimerState.qml`, `TimerStrip.qml`): the ringing bell after his Modern/bar/Alarm.qml, and
+  `sounds/alarm.ogg` copied from elifouts/Dotfiles (https://github.com/elifouts/Dotfiles), GPL-3.0.

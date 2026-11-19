@@ -470,6 +470,11 @@ Item {
     function toggleTasks(): void { root.tasksOpen = !root.tasksOpen }
     function togglePlayer(): void { root.playerOpen = !root.playerOpen }
     function openOverview(): void { root.overviewOpen = true }
+    function timerStart(minutes: string): void { timerState.start(Number(minutes)) }
+    function timerCancel(): void { timerState.cancel() }
+    function timerDismiss(): void { timerState.dismiss() }
+    function alarmSet(hhmm: string): void { timerState.setAlarm(hhmm) }
+    function alarmToggle(): void { timerState.toggleAlarm() }
     function bootIntro(): void { if (root.rice === "modern") bootModern.play(600); else Quickshell.execDetached([bootModern.transition, "boot", root.rice]) }
     function closeOverview(): void { root.overviewOpen = false }
     function toggleEdit(): void { root.editMode = !root.editMode }
@@ -655,6 +660,9 @@ Item {
   MenuShell { host: root; kind: "crt"; source: Qt.resolvedUrl("menus/MenuCrt.qml"); dim: 0.6 }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
+  // таймер и будильник (полоса под плеером, IPC timer* / alarm*)
+  TimerState { id: timerState; host: root }
+  readonly property alias timers: timerState
   // шкала громкости NieR у левого края (райс Unit-3 или nierVolume)
   NierVolume { host: root }
   LazyLoader {

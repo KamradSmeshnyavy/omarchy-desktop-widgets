@@ -41,12 +41,16 @@ PanelWindow {
   margins.right: 20
   exclusionMode: ExclusionMode.Ignore
   color: "transparent"
-  implicitWidth: view.item ? Math.max(1, view.item.implicitWidth) : 1
-  implicitHeight: view.item ? Math.max(1, view.item.implicitHeight) : 1
+  // под карточкой — полоса таймера и будильника (TimerStrip), ширина — по карточке, но не уже 300
+  readonly property real cardW: view.item ? Math.max(1, view.item.implicitWidth) : 1
+  readonly property real cardH: view.item ? Math.max(1, view.item.implicitHeight) : 1
+  implicitWidth: Math.max(cardW, 300)
+  implicitHeight: cardH + 10 + strip.implicitHeight
   WlrLayershell.namespace: "omarchy-player"
   WlrLayershell.layer: WlrLayer.Top
   visible: host.playerOpen || linger.running
-  mask: Region { item: host.playerOpen ? view : null }
+  mask: Region { item: host.playerOpen ? whole : null }
+  Item { id: whole; anchors.fill: parent }
 
   Timer { id: linger; interval: 700 }
   Connections {
@@ -59,9 +63,20 @@ PanelWindow {
 
   Loader {
     id: view
-    anchors.fill: parent
+    anchors.right: parent.right
+    width: win.cardW; height: win.cardH
     source: win.files[win.style]
     onLoaded: if (win.host.playerOpen && !item.shown) item.toggleVisible()
+  }
+  TimerStrip {
+    id: strip
+    host: win.host
+    ts: win.host.timers
+    y: win.cardH + 10
+    anchors.right: parent.right
+    width: Math.max(win.cardW, 300)
+    opacity: win.host.playerOpen ? 1 : 0
+    Behavior on opacity { NumberAnimation { duration: 220 } }
   }
   Binding { when: !!view.item; target: view.item; property: "mpTitle"; value: win.player && win.player.trackTitle ? win.player.trackTitle : "NO SIGNAL" }
   Binding { when: !!view.item; target: view.item; property: "mpArtist"; value: win.player && win.player.trackArtist ? win.player.trackArtist : "— // —" }
