@@ -158,7 +158,9 @@ Item {
     // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
     "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" },
     // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
-    "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" }
+    "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
+    // Modern: Super+M — остров из бара (ModernIsland.qml)
+    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "grid" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -472,6 +474,12 @@ Item {
     // Shot: скриншот / запись области, окна или экрана с правкой снимка
     function shot(): void { glyphShot.open() }
     function togglePrefs(): void { root.prefsOpen = !root.prefsOpen }
+    // Modern: пилюля бара просит остров — страница, "x y w h" пилюли в окне бара, куда расти, hover | click
+    function modernIsland(page: string, geom: string, align: string, mode: string): void {
+      var g = geom.split(" ").map(Number)
+      if (modernIslandItem.open && modernIslandItem.page === page && mode === "click") { modernIslandItem.close(); return }
+      modernIslandItem.show(page, g[0], g[1], g[2], g[3], align, mode === "hover")
+    }
     // открыть панель настроек на странице (кнопка FILTER пикера SCREENS → screen)
     function openPrefsPage(page: string): void { SheetUi.Ui.sheet = page; root.prefsOpen = true }
     // Clip: история буфера обмена (cliphist) в виде glyph-rice
@@ -579,6 +587,12 @@ Item {
 
   // дашборд Space — на весь экран (как его Home)
   DashSpaceFull {
+    host: root
+  }
+
+  // Modern: пилюли бара вырастают в карточки, Super+M — тот же остров
+  ModernIsland {
+    id: modernIslandItem
     host: root
   }
 
