@@ -198,6 +198,7 @@ PanelWindow {
     glassCut: power.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
     glassCut2: power.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
       : power.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
+    mergeFillet: dg.fillet
     mergeEdges: power.fromBar && power.progress > 0.6 ? (power.docked ? dg.mergeEdges : pull.mergeEdges) : []
   }
   Rectangle {

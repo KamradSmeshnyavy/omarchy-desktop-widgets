@@ -222,6 +222,8 @@ Item {
     anchors.fill: parent
     style: card.style
     seed: card.seed
+    // UwU у Vitreus украшает и карточки стола (уши, усы, звёзды, сердечки, лапки), остальные основы — только панели
+    decor: card.style.base === "uwu"
     radius: Math.min(card.style.cornerRadius, card.height / 2)
     // жидкое стекло: окно слоя виджетов на весь экран — место на экране спросить у Hyprland по имени слоя
     glassLayer: card.glassNs
