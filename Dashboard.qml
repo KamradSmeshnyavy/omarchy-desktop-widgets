@@ -73,10 +73,21 @@ PanelWindow {
   readonly property string animation: String(host.value("dashAnimation"))
   readonly property int duration: Math.max(60, host.num("dashDuration"))
 
-  property real progress: !host.dotmatrixDash && host.dashboardOpen ? 1 : 0
+  property real progress: drop.active ? drop.d : !host.dotmatrixDash && host.dashboardOpen ? 1 : 0
   readonly property bool liquid: animation === "liquid"
+  // «капля» (style.appear drip, DripMotion): раскрытие — пружина, содержимое — после формы, по бару — рябь
+  readonly property bool dripOn: style.drip && !spaceDash && geo.barLayer.width > 0
+  DripMotion {
+    id: drop
+    active: dash.dripOn
+    open: !dash.host.dotmatrixDash && dash.host.dashboardOpen
+    motion: dash.style.motion
+    screenName: dash.screen ? String(dash.screen.name) : ""
+    rippleOrigin: Qt.point(dg.startRect.x + dg.startRect.width / 2, dg.startRect.y + dg.startRect.height / 2)
+  }
   // liquid открывается с перелётом (OutBack), закрывается без него — иначе капля «проваливается» в бар.
   Behavior on progress {
+    enabled: !drop.active
     NumberAnimation {
       duration: dash.liquid ? Math.round(dash.duration * 1.25) : dash.duration
       easing.type: dash.liquid && dash.host.dashboardOpen ? Easing.OutBack : Easing.OutCubic
@@ -93,7 +104,7 @@ PanelWindow {
     target: dash.host
     function onDashboardOpenChanged() {
       if (dash.host.dashboardOpen) { geo.refresh(); wave.stop(); pull.restore() }
-      else if (dash.fromBar) waveDelay.restart()
+      else if (dash.fromBar && !dash.dripOn) waveDelay.restart()
     }
   }
   // Волна: панель втянулась — по пилюле бара расходятся два световых кольца (у Vitreus бар качается).
@@ -102,7 +113,7 @@ PanelWindow {
   NumberAnimation { id: wave; target: dash; property: "wv"; from: 0; to: 1; duration: 620; easing.type: Easing.OutCubic }
   // Бар у любого края: панель встаёт рядом с ним (сверху / снизу — по центру, слева / справа — по середине высоты),
   // перешеек выходит из внутренней кромки пилюли. Окно — весь экран (Ignore), клики — только по панели (mask).
-  readonly property bool fromBar: liquid && geo.barLayer.width > 0
+  readonly property bool fromBar: (liquid || dripOn) && geo.barLayer.width > 0
   readonly property string edge: geo.edge
   readonly property bool sideBar: dg.sideBar
   readonly property real scrW: screen ? screen.width : width
@@ -118,6 +129,11 @@ PanelWindow {
     anchorIds: ["vit-clock", "surf-clock", "omarchy.clock", "glyph-clock", "dot-clock"]
     scrW: dash.scrW
     scrH: dash.scrH
+    drip: dash.dripOn
+    sag: drop.sag
+    wobble: drop.wobble
+    squareness: dash.style.squareness
+    panelRadius: dash.panelRadius
   }
   readonly property real sideX: (width - w) / 2
   readonly property rect startRect: dg.startRect
@@ -126,7 +142,7 @@ PanelWindow {
   readonly property rect neckBase: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
   // скругление панели — не пилюля, даже если бар полностью круглый (glyph-pill: radius 99)
   readonly property real panelRadius: Math.min(style.cornerRadius, 28)
-  readonly property real morphRadius: geo.radius + (panelRadius - geo.radius) * Math.min(1, m * 2)
+  readonly property real morphRadius: dripOn ? dg.dripRadius : geo.radius + (panelRadius - geo.radius) * Math.min(1, m * 2)
   readonly property real h: animation === "grow" ? Math.round(bodyHeight * progress)
     : liquid ? Math.round(bodyHeight * Math.max(0, Math.min(1.04, progress * progress))) : bodyHeight
   readonly property real w: liquid ? Math.round(bodyWidth * Math.max(0.18, Math.min(1.02, 0.18 + 0.82 * Math.sqrt(Math.max(0, progress))))) : bodyWidth
@@ -305,8 +321,8 @@ PanelWindow {
       glassJoinK: pull.stuck ? dg.fillet : dash.neckK
       // у рамки — ещё и крыло в её кромку; стекло внутри бара и рамки не рисуется (там своё)
       readonly property bool docked: dash.fromBar && !dash.loose
-      glassJoin2: docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
-      glassJoin2K: dg.fillet
+      glassJoin2: docked && dg.wing.width > 0 && dg.wingK > 0.5 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+      glassJoin2K: dg.wingK
       glassCut: dash.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
       glassCut2: dash.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
         : docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
@@ -372,11 +388,11 @@ PanelWindow {
     Item {
       id: content
       x: dash.loose ? hit.x : dash.fromBar ? dash.endRect.x : dash.sideX + (dash.w - dash.bodyWidth) / 2
-      y: dash.loose ? hit.y : dash.fromBar ? dash.endRect.y + (dash.edge === "top" ? 14 : dash.edge === "bottom" ? -14 : 0) * (1 - Math.min(1, dash.m)) : hit.y
+      y: dash.loose ? hit.y : dash.fromBar ? dash.endRect.y + (dash.edge === "top" ? 14 : dash.edge === "bottom" ? -14 : 0) * (1 - Math.min(1, dash.dripOn ? drop.reveal : dash.m)) + (dash.dripOn ? drop.sag * (dash.edge === "bottom" ? -0.5 : dash.edge === "top" ? 0.5 : 0) : 0) : hit.y
       width: dash.bodyWidth
       height: dash.fromBar ? dash.bodyHeight : dash.h
       clip: !dash.fromBar
-      opacity: dash.animation === "grow" || dash.liquid ? Math.max(0, (Math.min(1, dash.progress) - (dash.liquid ? 0.55 : 0.35)) / (dash.liquid ? 0.45 : 0.65)) : 1
+      opacity: dash.dripOn ? drop.reveal : dash.animation === "grow" || dash.liquid ? Math.max(0, (Math.min(1, dash.progress) - (dash.liquid ? 0.55 : 0.35)) / (dash.liquid ? 0.45 : 0.65)) : 1
       focus: dash.host.dashboardOpen
       Keys.onEscapePressed: dash.host.dashboardOpen = false
       // клавиатура: стрелки / hjkl / Tab — по кнопкам, Enter — нажать (KeyNav)

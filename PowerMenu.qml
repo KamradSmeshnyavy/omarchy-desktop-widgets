@@ -47,8 +47,18 @@ PanelWindow {
   property string armed: ""   // id пункта, ждущего подтверждения
   Timer { id: disarm; interval: 3000; onTriggered: power.armed = "" }
 
-  property real progress: host.powerOpen && ["glyph", "cassini", "cozytile", "dial"].indexOf(String(host.value("powerStyle"))) === -1 ? 1 : 0
-  Behavior on progress { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+  readonly property bool wanted: host.powerOpen && ["glyph", "cassini", "cozytile", "dial"].indexOf(String(host.value("powerStyle"))) === -1
+  property real progress: drop.active ? drop.d : wanted ? 1 : 0
+  Behavior on progress { enabled: !drop.active; NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+  // «капля» (style.appear drip): панель вытекает из кнопки питания пружиной, содержимое — после формы
+  DripMotion {
+    id: drop
+    active: power.fromBar && power.style.drip
+    open: power.wanted
+    motion: power.style.motion
+    screenName: power.screen ? String(power.screen.name) : ""
+    rippleOrigin: Qt.point(dg.startRect.x + dg.startRect.width / 2, dg.startRect.y + dg.startRect.height / 2)
+  }
   readonly property real w: Math.round(thickness * progress)
 
   // Что доступно: сон можно отключить в Omarchy, гибернация — только если настроена.
@@ -90,7 +100,7 @@ PanelWindow {
 
   // liquid (Vitreus): растёт из кнопки питания на баре и сливается с ним (DrawerGeom); окно — весь экран
   BarGeom { id: geo }
-  readonly property bool fromBar: !attached && style.material === "liquid" && geo.barLayer.width > 0
+  readonly property bool fromBar: !attached && (style.material === "liquid" || style.drip) && geo.barLayer.width > 0
   DrawerGeom {
     id: dg
     geo: geo
@@ -100,6 +110,11 @@ PanelWindow {
     anchorIds: ["omarchy.power"]
     scrW: power.screen ? power.screen.width : 1440
     scrH: power.screen ? power.screen.height : 900
+    drip: drop.active
+    sag: drop.sag
+    wobble: drop.wobble
+    squareness: power.style.squareness
+    panelRadius: Math.min(power.bodyRadius, 28)
   }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)
   DrawerPull {
     id: pull
@@ -169,7 +184,7 @@ PanelWindow {
     y: hit.y
     width: hit.width
     height: hit.height
-    radius: Math.min(power.bodyRadius, power.fromBar ? 28 : 999, width / 2, height / 2)
+    radius: drop.active && power.docked ? dg.dripRadius : Math.min(power.bodyRadius, power.fromBar ? 28 : 999, width / 2, height / 2)
     // из бара: одним куском с ним (перешеек вдоль стороны, крылья у рамки), стекло внутри бара не рисуется
     readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
     glassOrigin: power.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
@@ -178,8 +193,8 @@ PanelWindow {
       : power.docked || (pull.pulling && pull.dist < 170) ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
     glassJoinRadius: 2.5
     glassJoinK: pull.stuck ? dg.fillet : power.docked ? dg.neckK : pull.pulling && pull.dist < 170 ? dg.neckK + pull.dist * 0.35 : 0
-    glassJoin2: power.docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
-    glassJoin2K: dg.fillet
+    glassJoin2: power.docked && dg.wing.width > 0 && dg.wingK > 0.5 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin2K: dg.wingK
     glassCut: power.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
     glassCut2: power.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
       : power.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
@@ -236,7 +251,8 @@ PanelWindow {
     width: power.fromBar ? power.thickness : power.w
     height: power.length
     clip: !power.fromBar
-    opacity: Math.max(0, (power.progress - 0.4) / 0.6)
+    opacity: drop.active ? drop.reveal : Math.max(0, (power.progress - 0.4) / 0.6)
+    transform: Translate { y: drop.active ? (1 - drop.reveal) * 12 : 0 }
     focus: power.host.powerOpen
 
     Keys.onPressed: event => {

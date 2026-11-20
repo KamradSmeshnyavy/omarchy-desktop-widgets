@@ -32,11 +32,23 @@ PanelWindow {
   readonly property int bodyHeight: Math.min((screen ? screen.height : 900) - 112, 820)
   readonly property int duration: 280
 
-  property real progress: active ? 1 : 0
-  Behavior on progress { NumberAnimation { duration: panel.duration; easing.type: Easing.OutCubic } }
+  property real progress: drop.active ? drop.d : active ? 1 : 0
+  Behavior on progress { enabled: !drop.active; NumberAnimation { duration: panel.duration; easing.type: Easing.OutCubic } }
+  // «капля» (style.appear drip): настройки у Vitreus — на пружине помягче (setdrip 120/13, ~10 % перелёта)
+  DripMotion {
+    id: drop
+    active: panel.fromBar && panel.host.panelStyle.drip
+    open: panel.active
+    stiffness: 120
+    damping: 13
+    revealDelay: 260
+    motion: panel.host.panelStyle.motion
+    screenName: panel.screen ? String(panel.screen.name) : ""
+    rippleOrigin: Qt.point(dg.startRect.x + dg.startRect.width / 2, dg.startRect.y + dg.startRect.height / 2)
+  }
 
   readonly property real w: Math.round(bodyWidth * progress)
-  readonly property real contentReveal: Math.max(0, (progress - 0.48) / 0.52)
+  readonly property real contentReveal: drop.active ? drop.reveal : Math.max(0, (progress - 0.48) / 0.52)
 
   property string expanded: ""       // "", "wifi", "bt", "audio"
   property string armed: ""          // session action waiting for 2nd click
@@ -278,7 +290,7 @@ PanelWindow {
 
   // liquid (Vitreus): растёт из кнопок звука / сети на баре и сливается с ним (DrawerGeom); окно — весь экран
   BarGeom { id: geo }
-  readonly property bool fromBar: !attached && host.panelStyle.material === "liquid" && geo.barLayer.width > 0
+  readonly property bool fromBar: !attached && (host.panelStyle.material === "liquid" || host.panelStyle.drip) && geo.barLayer.width > 0
   DrawerGeom {
     id: dg
     geo: geo
@@ -288,6 +300,11 @@ PanelWindow {
     anchorIds: ["omarchy.audio", "kamradsmeshnyavy.audio", "omarchy.network", "kamradsmeshnyavy.network", "omarchy.bluetooth", "kamradsmeshnyavy.bluetooth", "vit-icons", "omarchy.tray"]
     scrW: panel.screen ? panel.screen.width : 1440
     scrH: panel.screen ? panel.screen.height : 900
+    drip: drop.active
+    sag: drop.sag
+    wobble: drop.wobble
+    squareness: panel.host.panelStyle.squareness
+    panelRadius: Math.min(panel.host.panelStyle.cornerRadius, 28)
   }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)
   DrawerPull {
     id: pull
@@ -355,7 +372,7 @@ PanelWindow {
     x: hit.x; y: hit.y
     width: panel.fromBar ? hit.width : panel.w
     height: panel.fromBar ? hit.height : panel.bodyHeight
-    radius: panel.fromBar ? Math.min(Math.min(panel.host.panelStyle.cornerRadius, 28), width / 2, height / 2) : panel.cardRadius
+    radius: drop.active && panel.docked ? dg.dripRadius : panel.fromBar ? Math.min(Math.min(panel.host.panelStyle.cornerRadius, 28), width / 2, height / 2) : panel.cardRadius
     // из бара: одним куском с ним (перешеек вдоль стороны, крылья у рамки), стекло внутри бара не рисуется
     readonly property rect neck: dg.neckFor(Qt.rect(hit.x, hit.y, hit.width, hit.height))
     glassOrigin: panel.fromBar ? Qt.point(hit.x, hit.y) : Qt.point(NaN, NaN)
@@ -364,8 +381,8 @@ PanelWindow {
       : panel.docked || (pull.pulling && pull.dist < 170) ? Qt.rect(neck.x - hit.x, neck.y - hit.y, neck.width, neck.height) : Qt.rect(0, 0, 0, 0)
     glassJoinRadius: 2.5
     glassJoinK: pull.stuck ? dg.fillet : panel.docked ? dg.neckK : pull.pulling && pull.dist < 170 ? dg.neckK + pull.dist * 0.35 : 0
-    glassJoin2: panel.docked && dg.wing.width > 0 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
-    glassJoin2K: dg.fillet
+    glassJoin2: panel.docked && dg.wing.width > 0 && dg.wingK > 0.5 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
+    glassJoin2K: dg.wingK
     glassCut: panel.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
     glassCut2: panel.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
       : panel.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)
@@ -477,6 +494,7 @@ PanelWindow {
     height: panel.bodyHeight
     clip: true
     opacity: panel.contentReveal
+    transform: Translate { y: drop.active ? (1 - drop.reveal) * 12 : 0 }
     focus: panel.active
     Keys.onEscapePressed: panel.host.settingsOpen = false
     Keys.onPressed: function(e) { if (setNav.handle(e)) e.accepted = true }

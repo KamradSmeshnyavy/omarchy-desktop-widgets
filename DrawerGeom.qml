@@ -18,7 +18,15 @@ QtObject {
   property real scrW: 1440
   property real scrH: 900
   property real gap: 10
-  property real fillet: 16
+  property real fillet: drip ? 22 : 16
+  // drip — «капля» Vitreus (DripMotion): ширина ведёт, высота догоняет, в середине пути панель на 7 % уже (bell), угол
+  // от пилюли к своему, шейка (радиус слияния с баром) шире в полёте; sag / wobble — провис и дрожь при приземлении.
+  // squareness — квадратность основы (BarStyle.squareness: Retro, Cyber — 1, шейки почти нет); panelRadius — угол панели.
+  property bool drip: false
+  property real sag: 0
+  property real wobble: 0
+  property real squareness: 0
+  property real panelRadius: 22
 
   readonly property string edge: geo.edge
   readonly property bool sideBar: edge === "left" || edge === "right"
@@ -66,33 +74,63 @@ QtObject {
   readonly property real mh: Math.pow(Math.min(1.04, m), 1.35)
   readonly property real mAlongX: sideBar ? mh : mw
   readonly property real mAlongY: sideBar ? mw : mh
-  readonly property rect morph: Qt.rect(startRect.x + (endRect.x - startRect.x) * Math.min(1, mAlongX), startRect.y + (endRect.y - startRect.y) * Math.min(1, mAlongY),
+  readonly property rect morphStd: Qt.rect(startRect.x + (endRect.x - startRect.x) * Math.min(1, mAlongX), startRect.y + (endRect.y - startRect.y) * Math.min(1, mAlongY),
                                         startRect.width + (endRect.width - startRect.width) * mAlongX, startRect.height + (endRect.height - startRect.height) * mAlongY)
+
+  // капля (формулы drawer у Vitreus, vitreus.plm): d — раскрытие пружиной, может быть чуть больше 1
+  readonly property real dd: Math.max(0, progress)
+  readonly property real bell: Math.max(0, 4 * dd * (1 - dd))
+  readonly property real s0: Math.min(s, 140)
+  readonly property real crossLen: sideBar ? bodyWidth : bodyHeight
+  readonly property real dripAlong: Math.max(0, (s0 + (len - s0) * (Math.min(1, 1.6 * dd) + Math.max(0, dd - 1) * 0.6)) * (1 - 0.07 * bell + 0.003 * wobble))
+  readonly property real dripCross: Math.max(0, (crossLen * dd + Math.max(0, sag)) * (1 - 0.002 * wobble))
+  readonly property real dripCenter: (sa + s / 2) + ((a0 + len / 2) - (sa + s / 2)) * Math.min(1, 1.6 * dd)
+  readonly property rect dripRect: {
+    var a = dripCenter - dripAlong / 2, c = dripCross
+    if (edge === "top") return Qt.rect(a, inner + off, dripAlong, c)
+    if (edge === "bottom") return Qt.rect(a, inner - off - c, dripAlong, c)
+    if (edge === "left") return Qt.rect(inner + off, a, c, dripAlong)
+    return Qt.rect(inner - off - c, a, c, dripAlong)
+  }
+  readonly property real dripRadius: {
+    var pill = Math.min(dripRect.width, dripRect.height) / 2
+    return pill + (Math.min(panelRadius, pill) - pill) * Math.max(0, Math.min(1, 1.6 * dd - 0.1))
+  }
+  readonly property real dripNeck: (26 + 20 * bell) * Math.min(1, 4 * dd) * (1 - 0.85 * squareness)
+  readonly property rect morph: drip ? dripRect : morphStd
 
   // опора перешейка у внутренней кромки бара: при merge — вдоль всей стороны панели и ещё на изгиб с каждой стороны
   function neckFor(r) {
     var t = 5
     if (merge) {
-      var e = fillet + 6
-      return sideBar ? Qt.rect(edge === "left" ? inner - t : inner, r.y - e, t, r.height + 2 * e)
-                     : Qt.rect(r.x - e, edge === "top" ? inner - t : inner, r.width + 2 * e, t)
+      var e = Math.max(fillet, neckK) + 6
+      // полоса целиком под вырезом cut (на 3 px за кромкой): сама не видна, только тянет к себе панель
+      return sideBar ? Qt.rect(edge === "left" ? inner - t - 3 : inner + 3, r.y - e, t, r.height + 2 * e)
+                     : Qt.rect(r.x - e, edge === "top" ? inner - t - 3 : inner + 3, r.width + 2 * e, t)
     }
     return sideBar ? Qt.rect(edge === "left" ? inner - t : inner, along - 70, t, 140)
                    : Qt.rect(along - 70, edge === "top" ? inner - t : inner, 140, t)
   }
-  readonly property real neckK: merge ? fillet : 26
+  readonly property real neckK: drip ? dripNeck : merge ? fillet : 26
 
   // крыло: кусок кромки рамки, к которой прилипла панель (поперёк бара)
   readonly property rect wing: {
     if (!wingLo && !wingHi) return Qt.rect(0, 0, 0, 0)
     var t = 5, e = fillet + 6, r = endRect
     if (!sideBar) {
-      var x = wingLo ? fw - t : scrW - fw
+      var x = wingLo ? fw - t - 3 : scrW - fw + 3
       return Qt.rect(x, r.y - e, t, r.height + 2 * e)
     }
-    var y = wingLo ? fw - t : scrH - fw
+    var y = wingLo ? fw - t - 3 : scrH - fw + 3
     return Qt.rect(r.x - e, y, r.width + 2 * e, t)
   }
+  // сила крыла: полная, когда панель у кромки рамки, и сходит на нет к 48 px (капля в полёте ещё не дотянулась)
+  readonly property real wingGap: {
+    var r = morph, a = sideBar ? r.y : r.x, l = sideBar ? r.height : r.width
+    return wingLo ? a - lo : wingHi ? hi - (a + l) : 999
+  }
+  readonly property real wingK: !drip ? fillet : fillet * Math.max(0, Math.min(1, 1 - (wingGap - 4) / 44))
+
   // вырезы: бар (от его внутренней кромки минус 3 px наружу) и кромка рамки у крыла
   readonly property rect cut: edge === "top" ? Qt.rect(-4000, -4000, 8000 + scrW, 4000 + inner - 3)
     : edge === "bottom" ? Qt.rect(-4000, inner + 3, 8000 + scrW, 4000 + scrH)
