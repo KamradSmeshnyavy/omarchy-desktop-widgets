@@ -365,6 +365,9 @@ PanelWindow {
   // скруглённая карточка с рамкой и тенью бара (BarStyle).
   readonly property real cardRadius: Math.min(panel.host.panelStyle.cornerRadius, panel.w / 2)
   StyleCard {
+    // Retro у Vitreus на ходу пикселится (DripMotion.pixel, Pixelate.qml)
+    layer.enabled: panel.host.panelStyle.base === "retro" && drop.active && drop.pixel > 1
+    layer.effect: Pixelate { px: drop.pixel }
     visible: !panel.attached && panel.host.panelStyle.card && panel.w > 1
     style: panel.host.panelStyle
     seed: 13
@@ -489,6 +492,8 @@ PanelWindow {
   }
 
   Item {
+    layer.enabled: panel.host.panelStyle.base === "retro" && drop.active && drop.pixel > 1
+    layer.effect: Pixelate { px: drop.pixel }
     x: panel.docked ? dg.endRect.x : hit.x
     y: panel.docked ? dg.endRect.y : hit.y
     width: panel.fromBar ? panel.bodyWidth : panel.w

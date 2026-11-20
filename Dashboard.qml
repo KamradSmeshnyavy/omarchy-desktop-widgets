@@ -243,6 +243,9 @@ PanelWindow {
   // Всё содержимое — в «листе», который сдвигается при slide.
   Item {
     id: sheet
+      // Retro у Vitreus на ходу пикселится (DripMotion.pixel, Pixelate.qml)
+      layer.enabled: dash.style.base === "retro" && drop.active && drop.pixel > 1
+      layer.effect: Pixelate { px: drop.pixel }
     width: dash.width
     height: dash.height
     y: dash.slide

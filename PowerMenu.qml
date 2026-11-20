@@ -175,6 +175,9 @@ PanelWindow {
   // Контур как у OSD у края: вогнутые углы сверху и снизу переходят в край экрана.
   // floating: карточка с рамкой и тенью.
   StyleCard {
+    // Retro у Vitreus на ходу пикселится (DripMotion.pixel, Pixelate.qml)
+    layer.enabled: power.style.base === "retro" && drop.active && drop.pixel > 1
+    layer.effect: Pixelate { px: drop.pixel }
     visible: !power.attached && power.style.card
     style: power.style
     glassLayer: power.fromBar ? "" : "omarchy-power"
@@ -247,6 +250,9 @@ PanelWindow {
 
   Item {
     id: content
+      // Retro у Vitreus на ходу пикселится (DripMotion.pixel, Pixelate.qml)
+      layer.enabled: power.style.base === "retro" && drop.active && drop.pixel > 1
+      layer.effect: Pixelate { px: drop.pixel }
     x: power.docked ? dg.endRect.x : hit.x
     y: power.docked ? dg.endRect.y : hit.y
     width: power.fromBar ? power.thickness : power.w
