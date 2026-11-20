@@ -464,11 +464,79 @@ PanelWindow {
                     }
                 }
             }
+            // Vitreus: карточки тем, как на его странице Theme — имя, подпись, пять образцов, косые полосы палитры, галочка;
+            // Glass (цвета обоев — dynamic-vitreus) первым
+            Flow {
+                id: vitCards
+                readonly property var info: ({
+                    "dynamic-vitreus": ["Glass", "Wallpaper colours", "Цвета обоев"],
+                    "vitreus-retro": ["Retro", "Moulded plastic", "Литой пластик"],
+                    "vitreus-uwu": ["UwU", "Kawaii overload", "Кавай через край"],
+                    "vitreus-cyber": ["Cyber", "Neon HUD", "Неоновый HUD"],
+                    "vitreus-milk": ["Milkbox", "Soft", "Мягкий"],
+                    "vitreus-doodle": ["Doodle", "Sketchbook", "Скетчбук"],
+                    "vitreus-paper": ["Paper", "Scrapbook", "Скрапбук"],
+                    "vitreus-proxy": ["Proxy", "Combat HUD", "Боевой HUD"]
+                })
+                readonly property var order: ["dynamic-vitreus", "vitreus-retro", "vitreus-uwu", "vitreus-cyber", "vitreus-milk", "vitreus-doodle", "vitreus-paper", "vitreus-proxy"]
+                readonly property bool on: StoreShared.lists.rice === "vitreus"
+                visible: !parent.space && on
+                width: 4 * 196
+                spacing: 12
+                Repeater {
+                    model: vitCards.on ? vitCards.order.map(id => StoreShared.lists.themes.find(t => t.id === id)).filter(t => !!t) : []
+                    delegate: Item {
+                        id: vt
+                        required property var modelData
+                        readonly property var meta: vitCards.info[modelData.id] || [modelData.id, "", ""]
+                        readonly property var sw: modelData.c
+                        readonly property bool used: StoreShared.lists.theme === modelData.id
+                        // текст — тёмный на светлом фоне темы, светлый на тёмном
+                        readonly property color bgc: Qt.color(sw[0])
+                        readonly property color ink: 0.299 * bgc.r + 0.587 * bgc.g + 0.114 * bgc.b > 0.55 ? "#2b2833" : "#f5f7f5"
+                        readonly property string face: Qt.fontFamilies().indexOf("Space Grotesk") !== -1 ? "Space Grotesk" : Theme.font
+                        width: 184; height: 100
+                        // косые полосы палитры
+                        Item {
+                            anchors.fill: parent
+                            clip: true
+                            Rectangle { anchors.fill: parent; color: vt.sw[0] }
+                            Repeater {
+                                model: 4
+                                Rectangle {
+                                    required property int index
+                                    x: 70 + index * 34; y: -40
+                                    width: 34; height: 200
+                                    rotation: 18
+                                    color: vt.sw[Math.min(vt.sw.length - 1, [1, 3, 5, 6][index])]
+                                    opacity: 0.85
+                                }
+                            }
+                            Rectangle { anchors.fill: parent; gradient: Gradient { orientation: Gradient.Horizontal
+                                GradientStop { position: 0; color: Theme.alpha(vt.sw[0], 0.92) } GradientStop { position: 0.55; color: Theme.alpha(vt.sw[0], 0.25) } GradientStop { position: 1; color: "transparent" } } }
+                        }
+                        Rectangle { anchors.fill: parent; color: "transparent"; border.width: vt.used ? 2 : 1; border.color: vt.used ? Theme.accent : Theme.alpha(Theme.fg, vtm.containsMouse ? 0.5 : 0.18) }
+                        Text { x: 12; y: 10; text: vt.meta[0]; color: vt.ink; font { family: vt.face; pixelSize: 15; weight: Font.Bold } }
+                        Text { x: 12; y: 32; text: Qt.locale().name.indexOf("ru") === 0 ? vt.meta[2] : vt.meta[1]; color: Theme.alpha(vt.ink, 0.75); font { family: vt.face; pixelSize: 10 } }
+                        Row {
+                            x: 12; y: 66; spacing: 5
+                            Repeater { model: [0, 2, 4, 6, 5].map(i => vt.sw[Math.min(vt.sw.length - 1, i)]); Rectangle { required property string modelData; width: 20; height: 20; radius: 10; color: modelData; border.width: 1; border.color: Theme.alpha("#000000", 0.25) } }
+                        }
+                        Rectangle {
+                            visible: vt.used
+                            x: parent.width - 30; y: 8; width: 22; height: 22; radius: 11
+                            color: "#ffffff"
+                            Text { anchors.centerIn: parent; text: "✓"; color: "#202020"; font.pixelSize: 13; font.bold: true }
+                        }
+                        MouseArea { id: vtm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("theme", [vt.modelData.id]) }
+                    }
+                }
+            }
             // остальные райсы: темы самого райса (из его профилей) и его dynamic-тема; без райса — все темы Omarchy
             GridView {
                 readonly property var own: StoreShared.lists.rice ? StoreShared.lists.themes.filter(t =>
                     (StoreShared.lists.riceThemes || []).indexOf(t.id) !== -1 || t.id === "dynamic-" + StoreShared.lists.rice) : []
-                visible: !parent.space
+                visible: !parent.space && !vitCards.on
                 width: 9 * 90
                 height: Math.min(2, Math.ceil(Math.max(1, count) / 9)) * 118
                 clip: true
