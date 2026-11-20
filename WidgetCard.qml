@@ -30,16 +30,39 @@ Item {
   readonly property bool leftHalf: target && parent ? target.x + target.width / 2 < parent.width / 2 : true
   // масштаб виджета (DirectGrab, от центра)
   property real s: 1
-  x: target ? target.x + target.width * (1 - s) / 2 - pad - (leftHalf ? 0 : extra) : 0
-  y: target ? target.y + target.height * (1 - s) / 2 - pad : 0
-  width: (target ? target.width * s + 2 * pad : 0) + extra
-  height: target ? target.height * s + 2 * pad : 0
+  // карточка без «дотягивания» до кромки
+  readonly property real bx: target ? target.x + target.width * (1 - s) / 2 - pad - (leftHalf ? 0 : extra) : 0
+  readonly property real by: target ? target.y + target.height * (1 - s) / 2 - pad : 0
+  readonly property real bw: (target ? target.width * s + 2 * pad : 0) + extra
+  readonly property real bh: target ? target.height * s + 2 * pad : 0
+  x: bx - reach("left")
+  y: by - reach("top")
+  width: bw + reach("left") + reach("right")
+  height: bh + reach("top") + reach("bottom")
 
   // Слияние с баром / рамкой: края окна, у которых карточка сливается (DesktopLayer.mergeable), и какими из них она
   // касается — те и сливаются (пластик — без контура, с вогнутыми углами; стекло — перешеек вдоль края, внутри рамки не
   // рисуется). Список читает DesktopLayer — места стыков уходят рамке.
   property var mergeable: []
   readonly property real fil: 14
+  // Дотягивание (как у Vitreus: карточка ближе 64 px к кромке рамки тянется к ней): стекло — край вытягивается на
+  // долю зазора (dl = (зазор − 14) / 50, у самой кромки — вплотную), остаток перекрывает перешеек шириной 26;
+  // пластик — ближе 32 px встаёт вплотную. Дальше — обычная карточка.
+  readonly property bool glassy: style.liquid && !style.plastic && style.card
+  function gapOf(e) {
+    if (!parent) return 999
+    return e === "left" ? bx : e === "top" ? by : e === "right" ? parent.width - (bx + bw) : parent.height - (by + bh)
+  }
+  function reach(e) {
+    if (!visible || mergeable.indexOf(e) === -1) return 0
+    var g = gapOf(e)
+    if (g <= 0.5) return 0
+    if (!glassy) return g <= 32 ? g : 0
+    if (g > 64) return 0
+    return g * (1 - Math.max(0, Math.min(1, (g - 14) / 50)))
+  }
+  // кромка рядом, но не вплотную (стекло): остаток зазора, через который тянется перешеек
+  function rest(e) { return glassy && mergeable.indexOf(e) !== -1 && gapOf(e) > 0.5 && gapOf(e) <= 64 ? gapOf(e) - reach(e) : 0 }
   readonly property var mergeEdges: {
     var out = []
     if (!visible || !parent || !mergeable.length) return out
@@ -52,13 +75,53 @@ Item {
   }
   // для стекла: полоска у края (перешеек) и всё за краем минус 3 px (вырез) — до двух краёв (угол)
   function strip(e) {
-    var e2 = fil + 6, t = 5
-    return e === "top" ? Qt.rect(-e2, -t, width + 2 * e2, t) : e === "bottom" ? Qt.rect(-e2, height, width + 2 * e2, t)
-      : e === "left" ? Qt.rect(-t, -e2, t, height + 2 * e2) : Qt.rect(width, -e2, t, height + 2 * e2)
+    var e2 = joinK + 6, t = 5, r = rest(e)
+    return e === "top" ? Qt.rect(-e2, -t - r - 3, width + 2 * e2, t) : e === "bottom" ? Qt.rect(-e2, height + r + 3, width + 2 * e2, t)
+      : e === "left" ? Qt.rect(-t - r - 3, -e2, t, height + 2 * e2) : Qt.rect(width + r + 3, -e2, t, height + 2 * e2)
   }
   function beyond(e) {
-    return e === "top" ? Qt.rect(-4000, -4000, 8000, 4000 - 3) : e === "bottom" ? Qt.rect(-4000, height + 3, 8000, 4000)
-      : e === "left" ? Qt.rect(-4000, -4000, 4000 - 3, 8000) : Qt.rect(width + 3, -4000, 4000, 8000)
+    var r = rest(e)
+    return e === "top" ? Qt.rect(-4000, -4000, 8000, 4000 - 3 - r) : e === "bottom" ? Qt.rect(-4000, height + 3 + r, 8000, 4000)
+      : e === "left" ? Qt.rect(-4000, -4000, 4000 - 3 - r, 8000) : Qt.rect(width + 3 + r, -4000, 4000, 8000)
+  }
+  // края, с которыми стекло одним куском: слитые и те, к которым оно тянется (до двух — угол)
+  readonly property var joinEdges: {
+    var out = mergeEdges.slice()
+    if (glassy) for (var e of ["top", "bottom", "left", "right"]) if (out.indexOf(e) === -1 && rest(e) > 0.5) out.push(e)
+    return out.slice(0, 2)
+  }
+  // ширина перешейка: у Vitreus 26 (вогнутость ≈ 22), с пластиком — как раньше
+  readonly property real joinK: glassy ? 26 : fil
+
+  // Сосед: другая карточка стола ближе 26 px сбоку (с перекрытием по другой оси) — стекло двух карточек одним куском:
+  // каждая тянется к соседу и рисует свою половину перешейка (вторая половина — за серединой зазора — у соседа).
+  readonly property bool isWidgetCard: true
+  readonly property var neighbour: {
+    if (!glassy || !visible || !parent) return null
+    var kids = parent.children, best = null, bd = 27
+    for (var i = 0; i < kids.length; i++) {
+      var c = kids[i]
+      if (c === card || !c || c.isWidgetCard !== true || !c.visible || c.width <= 0) continue
+      var ox = Math.min(x + width, c.x + c.width) - Math.max(x, c.x)
+      var oy = Math.min(y + height, c.y + c.height) - Math.max(y, c.y)
+      var gx = Math.max(c.x - (x + width), x - (c.x + c.width))
+      var gy = Math.max(c.y - (y + height), y - (c.y + c.height))
+      var g = oy > 24 && gx >= -2 ? gx : ox > 24 && gy >= -2 ? gy : 999
+      if (g < bd) { bd = g; best = { c: c, horiz: oy > 24 && gx >= -2 } }
+    }
+    return best
+  }
+  readonly property rect nbRect: neighbour ? Qt.rect(neighbour.c.x - x, neighbour.c.y - y, neighbour.c.width, neighbour.c.height) : none
+  // своя половина: всё за серединой зазора — у соседа
+  readonly property rect nbCut: {
+    if (!neighbour) return none
+    var c = neighbour.c
+    if (neighbour.horiz) {
+      var mx = c.x > x ? (x + width + c.x) / 2 - x : (c.x + c.width + x) / 2 - x
+      return c.x > x ? Qt.rect(mx, -4000, 4000, 8000) : Qt.rect(-4000 + mx, -4000, 4000, 8000)
+    }
+    var my = c.y > y ? (y + height + c.y) / 2 - y : (c.y + c.height + y) / 2 - y
+    return c.y > y ? Qt.rect(-4000, my, 8000, 4000) : Qt.rect(-4000, -4000 + my, 8000, 4000)
   }
   readonly property rect none: Qt.rect(0, 0, 0, 0)
 
@@ -164,15 +227,18 @@ Item {
     glassLayer: card.glassNs
     glassBelow: card.glassBelowWin
     mergeEdges: card.mergeEdges
-    mergeFillet: card.fil
-    glassBleed: card.mergeEdges.length ? card.fil + 14 : 0
-    glassJoin: card.mergeEdges.length > 0 ? card.strip(card.mergeEdges[0]) : card.none
-    glassJoinK: card.mergeEdges.length > 0 ? card.fil : 0
+    mergeFillet: card.glassy ? 22 : card.fil
+    glassBleed: card.joinEdges.length || card.neighbour ? card.joinK + 80 : 0
+    glassJoin: card.joinEdges.length > 0 ? card.strip(card.joinEdges[0]) : card.none
+    glassJoinK: card.joinEdges.length > 0 ? card.joinK : 0
     glassJoinRadius: 0
-    glassJoin2: card.mergeEdges.length > 1 ? card.strip(card.mergeEdges[1]) : card.none
-    glassJoin2K: card.fil
-    glassCut: card.mergeEdges.length > 0 ? card.beyond(card.mergeEdges[0]) : card.none
-    glassCut2: card.mergeEdges.length > 1 ? card.beyond(card.mergeEdges[1]) : card.none
+    glassJoin2: card.joinEdges.length > 1 ? card.strip(card.joinEdges[1]) : card.none
+    glassJoin2K: card.joinK
+    glassJoin3: card.nbRect
+    glassJoin3K: card.neighbour ? 26 : 0
+    glassJoin3Radius: Math.min(card.style.cornerRadius, 22)
+    glassCut: card.joinEdges.length > 0 ? card.beyond(card.joinEdges[0]) : card.neighbour ? card.nbCut : card.none
+    glassCut2: card.joinEdges.length > 1 ? card.beyond(card.joinEdges[1]) : card.joinEdges.length === 1 && card.neighbour ? card.nbCut : card.none
   }
   Rectangle {
     visible: !card.dotmatrixCard && !card.riceCard && !card.style.card
