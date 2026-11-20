@@ -179,6 +179,12 @@ PanelWindow {
   // Отрыв от бара (как Desk у Vitreus): тянут за верхнюю полосу — перешеек тянется и рвётся, панель остаётся там, где
   // отпустили (detached: не закрывается кликом мимо, Esc — закрыть); отпустили у бара — прилипает обратно.
   // Место запоминается (DrawerPull): следующее открытие — там же; у кромки рамки / бара панель прилипает и сливается.
+  DeskNeighbour {
+    id: deskNb
+    screenName: dash.screen ? String(dash.screen.name) : ""
+    active: dash.fromBar && dash.style.liquid && !dash.style.plastic && dash.m > 0.9 && !dash.loose
+    rect: Qt.rect(hit.x, hit.y, hit.width, hit.height)
+  }
   DrawerPull {
     id: pull
     dg: dg
@@ -326,6 +332,11 @@ PanelWindow {
       readonly property bool docked: dash.fromBar && !dash.loose
       glassJoin2: docked && dg.wing.width > 0 && dg.wingK > 0.5 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
       glassJoin2K: dg.wingK
+      // соседняя стеклянная карточка стола (другое окно) — одним куском с панелью (DeskNeighbour)
+      glassJoin3: deskNb.rel(Qt.point(hit.x, hit.y))
+      glassJoin3K: deskNb.nb ? 26 : 0
+      glassJoin3Radius: deskNb.nb ? deskNb.nb.r : 16
+      glassCut3: deskNb.cutRel(Qt.point(hit.x, hit.y))
       glassCut: dash.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
       glassCut2: dash.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
         : docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)

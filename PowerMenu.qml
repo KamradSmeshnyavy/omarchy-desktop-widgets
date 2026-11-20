@@ -116,6 +116,12 @@ PanelWindow {
     squareness: power.style.squareness
     panelRadius: Math.min(power.bodyRadius, 28)
   }  // за язычок Retro / верхнюю полосу панель отрывают от бара и носят по столу; место запоминается (DrawerPull)
+  DeskNeighbour {
+    id: deskNb
+    screenName: power.screen ? String(power.screen.name) : ""
+    active: power.fromBar && power.style.liquid && !power.style.plastic && power.progress > 0.9 && power.docked
+    rect: Qt.rect(hit.x, hit.y, hit.width, hit.height)
+  }
   DrawerPull {
     id: pull
     dg: dg
@@ -198,6 +204,11 @@ PanelWindow {
     glassJoinK: pull.stuck ? dg.fillet : power.docked ? dg.neckK : pull.pulling && pull.dist < 170 ? dg.neckK + pull.dist * 0.35 : 0
     glassJoin2: power.docked && dg.wing.width > 0 && dg.wingK > 0.5 ? Qt.rect(dg.wing.x - hit.x, dg.wing.y - hit.y, dg.wing.width, dg.wing.height) : Qt.rect(0, 0, 0, 0)
     glassJoin2K: dg.wingK
+    // соседняя стеклянная карточка стола (другое окно) — одним куском с панелью (DeskNeighbour)
+    glassJoin3: deskNb.rel(Qt.point(hit.x, hit.y))
+    glassJoin3K: deskNb.nb ? 26 : 0
+    glassJoin3Radius: deskNb.nb ? deskNb.nb.r : 16
+    glassCut3: deskNb.cutRel(Qt.point(hit.x, hit.y))
     glassCut: power.fromBar ? Qt.rect(dg.cut.x - hit.x, dg.cut.y - hit.y, dg.cut.width, dg.cut.height) : Qt.rect(0, 0, 0, 0)
     glassCut2: power.fromBar && pull.stuck ? Qt.rect(pull.cut.x - hit.x, pull.cut.y - hit.y, pull.cut.width, pull.cut.height)
       : power.docked && dg.cut2.width > 0 ? Qt.rect(dg.cut2.x - hit.x, dg.cut2.y - hit.y, dg.cut2.width, dg.cut2.height) : Qt.rect(0, 0, 0, 0)

@@ -128,9 +128,31 @@ PanelWindow {
       }
     }
     var t = JSON.stringify(out)
-    if (t === spotsText) return
-    spotsText = t
-    spotsFile.setText(t + "\n")
+    if (t !== spotsText) {
+      spotsText = t
+      spotsFile.setText(t + "\n")
+    }
+    // стеклянные карточки в px экрана — панели в других окнах (дашборд, настройки, меню выключения) сливаются с ними
+    // (DeskNeighbour.qml); начало окна слоя — рабочая область, сдвинутая на бар и рамку
+    var g = bgeo.exported, pos = String(g.position || ""), bs = Number(g.barSize) || 0, fw = g.framed ? Number(g.frameWidth) || 0 : 0
+    var ox = pos === "left" ? bs : fw, oy = pos === "top" ? bs : fw
+    var cards = []
+    for (var k = 0; k < kids.length; k++) {
+      var w = kids[k]
+      if (!w || !w.visible || w.isWidgetCard !== true || !w.glassy || w.width <= 0) continue
+      cards.push({ x: Math.round(ox + w.x), y: Math.round(oy + w.y), w: Math.round(w.width), h: Math.round(w.height),
+                   r: Math.min(22, w.style.cornerRadius) })
+    }
+    var ct = JSON.stringify(cards)
+    if (ct === cardsText) return
+    cardsText = ct
+    cardsFile.setText(ct + "\n")
+  }
+  property string cardsText: ""
+  FileView {
+    id: cardsFile
+    path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/omarchy-desk-cards" + (desk.floating ? "-float-" : "-") + desk.screenName + ".json"
+    printErrors: false
   }
   FileView {
     id: spotsFile
