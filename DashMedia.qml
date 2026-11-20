@@ -9,7 +9,9 @@ Rectangle {
   readonly property var player: host.player
 
   radius: 16
-  color: Qt.rgba(host.foreground.r, host.foreground.g, host.foreground.b, 0.05)
+  color: vit ? "transparent" : Qt.rgba(host.foreground.r, host.foreground.g, host.foreground.b, 0.05)
+  // mediaStyle "vitreus": в дашборде та же карточка, что на столе (VitMediaCard) — её и вытягивают из панели
+  readonly property bool vit: String(host.value("mediaStyle")) === "vitreus"
 
   readonly property real progress: player && player.lengthSupported && player.length > 0
     ? Math.max(0, Math.min(1, player.position / player.length)) : 0
@@ -22,6 +24,7 @@ Rectangle {
   // Открепить плеер на рабочий стол поверх окон (Widgets.detach) — карточка остаётся там, пока не вернёшь
   // её через режим правки (Super+Ctrl+W → ПКМ → «Вернуть на место»).
   Rectangle {
+    visible: !media.vit
     z: 10
     anchors { top: parent.top; right: parent.right; margins: 8 }
     width: 28; height: 28; radius: 14
@@ -44,7 +47,7 @@ Rectangle {
   }
 
   Text {
-    visible: media.player === null
+    visible: !media.vit && media.player === null
     anchors.centerIn: parent
     text: "󰝛  " + media.host.tr("Nothing is playing", "Ничего не играет")
     font.family: media.host.fontFamily
@@ -54,7 +57,7 @@ Rectangle {
   }
 
   Item {
-    visible: media.player !== null
+    visible: !media.vit && media.player !== null
     anchors.fill: parent
     anchors.margins: 14
 
@@ -225,5 +228,15 @@ Rectangle {
         }
       }
     }
+  }
+
+  // карточка Vitreus: вуаль 8 % и волосяной контур, как плашки в его панели
+  Item {
+    visible: media.vit
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 288; height: 148
+    Rectangle { anchors.fill: parent; radius: 18; color: media.host.foreground; opacity: 0.08 }
+    Rectangle { anchors.fill: parent; radius: 18; color: "transparent"; border.width: 1; border.color: Qt.rgba(media.host.foreground.r, media.host.foreground.g, media.host.foreground.b, 0.16) }
+    VitMediaCard { anchors.fill: parent; host: media.host }
   }
 }

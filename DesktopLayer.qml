@@ -306,6 +306,7 @@ PanelWindow {
   MediaWidget {
     id: media
     host: desk.host
+    floating: desk.isFree("media")
     // DOT-MATRIX — как в NIHIL: карточка всегда на месте, без плеера кнопки приглушены.
     // Открепленная карточка тоже всегда на месте — пропадающее «окно» сбивает с толку.
     visible: desk.host.flag("media") && desk.shows("media")
@@ -367,7 +368,8 @@ PanelWindow {
       Row {
         anchors { top: parent.top; right: parent.right; margins: 6 }
         spacing: 4
-        opacity: hov.hovered ? 1 : 0
+        // у карточки плеера Vitreus свои ручка и булавка (VitMediaCard) — дубли не нужны
+        opacity: hov.hovered && !(fc.name === "media" && fc.w.vit === true) ? 1 : 0
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: 120 } }
         Repeater {

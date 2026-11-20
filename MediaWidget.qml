@@ -15,9 +15,17 @@ Rectangle {
   // mediaStyle "bruteon": обложка в плитке с контуром и тенью, название, исполнитель, волна точек визуализатора, время
   // и плитки назад / пауза (лососевая) / вперёд (по мотивам Bruteon, Darkkal44 — облик со скриншота, код свой)
   readonly property bool brute: !dotmatrix && String(host.value("mediaStyle")) === "bruteon"
+  // mediaStyle "vitreus": карточка плеера Vitreus 288 × 148 (VitMediaCard.qml); открепленная — с ручкой и булавкой
+  readonly property bool vit: !dotmatrix && String(host.value("mediaStyle")) === "vitreus"
+  property bool floating: false
+  // приземление вынесенной из дашборда карточки: она ещё чуть приподнята (как её держали) и садится с пружинкой
+  property real land: 1
+  onVisibleChanged: if (visible && floating && vit) { land = 0; landAnim.restart() }
+  NumberAnimation { id: landAnim; target: card; property: "land"; to: 1; duration: 420; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+  transform: Scale { origin.x: card.width / 2; origin.y: card.height / 2; xScale: 1.04 - 0.04 * card.land; yScale: 1.04 - 0.04 * card.land }
 
-  width: yami ? 500 : brute ? 380 : dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
-  height: yami ? 150 : brute ? 140 : 120
+  width: vit ? 288 : yami ? 500 : brute ? 380 : dotmatrix ? 320 : 400   // DOT-MATRIX — ширина колонки карточек
+  height: vit ? 148 : yami ? 150 : brute ? 140 : 120
   radius: 18
   // На подложке стиля (WidgetCard) своя заливка и рамка не нужны.
   color: host.styledWidgets ? "transparent" : (dotmatrix ? DotMatrix.Palette.bg : Qt.rgba(host.background.r, host.background.g, host.background.b, 0.62))
@@ -28,7 +36,7 @@ Rectangle {
     ? Math.max(0, Math.min(1, player.position / player.length)) : 0
 
   Item {
-    visible: !card.brute
+    visible: !card.vit && (!card.brute)
     id: cover
     x: 12
     y: 12
@@ -84,7 +92,7 @@ Rectangle {
   }
 
   Column {
-    visible: !card.brute
+    visible: !card.vit && (!card.brute)
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; top: parent.top; topMargin: 14 }
     spacing: 2
 
@@ -111,7 +119,7 @@ Rectangle {
   }
 
   DotMatrix.DotMeter {
-    visible: card.dotmatrix
+    visible: !card.vit && (card.dotmatrix)
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     count: Math.max(10, Math.floor((width + 3) / 7))
     dot: 4
@@ -122,7 +130,7 @@ Rectangle {
   // Прогресс
   Rectangle {
     id: track
-    visible: !card.dotmatrix && !card.brute
+    visible: !card.vit && (!card.dotmatrix && !card.brute)
     anchors { left: cover.right; leftMargin: 14; right: parent.right; rightMargin: 16; bottom: buttons.top; bottomMargin: 8 }
     height: 4
     radius: 2
@@ -139,7 +147,7 @@ Rectangle {
   }
 
   Row {
-    visible: !card.brute
+    visible: !card.vit && (!card.brute)
     id: buttons
     anchors { left: cover.right; leftMargin: 8; bottom: parent.bottom; bottomMargin: 8 }
     spacing: 4
@@ -181,7 +189,7 @@ Rectangle {
   // ── bruteon ─────────────────────────────────────────────────────────
   Item {
     id: bru
-    visible: card.brute
+    visible: !card.vit && (card.brute)
     anchors.fill: parent
     z: 50
     readonly property color ink: card.host.foreground
@@ -254,7 +262,7 @@ Rectangle {
 
   // ── yami ────────────────────────────────────────────────────────────
   Rectangle {
-    visible: card.yami
+    visible: !card.vit && (card.yami)
     anchors.fill: parent
     z: 50
     color: Qt.rgba(card.host.background.r * 0.85, card.host.background.g * 0.85, card.host.background.b * 0.85, 1)
@@ -300,5 +308,13 @@ Rectangle {
       cursorShape: parent.has ? Qt.PointingHandCursor : Qt.ArrowCursor
       onClicked: if (card.player) card.player.togglePlaying()
     }
+  }
+
+  VitMediaCard {
+    visible: card.vit
+    anchors.fill: parent
+    host: card.host
+    floating: card.floating
+    onPinned: card.host.dock("media")
   }
 }

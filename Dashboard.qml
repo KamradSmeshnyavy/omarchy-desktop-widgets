@@ -458,26 +458,65 @@ PanelWindow {
           id: dm
           visible: dash.showMedia; host: dash.host; width: 360; height: parent.height
           z: dash.cardDrag ? 10 : 0
-          transform: Translate { id: dmT }
+          // Вынос плеера (как у Vitreus): карточка тянется за курсором на пружине 415/24 («как капля»), приподнимается,
+          // а оторвавшись больше чем на 16 px — получает своё стекло; отпустили за панелью — остаётся там на столе
+          // (Widgets.detachAt), панель втягивается в бар; внутри — пружиной возвращается на место.
+          readonly property bool vitDrag: dm.vit && dash.style.liquid
+          property real lift: dmDrag.active ? 1 : 0
+          Behavior on lift { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+          property bool torn: false
+          property bool dropped: false
+          opacity: dropped ? 0 : 1
+          Spring { id: fx; stiffness: 415; damping: 24; motion: dash.style.motion }
+          Spring { id: fy; stiffness: 415; damping: 24; motion: dash.style.motion }
+          transform: [
+            Translate { id: dmT; x: dm.vitDrag ? fx.value : dmT.dx; y: dm.vitDrag ? fy.value : dmT.dy; property real dx: 0; property real dy: 0 },
+            Scale { origin.x: dm.width / 2; origin.y: dm.vit ? 74 : dm.height / 2; xScale: 1 + 0.04 * dm.lift; yScale: 1 + 0.04 * dm.lift }
+          ]
+          // своё стекло оторванной карточки
+          LiquidGlass {
+            visible: dm.vitDrag && dm.torn
+            z: -1
+            x: (dm.width - 288) / 2; y: 0
+            width: 288; height: 148
+            radius: 18
+            tintColor: dash.host.background
+            opacity: dm.torn ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+          }
           DragHandler {
             id: dmDrag
             target: null
             enabled: dash.fromBar
             dragThreshold: 10
             onActiveChanged: {
-              if (active) { dash.cardDrag = true; return }
-              var c = dm.mapToItem(null, dm.width / 2 + 0, dm.height / 2 + 0)
+              if (active) { dash.cardDrag = true; dm.dropped = false; dm.torn = false; return }
+              var c = dm.mapToItem(null, dm.width / 2 + 0, (dm.vit ? 74 : dm.height / 2) + 0)
               var out = c.y > hit.y + hit.height + 30 || c.y < hit.y - 30 || c.x < hit.x - 30 || c.x > hit.x + hit.width + 30
-              if (out && dash.screen) dash.host.detachAt("media", String(dash.screen.name), c.x / dash.screen.width, c.y / dash.screen.height)
-              back.restart()
+              if (out && dash.screen) {
+                dash.host.detachAt("media", String(dash.screen.name), c.x / dash.screen.width, c.y / dash.screen.height)
+                // карточка уже на столе ровно здесь — эта прячется сразу, без отскока, и встаёт на место, когда панель закроется
+                dm.dropped = true
+                resetLater.restart()
+              } else {
+                fx.target = 0; fy.target = 0
+                back.restart()
+              }
+              dm.torn = false
               dash.cardDrag = false
             }
-            onTranslationChanged: if (active) { dmT.x = translation.x; dmT.y = translation.y }
+            onTranslationChanged: {
+              if (!active) return
+              dmT.dx = translation.x; dmT.dy = translation.y
+              fx.target = translation.x; fy.target = translation.y
+              if (Math.sqrt(translation.x * translation.x + translation.y * translation.y) > 16) dm.torn = true
+            }
           }
+          Timer { id: resetLater; interval: 900; onTriggered: { fx.snap(0); fy.snap(0); dmT.dx = 0; dmT.dy = 0; dm.dropped = false } }
           ParallelAnimation {
             id: back
-            NumberAnimation { target: dmT; property: "x"; to: 0; duration: 260; easing.type: Easing.OutBack }
-            NumberAnimation { target: dmT; property: "y"; to: 0; duration: 260; easing.type: Easing.OutBack }
+            NumberAnimation { target: dmT; property: "dx"; to: 0; duration: 260; easing.type: Easing.OutBack }
+            NumberAnimation { target: dmT; property: "dy"; to: 0; duration: 260; easing.type: Easing.OutBack }
           }
         }
         DashCalendar { visible: dash.showCalendar; host: dash.host; width: 250; height: parent.height }
