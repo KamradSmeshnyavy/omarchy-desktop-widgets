@@ -18,10 +18,14 @@ PanelWindow {
     signal done()
     visible: true
     screen: Ui.target
-    anchors.bottom: true
+    // Vitreus: его Settings — по центру экрана, поднимается из середины нижней кромки (vitreus.plm edg / lp.ty)
+    readonly property bool vit: Theme.vit
+    // окно — на весь экран (якоря layer-shell после показа не меняются); видимое и кликабельное — только frame
+    anchors { top: true; bottom: true; left: true; right: true }
     exclusionMode: ExclusionMode.Ignore
     implicitWidth: Math.min(1240, (screen?.width ?? 1240) - 32)
     implicitHeight: 560
+    readonly property real boxW: vit ? Math.min(1100, width - 80) : width
     color: "transparent"
     mask: Region { item: frame }
     WlrLayershell.layer: WlrLayer.Overlay
@@ -45,8 +49,8 @@ PanelWindow {
     function open() { morph.open() }
     function toggle() { morph.leaving ? morph.open() : morph.close() }
     MorphShared { id: morph; openMs: 560; closeMs: 340; onClosed: sheet.done() }
-    property real w: Math.min(implicitWidth, Math.max(tabRow.implicitWidth + 96, content.implicitWidth + 48))
-    property real h: Math.min(implicitHeight, content.implicitHeight + 46)
+    property real w: vit ? Math.min(boxW, content.implicitWidth + 210) : Math.min(implicitWidth, Math.max(tabRow.implicitWidth + 96, content.implicitWidth + 48))
+    property real h: vit ? Math.min(height - 90, Math.max(tabCol.implicitHeight + 76, content.implicitHeight + 80)) : Math.min(implicitHeight, content.implicitHeight + 46)
     Behavior on w { SettleShared { duration: Theme.fast } }
     Behavior on h { SettleShared { duration: Theme.fast } }
     function step(d) {
@@ -141,20 +145,48 @@ PanelWindow {
         }
     }
 
+    // тело Vitreus: стекло (glass, cyber) — фон темы на 86 % с бликом сверху и ободком; пластик — сплошной с контуром и
+    // жёсткой тенью; UwU — его конфетный градиент
+    readonly property bool plasticBase: ["retro", "doodle", "proxy", "milk", "paper", "uwu"].indexOf(Theme.base) !== -1
+    Rectangle {
+        visible: sheet.vit && sheet.plasticBase && Theme.base !== "milk" && Theme.base !== "paper"
+        x: frame.x + (Theme.base === "retro" ? 6 : 4); y: frame.y + (Theme.base === "retro" ? 7 : 5)
+        width: frame.width; height: frame.height; radius: frame.radius
+        color: Theme.base === "uwu" ? "#d76fb6" : Theme.base === "proxy" ? "#2a8cff" : Theme.alpha(Theme.fg, 0.55)
+        opacity: frame.opacity
+    }
     Rectangle {
         id: frame
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: -(1 - morph.rise) * 18
         readonly property real fw: 44 + (sheet.w - 44) * Math.min(1, morph.mw)
+        // Vitreus: из нижней кромки — к середине экрана
+        readonly property real travel: Math.max(0, Math.min(1, (morph.t - 0.25) / 0.75))
+        // без якорей: Theme читается после создания окна, а снятый якорь не возвращает привязку y
+        y: sheet.vit ? Math.round((sheet.height - height - 9) + ((sheet.height - sheet.h) / 2 - (sheet.height - height - 9)) * travel)
+                     : sheet.height - height + (1 - morph.rise) * 18
         x: Math.round((sheet.width - fw) / 2)
         width: Math.round((sheet.width + fw) / 2) - x
         height: Math.round(10 + (sheet.h - 10) * Math.min(1, morph.mh))
         opacity: Math.min(1, morph.t * 6)
         clip: true
-        color: Theme.back(0.8)
-        border.width: 1
-        border.color: Theme.alpha(Theme.accent, 0.3)
-        Rectangle { width: parent.width; height: 2; color: Theme.accent }
+        radius: sheet.vit ? Math.min(height / 2, Theme.base === "retro" || Theme.base === "cyber" || Theme.base === "doodle" || Theme.base === "proxy" ? 8 : 26) : 0
+        color: !sheet.vit ? Theme.back(0.8) : sheet.plasticBase ? Theme.bg : Theme.back(0.86)
+        gradient: sheet.vit && Theme.base === "uwu" ? candyGrad : null
+        Gradient {
+            id: candyGrad
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0; color: "#ffb3dc" }
+            GradientStop { position: 0.38; color: "#cfc4ff" }
+            GradientStop { position: 0.68; color: "#aab4ff" }
+            GradientStop { position: 1; color: "#ffd0ea" }
+        }
+        border.width: !sheet.vit ? 1 : Theme.base === "uwu" ? 3 : sheet.plasticBase ? 2 : 1
+        border.color: !sheet.vit ? Theme.alpha(Theme.accent, 0.3) : Theme.base === "uwu" ? Qt.darker(Theme.fg, 1.45) : sheet.plasticBase ? Theme.fg : Qt.rgba(1, 1, 1, 0.22)
+        Rectangle { visible: !sheet.vit; width: parent.width; height: 2; color: Theme.accent }
+        Rectangle {
+            visible: sheet.vit && !sheet.plasticBase
+            x: 1; y: 1; width: parent.width - 2; height: 70; radius: parent.radius
+            gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.12) } GradientStop { position: 1; color: "transparent" } }
+        }
         MouseArea {
             anchors.fill: parent
             z: 1
@@ -167,8 +199,49 @@ PanelWindow {
             height: Math.round(sheet.h)
             opacity: morph.stage(0.5)
 
+            // Vitreus: слева колонка разделов, сверху «SETTINGS › раздел»
+            Row {
+                visible: sheet.vit
+                x: 22; y: 18
+                spacing: 10
+                Rectangle {
+                    width: 26; height: 26; radius: 8
+                    color: Theme.alpha(Theme.accent, 0.2)
+                    Grid { anchors.centerIn: parent; columns: 2; spacing: 2
+                        Repeater { model: 4; Rectangle { width: 6; height: 6; radius: 2; color: "transparent"; border.width: 1.4; border.color: Theme.accent } } }
+                }
+                Text { anchors.verticalCenter: parent.verticalCenter; text: "SETTINGS"; color: Theme.fg; font { family: Theme.font; pixelSize: 15; weight: Font.Bold } }
+                Text { anchors.verticalCenter: parent.verticalCenter; text: "›"; color: Theme.alpha(Theme.fg, 0.45); font { family: Theme.font; pixelSize: 15 } }
+                Text { anchors.verticalCenter: parent.verticalCenter; text: sheet.tab.charAt(0).toUpperCase() + sheet.tab.slice(1); color: Theme.accent; font { family: Theme.font; pixelSize: 14; weight: Font.Bold } }
+            }
+            Column {
+                id: tabCol
+                visible: sheet.vit
+                x: 16; y: 62
+                spacing: 2
+                Repeater {
+                    model: sheet.vit ? sheet.tabs : []
+                    Rectangle {
+                        required property string modelData
+                        readonly property bool on: sheet.tab === modelData
+                        width: 150; height: 30; radius: 10
+                        color: on ? Theme.alpha(Theme.accent, 0.18) : tabHov.hovered ? Theme.alpha(Theme.fg, 0.06) : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.fast } }
+                        Rectangle { visible: parent.on; x: 0; anchors.verticalCenter: parent.verticalCenter; width: 3; height: 14; radius: 1.5; color: Theme.accent }
+                        Text {
+                            x: 14; anchors.verticalCenter: parent.verticalCenter
+                            text: parent.modelData.charAt(0).toUpperCase() + parent.modelData.slice(1)
+                            color: parent.on ? Theme.fg : Theme.alpha(Theme.fg, 0.7)
+                            font { family: Theme.font; pixelSize: 13; weight: parent.on ? Font.Bold : Font.Normal }
+                        }
+                        HoverHandler { id: tabHov; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: sheet.tab = parent.modelData }
+                    }
+                }
+            }
             Row {
                 id: tabRow
+                visible: !sheet.vit
                 x: 24
                 y: 10
                 spacing: 18
@@ -184,6 +257,7 @@ PanelWindow {
                 }
             }
             Rectangle {
+                visible: !sheet.vit
                 readonly property Item on: tabItems.count ? tabItems.itemAt(sheet.tabs.indexOf(sheet.tab)) : null
                 x: tabRow.x + (on?.x ?? 0)
                 y: tabRow.y + tabRow.height + 3
@@ -193,12 +267,12 @@ PanelWindow {
                 Behavior on x { SettleShared { duration: Theme.fast } }
                 Behavior on width { SettleShared { duration: Theme.fast } }
             }
-            DecodeText { anchors.right: parent.right; anchors.rightMargin: 24; y: 10; text: "esc"; color: Theme.alpha(Theme.fg, 0.25) }
+            DecodeText { anchors.right: parent.right; anchors.rightMargin: 24; y: sheet.vit ? 22 : 10; text: "esc"; color: Theme.alpha(Theme.fg, 0.25) }
 
             Loader {
                 id: content
-                x: 24
-                y: 34
+                x: sheet.vit ? 186 : 24
+                y: sheet.vit ? 62 : 34
                 transform: Translate { id: shift }
                 onLoaded: sheetKeys.forceActiveFocus()
                 sourceComponent: ({ core: core, colors: colors, fonts: fonts, profiles: profiles })[sheet.tab] ?? pageView

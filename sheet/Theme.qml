@@ -11,14 +11,18 @@ import qs.Commons as Commons
 Singleton {
   id: th
   property string rice: ""
+  property string base: "glass"
   FileView {
     path: Quickshell.env("HOME") + "/.config/omarchy/style.json"
     printErrors: false
     watchChanges: true
     onFileChanged: reload()
-    onLoaded: { try { var s = JSON.parse(text()); th.rice = String(s.rice || s.id || "") } catch (e) {} }
+    onLoaded: { try { var s = JSON.parse(text()); th.rice = String(s.rice || s.id || ""); if (th.rice === "liquid") th.rice = "vitreus"; th.base = String(s.base || "glass") } catch (e) {} }
   }
   readonly property bool hud: rice === "space" || rice === "crt"
+  // Vitreus: его Settings — Space Grotesk, крупные скругления; основа (base) задаёт тело панели
+  readonly property bool vit: rice === "vitreus"
+  readonly property string grotesk: Qt.fontFamilies().indexOf("Space Grotesk") !== -1 ? "Space Grotesk" : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
   readonly property color accent: Commons.Color.accent
   readonly property color fg: Commons.Color.foreground
   readonly property color bg: Commons.Color.background
@@ -29,7 +33,7 @@ Singleton {
   readonly property string mono: Qt.fontFamilies().indexOf("JetBrainsMono Nerd Font") !== -1 ? "JetBrainsMono Nerd Font" : "monospace"
   // Retro CRT — Terminess, как у него в Retro/common/Theme.qml
   readonly property string term: Qt.fontFamilies().indexOf("Terminess Nerd Font Mono") !== -1 ? "Terminess Nerd Font Mono" : mono
-  readonly property string font: rice === "crt" ? term : hud ? mono : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
+  readonly property string font: rice === "crt" ? term : hud ? mono : vit ? grotesk : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
   readonly property string sans: font
   readonly property int caps: hud ? Font.AllUppercase : Font.MixedCase
   readonly property real tracking: rice === "crt" ? 1 : hud ? 1.6 : 0.4
