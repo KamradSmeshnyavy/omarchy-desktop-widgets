@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import ".."
 import "MotionShared.js" as Motion
 import "Schema.js" as Schema
+import "SheetKeys.js" as SheetKeys
 
 // Скин crt панели настроек — его Retro/settings/Settings.qml (github.com/elifouts/Dotfiles, GPL-3.0) почти дословно:
 // двойная рамка SETUP по центру, включается как трубка; слева «select a page:» и страницы «N. PAGE» с подписью, справа —
@@ -44,7 +45,13 @@ PanelWindow {
     function step(d) { tab = pages[(index + d + pages.length) % pages.length][0] }
 
     property real t: 0
-    Component.onCompleted: { StoreShared.refresh(); grow.start() }
+    Component.onCompleted: { StoreShared.refresh(); Sk.list = pickl; Sk.keys = keys; Sk.nav = nav; grow.start() }
+    Binding {
+        target: Sk
+        property: "t"
+        value: ({ bg: cp.bg, card: cp.bg, ink: cp.fg, dim: cp.dim, accent: cp.accent, line: cp.line, sel: cp.accent, font: cp.font,
+                  head: cp.font, size: cp.size, caps: true, spacing: 1, radius: 0, border: 2, shadow: 0, popup: "completion", ring: cp.accent })
+    }
     NumberAnimation { id: grow; target: sheet; property: "t"; to: 1; duration: 240; easing.type: Easing.OutCubic }
     SequentialAnimation {
         id: shut
@@ -97,14 +104,15 @@ PanelWindow {
                     width: word.implicitWidth + 12 + (pick.many ? 26 : 0)
                     height: 22
                     color: on && !pick.many ? cp.accent : ca.containsMouse ? cp.low : "transparent"
-                    CrtType { id: word; pal: cp; x: 6; height: parent.height; text: (chip.modelData?.l ?? chip.modelData ?? "") + (pick.many ? "  ◂▸" : ""); color: chip.on && !pick.many ? cp.bg : pick.many ? cp.accent : cp.dim }
+                    CrtType { id: word; pal: cp; x: 6; height: parent.height; text: (chip.modelData?.l ?? chip.modelData ?? "") + (pick.many ? "  ▾" : ""); color: chip.on && !pick.many ? cp.bg : pick.many ? cp.accent : cp.dim }
                     MouseArea {
                         id: ca
                         anchors.fill: parent
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        onClicked: m => pick.many ? pick.next(m.button === Qt.RightButton ? -1 : 1) : pick.chose(chip.modelData.v ?? chip.modelData)
-                        onWheel: w => { if (pick.many) pick.next(w.angleDelta.y < 0 ? 1 : -1) }
+                        // много вариантов: левый клик / Enter — выпадающий список, правый — предыдущий
+                        function kbdPress() { pick.many ? Sk.list.open(chip, pick.options, pick.current, v => pick.chose(v), pick.label) : pick.chose(chip.modelData.v ?? chip.modelData) }
+                        onClicked: m => { if (pick.many && m.button === Qt.RightButton) pick.next(-1); else kbdPress() }
                     }
                 }
             }
@@ -137,7 +145,9 @@ PanelWindow {
             id: fa
             x: 166; width: 90; height: parent.height
             hoverEnabled: true
-            onClicked: {
+            function kbdPress() { flipIt() }
+            onClicked: flipIt()
+            function flipIt() {
                 const r = tg.raises, next = {}
                 next[tg.key] = !tg.on
                 if (!tg.on && r && StoreShared.values[r.key] < r.min) next[r.key] = r.min
@@ -178,6 +188,8 @@ PanelWindow {
             }
             MouseArea {
                 anchors.fill: parent
+                function kbdAdjust(d) { knob.setFrac(knob.frac + d / Math.max(1, (knob.to - knob.from) / knob.step)) }
+                function kbdPress() {}
                 onPressed: m => knob.setFrac(m.x / width)
                 onPositionChanged: m => { if (pressed) knob.setFrac(m.x / width) }
                 onWheel: w => knob.setFrac(knob.frac + (w.angleDelta.y > 0 ? 1 : -1) / Math.max(1, (knob.to - knob.from) / knob.step))
@@ -199,7 +211,7 @@ PanelWindow {
         Text { x: 4; text: line.lit ? "▶" : ""; font.family: cp.font; font.pixelSize: cp.size; color: line.ink; anchors.verticalCenter: parent.verticalCenter }
         CrtType { pal: cp; caps: false; x: 24; width: parent.width - x - val.width - 10; height: parent.height; text: line.text; elide: Text.ElideRight; color: line.ink }
         CrtType { id: val; pal: cp; anchors.right: parent.right; anchors.rightMargin: 4; height: parent.height; text: line.value; color: la.containsMouse ? cp.bg : cp.dim }
-        MouseArea { id: la; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: m => line.clicked(m) }
+        MouseArea { id: la; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: m => line.clicked(m); function kbdPress() { line.clicked({ button: Qt.LeftButton }) } }
     }
 
     MouseArea { anchors.fill: parent; onClicked: sheet.close() }
@@ -233,7 +245,7 @@ PanelWindow {
                     color: on ? cp.accent : ra.containsMouse ? cp.low : "transparent"
                     CrtType { pal: cp; x: 8; y: 2; text: (row.index + 1) + ". " + row.modelData[0]; color: row.on ? cp.bg : cp.fg }
                     CrtType { pal: cp; x: 30; y: 17; caps: false; text: row.modelData[1]; font.pixelSize: cp.size - 3; color: row.on ? cp.bg : cp.dim }
-                    MouseArea { id: ra; anchors.fill: parent; hoverEnabled: true; onClicked: sheet.tab = row.modelData[0] }
+                    MouseArea { id: ra; anchors.fill: parent; hoverEnabled: true; property int kbdOrder: 2000000 + row.index; onClicked: sheet.tab = row.modelData[0]; function kbdPress() { sheet.tab = row.modelData[0] } }
                 }
             }
         }
@@ -313,7 +325,7 @@ PanelWindow {
                         height: 22
                         color: on ? cp.accent : fh.containsMouse ? cp.low : "transparent"
                         Text { x: 6; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 10; elide: Text.ElideRight; text: parent.modelData; font.family: parent.modelData; font.pixelSize: 13; color: parent.on ? cp.bg : cp.fg }
-                        MouseArea { id: fh; anchors.fill: parent; hoverEnabled: true; onClicked: StoreShared.set("ui.font", parent.modelData) }
+                        MouseArea { id: fh; anchors.fill: parent; hoverEnabled: true; onClicked: StoreShared.set("ui.font", parent.modelData); function kbdPress() { StoreShared.set("ui.font", parent.modelData) } }
                     }
                 }
             }
@@ -345,7 +357,11 @@ PanelWindow {
                         color: "transparent"
                         border.width: on ? 2 : 1
                         border.color: on ? cp.accent : ta.containsMouse ? cp.line : cp.low
-                        MouseArea { id: ta; anchors.fill: parent; hoverEnabled: true; onClicked: if (!tile.on) StoreShared.act("crtColors", [tile.modelData.id, String(tile.pick)]) }
+                        MouseArea {
+                            id: ta; anchors.fill: parent; hoverEnabled: true
+                            function kbdPress() { if (!tile.on) StoreShared.act("crtColors", [tile.modelData.id, String(tile.pick)]) }
+                            onClicked: kbdPress()
+                        }
                         Rectangle {
                             x: 6; y: 6
                             width: parent.width - 12
@@ -369,7 +385,7 @@ PanelWindow {
                                     color: tile.pal[modelData] ?? "#444"
                                     border.width: chosen ? 1 : 0
                                     border.color: cp.fg
-                                    MouseArea { id: sa; anchors.fill: parent; anchors.topMargin: -(22 - parent.height); hoverEnabled: true; onClicked: StoreShared.act("crtColors", [tile.modelData.id, String(sw.modelData)]) }
+                                    MouseArea { id: sa; anchors.fill: parent; anchors.topMargin: -(22 - parent.height); hoverEnabled: true; onClicked: StoreShared.act("crtColors", [tile.modelData.id, String(sw.modelData)]); function kbdPress() { StoreShared.act("crtColors", [tile.modelData.id, String(sw.modelData)]) } }
                                 }
                             }
                         }
@@ -507,15 +523,31 @@ PanelWindow {
         }
     }
 
+    // клавиатура: SheetKeys.js (Tab, [ ], 1–9, hjkl, ?) + KeyNav по строкам; выбор из многих — выпадающий список
+    property bool help: false
     Item {
         id: keys
         focus: true
-        Keys.onEscapePressed: activeFocus ? sheet.close() : forceActiveFocus()
-        Keys.onTabPressed: sheet.step(1)
-        Keys.onBacktabPressed: sheet.step(-1)
         Keys.onPressed: e => {
-            const n = parseInt(e.text)
-            if (n >= 1 && n <= Math.min(9, sheet.pages.length)) { sheet.tab = sheet.pages[n - 1][0]; e.accepted = true }
+            if (!keys.activeFocus) return
+            if (SheetKeys.handle(e, { list: pickl, nav: nav, tabs: sheet.pages.map(p => p[0]), go: t => sheet.tab = t, step: sheet.step,
+                                      close: sheet.close, help: () => sheet.help = !sheet.help, helpOn: () => sheet.help }))
+                e.accepted = true
         }
+    }
+    KeyNav { id: nav; anchors.fill: parent; z: 999; scope: frame; vim: false; active: !pickl.opened && !shut.running; ring: cp.accent; ringWidth: 2 }
+    PickList { id: pickl }
+    Rectangle {
+        visible: sheet.help
+        z: 4000
+        readonly property var rows: [["TAB  [ ]  1-9", "PAGES"], ["ARROWS  H J K L", "MOVE"], ["ENTER  SPACE", "PRESS / OPEN LIST"], ["RIGHT CLICK", "PREVIOUS / DEFAULT"], ["ESC", "CLOSE"]]
+        width: 360; height: rows.length * 24 + 20
+        x: frame.x + (frame.width - width) / 2; y: frame.y + (frame.height - height) / 2
+        color: cp.bg; border.width: 2; border.color: cp.accent
+        Column { x: 14; y: 10
+            Repeater { model: parent.parent.rows
+                Row { required property var modelData; height: 24
+                    Text { width: 180; text: modelData[0]; color: cp.accent; font.family: cp.font; font.pixelSize: cp.size; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: modelData[1]; color: cp.fg; font.family: cp.font; font.pixelSize: cp.size; anchors.verticalCenter: parent.verticalCenter } } } }
     }
 }

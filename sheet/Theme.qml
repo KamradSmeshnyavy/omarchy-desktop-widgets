@@ -21,7 +21,8 @@ Singleton {
   }
   readonly property bool hud: rice === "space" || rice === "crt"
   // Vitreus: его Settings — Space Grotesk, крупные скругления; основа (base) задаёт тело панели
-  readonly property bool vit: rice === "vitreus"
+  // облик vitreus — по settingsSkin (Ui.skin); space на райсе Vitreus — облик Space
+  readonly property bool vit: Ui.skin === "vitreus" || (Ui.skin === "" && rice === "vitreus")
   readonly property string grotesk: Qt.fontFamilies().indexOf("Space Grotesk") !== -1 ? "Space Grotesk" : (Commons.Style && Commons.Style.font ? Commons.Style.font.family : mono)
   readonly property color accent: Commons.Color.accent
   readonly property color fg: Commons.Color.foreground

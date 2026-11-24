@@ -11,6 +11,8 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "MotionShared.js" as Motion
 import "Schema.js" as Schema
+import "SheetKeys.js" as SheetKeys
+import ".." as W
 
 PanelWindow {
     id: sheet
@@ -44,7 +46,15 @@ PanelWindow {
         was = i
         swap.restart()
     }
-    Component.onCompleted: { StoreShared.refresh(); morph.open() }
+    Component.onCompleted: { StoreShared.refresh(); Sk.list = pickl; Sk.keys = sheetKeys; Sk.nav = nav; morph.open() }
+    // токены общих ручек (выпадающий список, подсказка) — из Theme этого облика
+    Binding {
+        target: Sk
+        property: "t"
+        value: ({ bg: Theme.back(0.96), card: Theme.mix(Theme.bg, Theme.fg, 0.06), ink: Theme.fg, dim: Theme.dim, accent: Theme.accent,
+                  line: Theme.alpha(Theme.accent, 0.45), sel: Theme.accent, font: Theme.font, head: Theme.font, size: 12, caps: Theme.hud,
+                  spacing: Theme.hud ? 1.2 : 0, radius: Theme.rounding, border: 1, shadow: 0, popup: "list", ring: Theme.accent })
+    }
     function close() { morph.close() }
     function open() { morph.open() }
     function toggle() { morph.leaving ? morph.open() : morph.close() }
@@ -86,15 +96,16 @@ PanelWindow {
                 DecodeText {
                     required property var modelData
                     readonly property var v: modelData.v ?? modelData
-                    text: (modelData.l ?? modelData) + (pick.many ? " \u203a" : "")
+                    text: (modelData.l ?? modelData) + (pick.many ? " \u25be" : "")
                     height: 20
                     color: v === pick.current ? Theme.accent : area.containsMouse ? Theme.fg : Theme.dim
-                    MouseArea {
+                    // много вариантов — выпадающий список (применяется только выбранное), иначе — сразу этот
+                    SkHit {
                         id: area
                         anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: pick.many ? pick.next(1) : pick.chose(parent.v)
-                        onWheel: w => { if (pick.many) pick.next(w.angleDelta.y < 0 ? 1 : -1) }
+                        anchors.margins: -3
+                        kbdRadius: Theme.rounding
+                        onHit: pick.many ? Sk.list.open(parent, pick.options, pick.current, v => pick.chose(v), pick.label) : pick.chose(parent.v)
                     }
                 }
             }
@@ -139,6 +150,7 @@ PanelWindow {
             width: knob.width - 158
             height: 20
             scrollable: false
+            step: knob.step / ((knob.to - knob.from) || 1)
             readout: knob.v.toFixed(knob.digits) + knob.unit
             value: (knob.v - knob.from) / (knob.to - knob.from)
             onMoved: x => StoreShared.set(knob.key, Number((Math.round((knob.from + x * (knob.to - knob.from)) / knob.step) * knob.step).toFixed(knob.digits)))
@@ -223,6 +235,7 @@ PanelWindow {
                     model: sheet.vit ? sheet.tabs : []
                     Rectangle {
                         required property string modelData
+                        required property int index
                         readonly property bool on: sheet.tab === modelData
                         width: 150; height: 30; radius: 10
                         color: on ? Theme.alpha(Theme.accent, 0.18) : tabHov.hovered ? Theme.alpha(Theme.fg, 0.06) : "transparent"
@@ -235,7 +248,7 @@ PanelWindow {
                             font { family: Theme.font; pixelSize: 13; weight: parent.on ? Font.Bold : Font.Normal }
                         }
                         HoverHandler { id: tabHov; cursorShape: Qt.PointingHandCursor }
-                        TapHandler { onTapped: sheet.tab = parent.modelData }
+                        SkHit { anchors.fill: parent; kbdRadius: 10; property int kbdOrder: 2000000 + index; onHit: sheet.tab = parent.modelData }
                     }
                 }
             }
@@ -250,9 +263,10 @@ PanelWindow {
                     model: sheet.tabs
                     DecodeText {
                         required property string modelData
+                        required property int index
                         text: modelData
                         color: sheet.tab === modelData ? Theme.accent : Theme.dim
-                        MouseArea { anchors.fill: parent; onClicked: sheet.tab = parent.modelData }
+                        SkHit { anchors.fill: parent; anchors.margins: -3; kbdRadius: 0; property int kbdOrder: 2000000 + parent.index; onHit: sheet.tab = parent.modelData }
                     }
                 }
             }
@@ -267,7 +281,7 @@ PanelWindow {
                 Behavior on x { SettleShared { duration: Theme.fast } }
                 Behavior on width { SettleShared { duration: Theme.fast } }
             }
-            DecodeText { anchors.right: parent.right; anchors.rightMargin: 24; y: sheet.vit ? 22 : 10; text: "esc"; color: Theme.alpha(Theme.fg, 0.25) }
+            DecodeText { anchors.right: parent.right; anchors.rightMargin: 24; y: sheet.vit ? 22 : 10; text: "? keys   esc"; color: Theme.alpha(Theme.fg, 0.25) }
 
             Loader {
                 id: content
@@ -511,7 +525,7 @@ PanelWindow {
                             border.color: tile.used ? Theme.accent : Theme.alpha(Theme.fg, 0.12)
                         }
                         DecodeText { x: 8; y: 6; font.pixelSize: 9; text: tile.modelData.name; color: tile.used ? Theme.fg : Theme.dim }
-                        MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true }
+                        MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
                         Column {
                             z: 2
                             x: 8
@@ -526,11 +540,11 @@ PanelWindow {
                                     height: 10
                                     color: tile.modelData.c[modelData]
                                     DecodeText { visible: tile.used && sheet.applied.i === sw.modelData; anchors.centerIn: parent; font.pixelSize: 9; text: "accent"; color: tile.modelData.c[0] }
-                                    MouseArea {
+                                    SkHit {
                                         anchors.fill: parent
                                         enabled: sw.modelData > 2
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: StoreShared.act("world", [tile.modelData.id, String(sw.modelData), String(1 + Math.floor(Math.random() * 996))])
+                                        kbdRadius: 0
+                                        onHit: StoreShared.act("world", [tile.modelData.id, String(sw.modelData), String(1 + Math.floor(Math.random() * 996))])
                                     }
                                 }
                             }
@@ -564,7 +578,7 @@ PanelWindow {
                         required property var modelData
                         readonly property var meta: vitCards.info[modelData.id] || [modelData.id, "", ""]
                         readonly property var sw: modelData.c
-                        readonly property bool used: StoreShared.lists.theme === modelData.id
+                        readonly property bool used: SheetCore.themeUsed(modelData.id)
                         // текст — тёмный на светлом фоне темы, светлый на тёмном
                         readonly property color bgc: Qt.color(sw[0])
                         readonly property color ink: 0.299 * bgc.r + 0.587 * bgc.g + 0.114 * bgc.b > 0.55 ? "#2b2833" : "#f5f7f5"
@@ -602,8 +616,44 @@ PanelWindow {
                             color: "#ffffff"
                             Text { anchors.centerIn: parent; text: "✓"; color: "#202020"; font.pixelSize: 13; font.bold: true }
                         }
-                        MouseArea { id: vtm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("theme", [vt.modelData.id]) }
+                        SkHit { id: vtm; anchors.fill: parent; onHit: StoreShared.act("theme", [vt.modelData.id]) }
                     }
+                }
+            }
+            // акцент (omarchy-rice-accent): ряды «тема» и «обои» — у Vitreus и у райсов без своего облика панели
+            Column {
+                visible: !parent.space && (SheetCore.accentTheme.length > 0 || SheetCore.accentWall.length > 0)
+                spacing: 6
+                Controls.Title { width: 9 * 90 - 6; glyph: "\u25c6"; text: "accent" }
+                Repeater {
+                    model: [["theme", SheetCore.accentTheme], ["wallpaper", SheetCore.accentWall]]
+                    Row {
+                        id: arow
+                        required property var modelData
+                        visible: modelData[1].length > 0
+                        spacing: 8
+                        DecodeText { width: 90; height: 24; text: arow.modelData[0]; color: Theme.dim }
+                        Repeater {
+                            model: arow.modelData[1]
+                            Rectangle {
+                                id: asw
+                                required property string modelData
+                                readonly property bool used: modelData.toLowerCase() === SheetCore.accentNow
+                                width: 22; height: 22; radius: Theme.round ? 11 : 0
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: modelData
+                                border.width: used ? 2 : 1
+                                border.color: used ? Theme.fg : Theme.alpha(Theme.fg, 0.25)
+                                SkHit { anchors.fill: parent; kbdRadius: parent.radius; onHit: SheetCore.setAccent(asw.modelData) }
+                            }
+                        }
+                    }
+                }
+                Row {
+                    spacing: 10
+                    DecodeText { width: 90; height: 24; text: "now"; color: Theme.dim }
+                    DecodeText { height: 24; text: SheetCore.accentNow || "—"; color: Theme.accent }
+                    Button { visible: SheetCore.accentCustom; label: "reset"; onPressed: SheetCore.resetAccent() }
                 }
             }
             // остальные райсы: темы самого райса (из его профилей) и его dynamic-тема; без райса — все темы Omarchy
@@ -620,7 +670,7 @@ PanelWindow {
                 delegate: Item {
                     id: th
                     required property var modelData
-                    readonly property bool used: StoreShared.lists.theme === modelData.id
+                    readonly property bool used: SheetCore.themeUsed(modelData.id)
                     width: 84
                     height: 112
                     Rectangle {
@@ -634,7 +684,7 @@ PanelWindow {
                         x: 8; y: 24; spacing: 2
                         Repeater { model: th.modelData.c; Rectangle { required property string modelData; width: 68; height: 10; color: modelData } }
                     }
-                    MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("theme", [th.modelData.id]) }
+                    SkHit { id: tm; anchors.fill: parent; kbdRadius: 0; onHit: StoreShared.act("theme", [th.modelData.id]) }
                 }
             }
         }
@@ -650,7 +700,8 @@ PanelWindow {
             Row {
                 spacing: 14
                 DecodeText { width: 60; height: 24; text: "font"; color: Theme.dim }
-                Field { id: find; width: 260; placeholder: "search"; keysTo: [sheetKeys]; onAccepted: sheetKeys.forceActiveFocus() }
+                Field { id: find; width: 260; placeholder: "search  ( / )"; keysTo: [sheetKeys]; onAccepted: sheetKeys.forceActiveFocus()
+                    Connections { target: sheet; function onSearch() { find.grab() } } }
                 DecodeText { height: 24; color: Theme.accent; text: (fontsCol.rows.find(f => f.cur) || {}).label || "" }
             }
             GridView {
@@ -673,17 +724,39 @@ PanelWindow {
                         font.pixelSize: 13
                         color: parent.modelData.cur ? Theme.accent : fh.containsMouse ? Theme.fg : Theme.dim
                     }
-                    MouseArea { id: fh; anchors.fill: parent; hoverEnabled: true; onClicked: StoreShared.act("font", [parent.modelData.value]) }
+                    SkHit { id: fh; anchors.fill: parent; cursorShape: Qt.ArrowCursor; onHit: StoreShared.act("font", [parent.modelData.value]) }
                 }
             }
         }
     }
 
+    // клавиатура: SheetKeys.js (вкладки, цифры, hjkl, ?, /) + KeyNav по строкам; выпадающий список — PickList
+    signal search()
+    property bool help: false
     Item {
         id: sheetKeys
         focus: true
-        Keys.onEscapePressed: activeFocus ? sheet.close() : forceActiveFocus()
-        Keys.onTabPressed: sheet.step(1)
-        Keys.onBacktabPressed: sheet.step(-1)
+        Keys.onPressed: e => {
+            if (!sheetKeys.activeFocus) { if (e.key === Qt.Key_Escape) { sheetKeys.forceActiveFocus(); e.accepted = true } return }
+            if (SheetKeys.handle(e, { list: pickl, nav: nav, tabs: sheet.tabs, go: t => sheet.tab = t, step: sheet.step, close: sheet.close,
+                                      help: () => sheet.help = !sheet.help, helpOn: () => sheet.help, search: () => searchLater.restart() }))
+                e.accepted = true
+        }
+    }
+    Timer { id: searchLater; interval: 80; onTriggered: sheet.search() }
+    W.KeyNav { id: nav; anchors.fill: parent; z: 999; scope: frame; vim: false; active: !pickl.opened && !morph.leaving; ring: Theme.accent }
+    PickList { id: pickl }
+    Rectangle {
+        visible: sheet.help
+        z: 4000
+        readonly property var rows: [["Tab  [ ]  1–9", "tabs"], ["↑ ↓ ← →  h j k l", "move"], ["Enter  Space", "press · open a list"], ["↑ ↓  Enter  in a list", "choose · apply"], ["/", "search fonts"], ["right click", "default value"], ["Esc", "close"]]
+        width: 340; height: rows.length * 22 + 20
+        x: frame.x + (frame.width - width) / 2; y: frame.y + (frame.height - height) / 2
+        color: Theme.back(0.96); border.width: 1; border.color: Theme.accent; radius: Theme.rounding
+        Column { x: 14; y: 10
+            Repeater { model: parent.parent.rows
+                Row { required property var modelData; height: 22
+                    Text { width: 160; text: modelData[0]; color: Theme.accent; font.family: Theme.font; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: modelData[1]; color: Theme.fg; font.family: Theme.font; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter } } } }
     }
 }

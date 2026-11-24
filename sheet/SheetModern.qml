@@ -6,6 +6,7 @@ import qs.Commons as Commons
 import ".."
 import "MotionShared.js" as Motion
 import "Schema.js" as Schema
+import "SheetKeys.js" as SheetKeys
 
 // Скин modern панели настроек — по мотивам его Modern/settings (shell.qml, Themes.qml, SettingSaved.qml,
 // github.com/elifouts/Dotfiles, GPL-3.0; облик — v2/settings-*.png; код свой): боковая панель матового стекла во всю
@@ -56,7 +57,14 @@ PanelWindow {
     Connections { target: Ui; function onSheetChanged() { if (sheet.pages.some(p => p[0] === Ui.sheet)) sheet.tab = Ui.sheet } }
 
     property real t: 0
-    Component.onCompleted: { StoreShared.refresh(); grow.start() }
+    Component.onCompleted: { StoreShared.refresh(); Sk.list = pickl; Sk.keys = keys; Sk.nav = nav; grow.start() }
+    Binding {
+        target: Sk
+        property: "t"
+        value: ({ bg: sheet.bg, card: Qt.tint(sheet.bg, sheet.a(sheet.fg, 0.06)), ink: sheet.fg, dim: sheet.a(sheet.fg, 0.6), accent: sheet.accent,
+                  line: sheet.a(sheet.fg, 0.18), sel: sheet.accent, font: sheet.font, head: sheet.font, size: 13, caps: false, spacing: 0,
+                  radius: 9, border: 1, shadow: 0, popup: "list", ring: sheet.accent })
+    }
     NumberAnimation { id: grow; target: sheet; property: "t"; to: 1; duration: 320; easing.type: Easing.OutCubic }
     SequentialAnimation {
         id: shut
@@ -113,6 +121,8 @@ PanelWindow {
         }
         MouseArea {
             x: 0; y: 26; width: parent.width; height: 24
+            function kbdAdjust(d) { sl.setFrac(sl.frac + d / Math.max(1, (sl.to - sl.from) / sl.step)) }
+            function kbdPress() {}
             onPressed: m => sl.setFrac(m.x / width)
             onPositionChanged: m => { if (pressed) sl.setFrac(m.x / width) }
             onWheel: w => sl.setFrac(sl.frac + (w.angleDelta.y > 0 ? 1 : -1) / Math.max(1, (sl.to - sl.from) / sl.step))
@@ -143,7 +153,9 @@ PanelWindow {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: {
+            function kbdPress() { flipIt() }
+            onClicked: flipIt()
+            function flipIt() {
                 const r = tg.raises, next = {}
                 next[tg.key] = !tg.on
                 if (!tg.on && r && StoreShared.values[r.key] < r.min) next[r.key] = r.min
@@ -183,7 +195,7 @@ PanelWindow {
                         width: (parent.width) / Math.max(1, ch.options.length); height: parent.height; radius: 7
                         color: on ? ch.s.a(ch.s.accent, 0.85) : "transparent"
                         Text { anchors.centerIn: parent; text: parent.modelData?.l ?? parent.modelData; font.family: ch.s.font; font.pixelSize: 12; color: parent.on ? ch.s.bg : ch.s.a(ch.s.fg, 0.7) }
-                        MouseArea { anchors.fill: parent; onClicked: ch.chose(parent.modelData.v ?? parent.modelData) }
+                        MouseArea { anchors.fill: parent; onClicked: ch.chose(parent.modelData.v ?? parent.modelData); function kbdPress() { ch.chose(parent.modelData.v ?? parent.modelData) } }
                     }
                 }
             }
@@ -195,8 +207,10 @@ PanelWindow {
             color: da.containsMouse ? ch.s.a(ch.s.fg, 0.12) : ch.s.a(ch.s.fg, 0.07)
             Text { id: dl; x: 14; anchors.verticalCenter: parent.verticalCenter; text: ch.options[ch.at]?.l ?? ch.options[ch.at] ?? ""; font.family: ch.s.font; font.pixelSize: 13; color: ch.s.fg }
             Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: ""; font.family: ch.s.font; font.pixelSize: 9; color: ch.s.a(ch.s.fg, 0.6) }
+            // клик / Enter — выпадающий список (применяется выбранное), правый клик — предыдущий
             MouseArea { id: da; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onClicked: m => ch.next(m.button === Qt.RightButton ? -1 : 1); onWheel: w => ch.next(w.angleDelta.y < 0 ? 1 : -1) }
+                function kbdPress() { Sk.list.open(parent, ch.options, ch.current, v => ch.chose(v), ch.label) }
+                onClicked: m => { if (m.button === Qt.RightButton) ch.next(-1); else kbdPress() } }
         }
     }
 
@@ -243,12 +257,13 @@ PanelWindow {
                 model: sheet.pages
                 Rectangle {
                     required property var modelData
+                    required property int index
                     readonly property bool on: sheet.tab === modelData[0]
                     width: (tabs.width - 8 * 6) / 7; height: 44; radius: 10
                     color: on ? sheet.a(sheet.accent, 0.55) : tha.containsMouse ? sheet.a(sheet.fg, 0.1) : sheet.a(sheet.fg, 0.05)
                     Behavior on color { ColorAnimation { duration: 160 } }
                     Text { anchors.centerIn: parent; text: parent.modelData[2]; font.family: sheet.font; font.pixelSize: 17; color: parent.on ? sheet.fg : sheet.a(sheet.fg, 0.7) }
-                    MouseArea { id: tha; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sheet.tab = parent.modelData[0] }
+                    MouseArea { id: tha; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; property int kbdOrder: 2000000 + parent.index; onClicked: sheet.tab = parent.modelData[0]; function kbdPress() { sheet.tab = parent.modelData[0] } }
                 }
             }
         }
@@ -333,6 +348,7 @@ PanelWindow {
                             anchors.fill: parent
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             cursorShape: Qt.PointingHandCursor
+                            function kbdPress() { StoreShared.act("profile", [pr.modelData.path]) }
                             onClicked: m => {
                                 if (m.button === Qt.LeftButton) return StoreShared.act("profile", [pr.modelData.path])
                                 if (!pr.modelData.mine) return
@@ -364,7 +380,7 @@ PanelWindow {
                         anchors.right: parent.right; y: 10; width: 70; height: 36; radius: 9
                         color: sva.containsMouse ? sheet.a(sheet.accent, 0.5) : sheet.a(sheet.accent, 0.3)
                         Text { anchors.centerIn: parent; text: "Save"; font.family: sheet.font; font.pixelSize: 13; color: sheet.fg }
-                        MouseArea { id: sva; anchors.fill: parent; hoverEnabled: true; onClicked: save.go() }
+                        MouseArea { id: sva; anchors.fill: parent; hoverEnabled: true; onClicked: save.go(); function kbdPress() { save.go() } }
                     }
                 }
                 Text {
@@ -397,7 +413,9 @@ PanelWindow {
                         Rectangle { visible: bv.modelData.v === "modern-attached" || bv.modelData.v === "modern-experimental"; y: 0; x: 12; width: parent.width - 24; height: 2; color: bv.ink; opacity: 0.6 }
                         MouseArea {
                             id: bva; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: { sheet.barNow = bv.modelData.v; const r = (StoreShared.lists.barLayouts || []).find(x => x.label === bv.modelData.v); if (r) StoreShared.act("modernBar", [r.value, bv.modelData.skin]) }
+                            function kbdPress() { clickIt() }
+                            onClicked: clickIt()
+                            function clickIt() { sheet.barNow = bv.modelData.v; const r = (StoreShared.lists.barLayouts || []).find(x => x.label === bv.modelData.v); if (r) StoreShared.act("modernBar", [r.value, bv.modelData.skin]) }
                         }
                     }
                 }
@@ -431,7 +449,7 @@ PanelWindow {
                         Rectangle { x: 2; y: 14; width: 8; height: 8; radius: 4; color: te.on ? sheet.accent : sheet.a(sheet.fg, 0.25) }
                         Label { x: 22; y: 8; text: te.modelData.name; font.bold: te.on; width: 200 }
                         Text { anchors.right: parent.right; y: 10; text: te.on ? "Applied" : ""; font.family: sheet.font; font.pixelSize: 12; color: sheet.accent }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("modernColors", [te.modelData.id, String(te.slot)]) }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("modernColors", [te.modelData.id, String(te.slot)]); function kbdPress() { StoreShared.act("modernColors", [te.modelData.id, String(te.slot)]) } }
                         Row {
                             x: 22; y: 32
                             spacing: 3
@@ -448,6 +466,7 @@ PanelWindow {
                                     border.width: chosen ? 2 : 0
                                     border.color: sheet.fg
                                     MouseArea { id: swa; anchors.fill: parent; anchors.topMargin: -(20 - parent.height); hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                        function kbdPress() { StoreShared.act("modernColors", [te.modelData.id, String(sw.index)]) }
                                         onClicked: StoreShared.act("modernColors", [te.modelData.id, String(sw.index)]) }
                                 }
                             }
@@ -478,7 +497,7 @@ PanelWindow {
                             width: fl.implicitWidth + 20; height: 26; radius: 8
                             color: on ? sheet.a(sheet.accent, 0.55) : fa.containsMouse ? sheet.a(sheet.fg, 0.1) : sheet.a(sheet.fg, 0.05)
                             Text { id: fl; anchors.centerIn: parent; text: parent.modelData; font.family: sheet.font; font.pixelSize: 12; color: sheet.fg }
-                            MouseArea { id: fa; anchors.fill: parent; hoverEnabled: true; onClicked: sheet.wallFolder = parent.modelData }
+                            MouseArea { id: fa; anchors.fill: parent; hoverEnabled: true; onClicked: sheet.wallFolder = parent.modelData; function kbdPress() { sheet.wallFolder = parent.modelData } }
                         }
                     }
                 }
@@ -511,7 +530,7 @@ PanelWindow {
                                     Rectangle { required property string modelData; width: wt.width / 16; height: 5; color: modelData }
                                 }
                             }
-                            MouseArea { id: wta; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("modernWall", [wt.modelData.path]) }
+                            MouseArea { id: wta; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: StoreShared.act("modernWall", [wt.modelData.path]); function kbdPress() { StoreShared.act("modernWall", [wt.modelData.path]) } }
                         }
                     }
                 }
@@ -571,11 +590,31 @@ PanelWindow {
         }
     }
 
+    // клавиатура: SheetKeys.js (Tab, [ ], 1–9, hjkl, ?) + KeyNav по строкам; выбор из многих — выпадающий список
+    property bool help: false
     Item {
         id: keys
         focus: true
-        Keys.onEscapePressed: activeFocus ? sheet.close() : forceActiveFocus()
-        Keys.onTabPressed: sheet.step(1)
-        Keys.onBacktabPressed: sheet.step(-1)
+        Keys.onPressed: e => {
+            if (!keys.activeFocus) return
+            if (SheetKeys.handle(e, { list: pickl, nav: nav, tabs: sheet.pages.map(p => p[0]), go: t => sheet.tab = t, step: sheet.step,
+                                      close: sheet.close, help: () => sheet.help = !sheet.help, helpOn: () => sheet.help }))
+                e.accepted = true
+        }
+    }
+    KeyNav { id: nav; anchors.fill: parent; z: 999; scope: panel; vim: false; active: !pickl.opened && !shut.running; ring: sheet.accent }
+    PickList { id: pickl }
+    Rectangle {
+        visible: sheet.help
+        z: 4000
+        readonly property var rows: [["Tab  [ ]  1–9", "pages"], ["↑ ↓ ← →  h j k l", "move"], ["← →  on a slider", "step"], ["Enter  Space", "press · open a list"], ["right click", "previous · default"], ["Esc", "close"]]
+        width: 340; height: rows.length * 22 + 20; radius: 12
+        x: panel.x + (panel.width - width) / 2; y: panel.y + (panel.height - height) / 2
+        color: sheet.bg; border.width: 1; border.color: sheet.accent
+        Column { x: 14; y: 10
+            Repeater { model: parent.parent.rows
+                Row { required property var modelData; height: 22
+                    Text { width: 160; text: modelData[0]; color: sheet.accent; font.family: sheet.font; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: modelData[1]; color: sheet.fg; font.family: sheet.font; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter } } } }
     }
 }

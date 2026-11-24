@@ -25,6 +25,9 @@ Item {
     MouseArea {
         anchors.fill: parent
         function set(mx) { sl.moved(Math.max(0, Math.min(1, mx / width))) }
+        // клавиатура (KeyNav): ←/→ — шаг
+        function kbdAdjust(d) { sl.moved(Math.max(0, Math.min(1, sl.value + d * sl.step))) }
+        function kbdPress() {}
         onPressed: m => set(m.x)
         onPositionChanged: m => { if (pressed) set(m.x) }
         onWheel: w => w.accepted = sl.scrollable && (sl.moved(Math.max(0, Math.min(1, sl.value + (w.angleDelta.y > 0 ? sl.step : -sl.step)))), true)

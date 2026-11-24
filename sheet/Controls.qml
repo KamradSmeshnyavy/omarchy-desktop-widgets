@@ -38,7 +38,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
         }
         DecodeText { id: val; anchors.right: parent.right; anchors.rightMargin: 6; height: parent.height; text: line.value; color: line.lit ? Theme.accent : Theme.alpha(Theme.fg, 0.35) }
-        MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: m => line.clicked(m) }
+        MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: m => line.clicked(m)
+            function kbdPress() { line.clicked({ button: Qt.LeftButton }) } }
     }
 
     component Slide: Item {
@@ -48,6 +49,7 @@ Item {
         property bool off: false
         property string readout
         property bool scrollable: true
+        property real step: 0.05
         signal moved(real v)
         width: parent?.width ?? 280
         height: 22
@@ -59,6 +61,7 @@ Item {
             value: sl.value
             dimmed: sl.off
             scrollable: sl.scrollable
+            step: sl.step
             onMoved: v => sl.moved(v)
         }
         DecodeText { decode: false; anchors.right: parent.right; height: parent.height; text: sl.off ? "off" : sl.readout || Math.round(sl.value * 100); color: Theme.fg }
@@ -102,6 +105,6 @@ Item {
             }
             DecodeText { visible: tg.text !== ""; text: tg.text; height: parent.height; color: tg.on ? Theme.accent : Theme.dim }
         }
-        MouseArea { id: area; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; onClicked: tg.flip() }
+        MouseArea { id: area; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; onClicked: tg.flip(); function kbdPress() { tg.flip() } }
     }
 }

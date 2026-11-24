@@ -336,6 +336,9 @@ def lists():
         if not l["walls"]:
             subprocess.Popen(["omarchy-crt-library", "index"], start_new_session=True,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # акцент для райсов без своего выбора цвета (у Space — миры, у Retro CRT и Modern — свои цвета)
+    if rid not in ("space", "crt", "modern"):
+        l["accent"] = load_cmd(["omarchy-rice-accent", "swatches"]) or {}
     if rid == "crt":
         l["crtColors"] = load_cmd(["omarchy-crt-colors", "--list"]) or []
         l["monoFonts"] = sorted({x.split(",")[0].strip() for x in run("fc-list", ":spacing=mono", "family").splitlines()
@@ -476,6 +479,9 @@ def do(what, args):
     elif what in ("modernColors", "modernWall"):  # его Themes: цвета (id, слот) / обои его библиотеки
         subprocess.Popen(["omarchy-modern-colors"] + (["--wallpaper", v] if what == "modernWall" else args),
                          start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif what == "riceAccent":  # акцент райса: '#rrggbb' или reset — тема <вариант>-accent (omarchy-rice-accent)
+        subprocess.Popen(["omarchy-rice-accent"] + (["reset"] if v == "reset" else ["set", v]), start_new_session=True,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif what == "crtColors":  # его COLORS: id цветов и слот акцента
         subprocess.Popen(["omarchy-crt-colors"] + args, start_new_session=True,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -501,6 +507,9 @@ def do(what, args):
             if d.get("theme") == "crt-live":
                 d["crtState"] = load_cmd(["omarchy-crt-colors", "--dump"]) or {}
                 d["build"] = ["omarchy-crt-colors", "--state", "{preset}"]
+            elif str(d.get("theme") or "").endswith("-accent"):
+                d["accentState"] = load_cmd(["omarchy-rice-accent", "dump"]) or {}
+                d["build"] = ["omarchy-rice-accent", "--state", "{preset}"]
             elif d.get("theme") == "modern-live":
                 d["modernState"] = load_cmd(["omarchy-modern-colors", "--dump"]) or {}
                 d["build"] = ["omarchy-modern-colors", "--state", "{preset}"]

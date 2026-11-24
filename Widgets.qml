@@ -118,7 +118,7 @@ Item {
     // voyage — его звёздная карта, table — все окна таблицей (OverviewTable, Retro CRT)
     overviewStyle: "auto",
     bootIntro: true,           // заставка Modern при входе в сеанс (BootModern.qml), раз за вход
-    settingsSkin: "auto",       // скин панели настроек (Super+Alt+I): auto — по райсу, space, crt, modern
+    settingsSkin: "auto",       // облик панели настроек (Super+Alt+I): auto — по райсу, или space, vitreus, crt, modern, rumda, yami, bruteon, cozytile, surface, unit3, dotmatrix, glyph
     // звёздная карта: начальный режим управления (route — по трассе, free — свободный полёт; F переключает) и вращение планет
     starmapNav: "route",
     starmapSpin: false,
@@ -142,26 +142,26 @@ Item {
     return r === "liquid" ? "vitreus" : r
   }
   readonly property var partDefaults: ({
-    "default":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "grid" },
-    "glyph":     { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
-    "dotmatrix": { homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "instrument", powerStyle: "edge", clipboardPanel: "stock" },
+    "default":   { settingsSkin: "space", homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "drawer", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "grid" },
+    "glyph":     { settingsSkin: "glyph", homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "quick", powerStyle: "glyph", clipboardPanel: "glyph" },
+    "dotmatrix": { settingsSkin: "dotmatrix", homeLayout: "glyph", homeCards: "glyph", deckLayout: "panel", deckCards: "glyph", settingsPanel: "instrument", powerStyle: "edge", clipboardPanel: "stock" },
     // Vitreus: дом — большие часы, Deck — во весь экран, карточки — материал основы, панели растут из бара
-    "vitreus":   { homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "glassring", powerStyle: "edge", clipboardPanel: "stock" },
+    "vitreus":   { settingsSkin: "vitreus", homeLayout: "minimal", homeCards: "style", deckLayout: "full", deckCards: "style", settingsPanel: "glassring", powerStyle: "edge", clipboardPanel: "stock" },
     // surface: меню выключения Cassini (снимок Сатурна), остальное — по стилю
-    "cozytile":  { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "cozytile", powerStyle: "cozytile", clipboardPanel: "stock" },
-    "surface":   { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" },
+    "cozytile":  { settingsSkin: "cozytile", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "cozytile", powerStyle: "cozytile", clipboardPanel: "stock" },
+    "surface":   { settingsSkin: "surface", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "surface", powerStyle: "cassini", clipboardPanel: "stock" },
     // свои меню Super+M (MenuShell + menus/Menu*.qml), остальное — как у default
-    "bruteon":   { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "bruteon", powerStyle: "edge", clipboardPanel: "stock" },
-    "yami":      { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "yami", powerStyle: "edge", clipboardPanel: "stock" },
-    "rumda":     { homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "rumda", powerStyle: "edge", clipboardPanel: "stock" },
+    "bruteon":   { settingsSkin: "bruteon", homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "bruteon", powerStyle: "edge", clipboardPanel: "stock" },
+    "yami":      { settingsSkin: "yami", homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "yami", powerStyle: "edge", clipboardPanel: "stock" },
+    "rumda":     { settingsSkin: "rumda", homeLayout: "glyph", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "rumda", powerStyle: "edge", clipboardPanel: "stock" },
     // Unit-3: Super+M — его радиальный центр управления NieR (NierControl.qml)
-    "unit3":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
+    "unit3":     { settingsSkin: "unit3", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "unit3", powerStyle: "edge", clipboardPanel: "stock" },
     // Space: Super+M — бортовой компьютер (menus/MenuSpace.qml)
-    "space":     { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" },
+    "space":     { settingsSkin: "space", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "space", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "voyage" },
     // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
-    "crt":       { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
+    "crt":       { settingsSkin: "crt", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
     // Modern: Super+M — остров из бара (ModernIsland.qml)
-    "modern":    { homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" }
+    "modern":    { settingsSkin: "modern", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -415,17 +415,26 @@ Item {
   // ── Дашборд и панель настроек ──────────────────────────────────────────
   property bool dashboardOpen: false
   property bool settingsOpen: false
-  // Prefs (glyph/Prefs.qml): быстрые настройки Glyph, Super+Alt+I
+  // панель настроек Super+Alt+I (Sheet, облик по райсу)
   property bool prefsOpen: false
   // Sheet (sheet/Sheet.qml) — его панель настроек вместо прежней Prefs: живёт, пока открыта; повторный вызов не обрывает,
   // а закрывает её с анимацией (close), конец — done
   property bool sheetOn: false
-  // скин панели: settingsSkin auto | space | crt; auto — по райсу (Retro CRT — его SETUP, остальные — облик Space)
+  // облик панели: settingsSkin auto | space | vitreus | crt | modern | rumda | yami | bruteon | cozytile | surface | unit3 |
+  // dotmatrix | glyph; auto — по райсу (partDefaults[rice].settingsSkin), без своего — облик Space.
+  // Файл облика — sheet/Sheet<Облик>.qml (space и vitreus → Sheet.qml, ветку Vitreus включает Ui.skin)
   property string sheetSkin: "space"
-  function skinNow() { var v = String(value("settingsSkin") || "auto"); return v !== "auto" ? v : rice === "crt" ? "crt" : rice === "modern" ? "modern" : "space" }
-  readonly property var sheetItem: sheetSkin === "crt" ? sheetCrtLoader.item : sheetSkin === "modern" ? sheetModernLoader.item : sheetLoader.item
+  readonly property var sheetFiles: ({ space: "Sheet", vitreus: "Sheet", crt: "SheetCrt", modern: "SheetModern", rumda: "SheetRumda",
+    yami: "SheetYami", bruteon: "SheetBrute", cozytile: "SheetCozy", surface: "SheetSurface", unit3: "SheetUnit3",
+    dotmatrix: "SheetDots", glyph: "SheetGlyph" })
+  function skinNow() {
+    var v = String(value("settingsSkin") || "auto")
+    if (v === "auto") v = String(partFor("settingsSkin") || "space")
+    return sheetFiles[v] ? v : "space"
+  }
+  readonly property var sheetItem: sheetLoader.item
   onPrefsOpenChanged: {
-    if (prefsOpen && !sheetOn) { sheetSkin = skinNow(); SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
+    if (prefsOpen && !sheetOn) { sheetSkin = skinNow(); SheetUi.Ui.skin = sheetSkin; SheetUi.Ui.target = root.focusedScreen; sheetOn = true }
     else if (!prefsOpen && sheetOn && sheetItem) sheetItem.close()
   }
   property string settingsSection: ""   // раздел, который SettingsPanel раскроет при открытии
@@ -667,18 +676,13 @@ Item {
   NierVolume { host: root }
   LazyLoader {
     id: sheetLoader
-    active: root.sheetOn && root.sheetSkin !== "crt" && root.sheetSkin !== "modern"
-    SheetUi.Sheet { onDone: { root.sheetOn = false; root.prefsOpen = false } }
+    active: root.sheetOn
+    source: Qt.resolvedUrl("sheet/" + (root.sheetFiles[root.sheetSkin] || "Sheet") + ".qml")
   }
-  LazyLoader {
-    id: sheetCrtLoader
-    active: root.sheetOn && root.sheetSkin === "crt"
-    SheetUi.SheetCrt { onDone: { root.sheetOn = false; root.prefsOpen = false } }
-  }
-  LazyLoader {
-    id: sheetModernLoader
-    active: root.sheetOn && root.sheetSkin === "modern"
-    SheetUi.SheetModern { onDone: { root.sheetOn = false; root.prefsOpen = false } }
+  Connections {
+    target: sheetLoader.item
+    ignoreUnknownSignals: true
+    function onDone() { root.sheetOn = false; root.prefsOpen = false }
   }
 
   EdgeHotzones {

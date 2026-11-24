@@ -16,3 +16,23 @@ CurvePlotShared 1.0 CurvePlotShared.qml
 LabelShared 1.0 LabelShared.qml
 SheetModern 1.0 SheetModern.qml
 ModernPal 1.0 ModernPal.qml
+singleton Sk 1.0 Sk.qml
+singleton SheetCore 1.0 SheetCore.qml
+PickList 1.0 PickList.qml
+SkLabel 1.0 SkLabel.qml
+SkToggle 1.0 SkToggle.qml
+SkSlider 1.0 SkSlider.qml
+SkPick 1.0 SkPick.qml
+SkTitle 1.0 SkTitle.qml
+SkField 1.0 SkField.qml
+SkPage 1.0 SkPage.qml
+SkinWindow 1.0 SkinWindow.qml
+SheetRumda 1.0 SheetRumda.qml
+SkHit 1.0 SkHit.qml
+SheetYami 1.0 SheetYami.qml
+SheetBrute 1.0 SheetBrute.qml
+SheetCozy 1.0 SheetCozy.qml
+SheetSurface 1.0 SheetSurface.qml
+SheetUnit3 1.0 SheetUnit3.qml
+SheetDots 1.0 SheetDots.qml
+SheetGlyph 1.0 SheetGlyph.qml
