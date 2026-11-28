@@ -422,13 +422,13 @@ Item {
   // Sheet (sheet/Sheet.qml) — его панель настроек вместо прежней Prefs: живёт, пока открыта; повторный вызов не обрывает,
   // а закрывает её с анимацией (close), конец — done
   property bool sheetOn: false
-  // облик панели: settingsSkin auto | space | vitreus | crt | modern | rumda | yami | bruteon | cozytile | surface | unit3 |
+  // облик панели: settingsSkin auto | space | vitreus | crt | modern | quest | rumda | yami | bruteon | cozytile | surface | unit3 |
   // dotmatrix | glyph; auto — по райсу (partDefaults[rice].settingsSkin), без своего — облик Space.
   // Файл облика — sheet/Sheet<Облик>.qml (space и vitreus → Sheet.qml, ветку Vitreus включает Ui.skin)
   property string sheetSkin: "space"
   readonly property var sheetFiles: ({ space: "Sheet", vitreus: "Sheet", crt: "SheetCrt", modern: "SheetModern", rumda: "SheetRumda",
     yami: "SheetYami", bruteon: "SheetBrute", cozytile: "SheetCozy", surface: "SheetSurface", unit3: "SheetUnit3",
-    dotmatrix: "SheetDots", glyph: "SheetGlyph" })
+    dotmatrix: "SheetDots", glyph: "SheetGlyph", quest: "SheetQuest" })
   function skinNow() {
     var v = String(value("settingsSkin") || "auto")
     if (v === "auto") v = String(partFor("settingsSkin") || "space")
