@@ -9,3 +9,4 @@ MenuDots MenuDots.qml
 MenuSpace MenuSpace.qml
 MenuCrt MenuCrt.qml
 MenuQuest MenuQuest.qml
+MenuRoom MenuRoom.qml

@@ -163,7 +163,9 @@ Item {
     // Modern: Super+M — остров из бара (ModernIsland.qml)
     "modern":    { settingsSkin: "modern", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" },
     // Quest: Super+M — командное меню ролевой игры (menus/MenuQuest.qml)
-    "quest":     { settingsSkin: "quest", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "quest", powerStyle: "edge", clipboardPanel: "stock" }
+    "quest":     { settingsSkin: "quest", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "quest", powerStyle: "edge", clipboardPanel: "stock" },
+    // Cozy Room: Super+M — инвентарь предметов комнаты (menus/MenuRoom.qml), дашборд — сама комната (DashRoom.qml)
+    "room":      { settingsSkin: "room", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "room", powerStyle: "edge", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -422,13 +424,13 @@ Item {
   // Sheet (sheet/Sheet.qml) — его панель настроек вместо прежней Prefs: живёт, пока открыта; повторный вызов не обрывает,
   // а закрывает её с анимацией (close), конец — done
   property bool sheetOn: false
-  // облик панели: settingsSkin auto | space | vitreus | crt | modern | quest | rumda | yami | bruteon | cozytile | surface | unit3 |
+  // облик панели: settingsSkin auto | space | vitreus | crt | modern | quest | room | rumda | yami | bruteon | cozytile | surface | unit3 |
   // dotmatrix | glyph; auto — по райсу (partDefaults[rice].settingsSkin), без своего — облик Space.
   // Файл облика — sheet/Sheet<Облик>.qml (space и vitreus → Sheet.qml, ветку Vitreus включает Ui.skin)
   property string sheetSkin: "space"
   readonly property var sheetFiles: ({ space: "Sheet", vitreus: "Sheet", crt: "SheetCrt", modern: "SheetModern", rumda: "SheetRumda",
     yami: "SheetYami", bruteon: "SheetBrute", cozytile: "SheetCozy", surface: "SheetSurface", unit3: "SheetUnit3",
-    dotmatrix: "SheetDots", glyph: "SheetGlyph", quest: "SheetQuest" })
+    dotmatrix: "SheetDots", glyph: "SheetGlyph", quest: "SheetQuest", room: "SheetRoom" })
   function skinNow() {
     var v = String(value("settingsSkin") || "auto")
     if (v === "auto") v = String(partFor("settingsSkin") || "space")
@@ -635,6 +637,11 @@ Item {
     host: root
   }
 
+  // дашборд Cozy Room — сама комната с живыми предметами
+  DashRoom {
+    host: root
+  }
+
   DotMatrixDashboard {
     host: root
   }
@@ -675,6 +682,7 @@ Item {
   MenuShell { host: root; kind: "space"; source: Qt.resolvedUrl("menus/MenuSpace.qml"); dim: 0.35 }
   MenuShell { host: root; kind: "crt"; source: Qt.resolvedUrl("menus/MenuCrt.qml"); dim: 0.6 }
   MenuShell { host: root; kind: "quest"; source: Qt.resolvedUrl("menus/MenuQuest.qml"); dim: 0.5 }
+  MenuShell { host: root; kind: "room"; source: Qt.resolvedUrl("menus/MenuRoom.qml"); dim: 0.45 }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
   // таймер и будильник (полоса под плеером, IPC timer* / alarm*)

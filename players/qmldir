@@ -13,3 +13,4 @@ PlayerSpace PlayerSpace.qml
 PlayerCrt PlayerCrt.qml
 PlayerModern PlayerModern.qml
 PlayerQuest PlayerQuest.qml
+PlayerRoom PlayerRoom.qml
