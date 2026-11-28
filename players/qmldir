@@ -12,3 +12,4 @@ PlayerVitreus PlayerVitreus.qml
 PlayerSpace PlayerSpace.qml
 PlayerCrt PlayerCrt.qml
 PlayerModern PlayerModern.qml
+PlayerQuest PlayerQuest.qml

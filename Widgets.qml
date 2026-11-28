@@ -161,7 +161,9 @@ Item {
     // Retro CRT: Super+M — «Главное меню ЭВМ» (menus/MenuCrt.qml), обзор — все окна таблицей (OverviewTable.qml)
     "crt":       { settingsSkin: "crt", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "crt", powerStyle: "edge", clipboardPanel: "stock", overviewStyle: "table" },
     // Modern: Super+M — остров из бара (ModernIsland.qml)
-    "modern":    { settingsSkin: "modern", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" }
+    "modern":    { settingsSkin: "modern", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "modern", powerStyle: "dial", clipboardPanel: "stock", overviewStyle: "modern" },
+    // Quest: Super+M — командное меню ролевой игры (menus/MenuQuest.qml)
+    "quest":     { settingsSkin: "quest", homeLayout: "minimal", homeCards: "style", deckLayout: "panel", deckCards: "style", settingsPanel: "quest", powerStyle: "edge", clipboardPanel: "stock" }
   })
   function partFor(key) {
     var t = partDefaults[rice] || partDefaults["default"]
@@ -628,6 +630,11 @@ Item {
     host: root
   }
 
+  // дашборд Quest — экран статуса героя ролевой игры
+  DashQuest {
+    host: root
+  }
+
   DotMatrixDashboard {
     host: root
   }
@@ -667,6 +674,7 @@ Item {
   MenuShell { host: root; kind: "instrument"; source: Qt.resolvedUrl("menus/MenuDots.qml"); ring: DotMatrix.Palette.signal }
   MenuShell { host: root; kind: "space"; source: Qt.resolvedUrl("menus/MenuSpace.qml"); dim: 0.35 }
   MenuShell { host: root; kind: "crt"; source: Qt.resolvedUrl("menus/MenuCrt.qml"); dim: 0.6 }
+  MenuShell { host: root; kind: "quest"; source: Qt.resolvedUrl("menus/MenuQuest.qml"); dim: 0.5 }
   // плеер райса по Super+Alt+M (playerStyle)
   PlayerHost { host: root }
   // таймер и будильник (полоса под плеером, IPC timer* / alarm*)
